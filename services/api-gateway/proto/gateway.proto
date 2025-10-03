@@ -1,0 +1,718 @@
+syntax = "proto3";
+
+package gateway.v1;
+
+option go_package = "github.com/visionworld/api-gateway/proto/gateway/v1;gateway_v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+// API网关服务定义
+service GatewayService {
+  // 用户认证
+  rpc UserAuth(UserAuthRequest) returns (UserAuthResponse);
+  
+  // 刷新Token
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  
+  // 用户登出
+  rpc UserLogout(UserLogoutRequest) returns (google.protobuf.Empty);
+  
+  // 通用代理请求（转发到后端服务）
+  rpc ProxyRequest(ProxyRequest) returns (ProxyResponse);
+  
+  // 获取服务状态
+  rpc GetServiceStatus(GetServiceStatusRequest) returns (GetServiceStatusResponse);
+  
+  // 获取API路由配置
+  rpc GetApiRoutes(GetApiRoutesRequest) returns (GetApiRoutesResponse);
+  
+  // 更新API路由配置
+  rpc UpdateApiRoute(UpdateApiRouteRequest) returns (UpdateApiRouteResponse);
+  
+  // 获取限流配置
+  rpc GetRateLimitConfig(GetRateLimitConfigRequest) returns (GetRateLimitConfigResponse);
+  
+  // 更新限流配置
+  rpc UpdateRateLimitConfig(UpdateRateLimitConfigRequest) returns (UpdateRateLimitConfigResponse);
+  
+  // 获取访问日志
+  rpc GetAccessLogs(GetAccessLogsRequest) returns (GetAccessLogsResponse);
+  
+  // 获取错误日志
+  rpc GetErrorLogs(GetErrorLogsRequest) returns (GetErrorLogsResponse);
+  
+  // 健康检查
+  rpc HealthCheck(google.protobuf.Empty) returns (HealthCheckResponse);
+  
+  // 获取服务发现信息
+  rpc GetServiceDiscovery(GetServiceDiscoveryRequest) returns (GetServiceDiscoveryResponse);
+  
+  // 注册服务
+  rpc RegisterService(RegisterServiceRequest) returns (RegisterServiceResponse);
+  
+  // 注销服务
+  rpc UnregisterService(UnregisterServiceRequest) returns (google.protobuf.Empty);
+  
+  // 获取负载均衡配置
+  rpc GetLoadBalanceConfig(GetLoadBalanceConfigRequest) returns (GetLoadBalanceConfigResponse);
+  
+  // 更新负载均衡配置
+  rpc UpdateLoadBalanceConfig(UpdateLoadBalanceConfigRequest) returns (UpdateLoadBalanceConfigResponse);
+  
+  // 获取熔断配置
+  rpc GetCircuitBreakerConfig(GetCircuitBreakerConfigRequest) returns (GetCircuitBreakerConfigResponse);
+  
+  // 更新熔断配置
+  rpc UpdateCircuitBreakerConfig(UpdateCircuitBreakerConfigRequest) returns (UpdateCircuitBreakerConfigResponse);
+  
+  // 获取监控指标
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+  
+  // 获取API统计信息
+  rpc GetApiStats(GetApiStatsRequest) returns (GetApiStatsResponse);
+  
+  // 获取用户访问统计
+  rpc GetUserAccessStats(GetUserAccessStatsRequest) returns (GetUserAccessStatsResponse);
+  
+  // 黑名单管理
+  rpc AddToBlacklist(AddToBlacklistRequest) returns (AddToBlacklistResponse);
+  
+  // 从黑名单移除
+  rpc RemoveFromBlacklist(RemoveFromBlacklistRequest) returns (RemoveFromBlacklistResponse);
+  
+  // 获取黑名单
+  rpc GetBlacklist(GetBlacklistRequest) returns (GetBlacklistResponse);
+  
+  // 白名单管理
+  rpc AddToWhitelist(AddToWhitelistRequest) returns (AddToWhitelistResponse);
+  
+  // 从白名单移除
+  rpc RemoveFromWhitelist(RemoveFromWhitelistRequest) returns (RemoveFromWhitelistResponse);
+  
+  // 获取白名单
+  rpc GetWhitelist(GetWhitelistRequest) returns (GetWhitelistResponse);
+}
+
+// 认证类型枚举
+enum AuthType {
+  AUTH_TYPE_UNSPECIFIED = 0;
+  AUTH_TYPE_PASSWORD = 1;              // 密码认证
+  AUTH_TYPE_SMS = 2;                   // 短信认证
+  AUTH_TYPE_EMAIL = 3;                 // 邮箱认证
+  AUTH_TYPE_OAUTH = 4;                 // OAuth认证
+  AUTH_TYPE_TOKEN = 5;                 // Token认证
+}
+
+// 请求方法枚举
+enum HttpMethod {
+  HTTP_METHOD_UNSPECIFIED = 0;
+  HTTP_METHOD_GET = 1;
+  HTTP_METHOD_POST = 2;
+  HTTP_METHOD_PUT = 3;
+  HTTP_METHOD_DELETE = 4;
+  HTTP_METHOD_PATCH = 5;
+  HTTP_METHOD_HEAD = 6;
+  HTTP_METHOD_OPTIONS = 7;
+}
+
+// 服务状态枚举
+enum ServiceStatus {
+  SERVICE_STATUS_UNSPECIFIED = 0;
+  SERVICE_STATUS_HEALTHY = 1;          // 健康
+  SERVICE_STATUS_DEGRADED = 2;         // 降级
+  SERVICE_STATUS_UNHEALTHY = 3;        // 不健康
+  SERVICE_STATUS_OFFLINE = 4;          // 离线
+}
+
+// 负载均衡算法枚举
+enum LoadBalanceAlgorithm {
+  LOAD_BALANCE_ALGORITHM_UNSPECIFIED = 0;
+  LOAD_BALANCE_ALGORITHM_ROUND_ROBIN = 1;      // 轮询
+  LOAD_BALANCE_ALGORITHM_WEIGHTED_ROUND_ROBIN = 2; // 加权轮询
+  LOAD_BALANCE_ALGORITHM_LEAST_CONNECTIONS = 3;   // 最少连接
+  LOAD_BALANCE_ALGORITHM_WEIGHTED_LEAST_CONNECTIONS = 4; // 加权最少连接
+  LOAD_BALANCE_ALGORITHM_RANDOM = 5;          // 随机
+  LOAD_BALANCE_ALGORITHM_IP_HASH = 6;          // IP哈希
+}
+
+// 熔断状态枚举
+enum CircuitBreakerStatus {
+  CIRCUIT_BREAKER_STATUS_UNSPECIFIED = 0;
+  CIRCUIT_BREAKER_STATUS_CLOSED = 1;           // 关闭
+  CIRCUIT_BREAKER_STATUS_OPEN = 2;             // 开启
+  CIRCUIT_BREAKER_STATUS_HALF_OPEN = 3;      // 半开
+}
+
+// 黑名单类型枚举
+enum BlacklistType {
+  BLACKLIST_TYPE_UNSPECIFIED = 0;
+  BLACKLIST_TYPE_IP = 1;                      // IP黑名单
+  BLACKLIST_TYPE_USER = 2;                    // 用户黑名单
+  BLACKLIST_TYPE_DEVICE = 3;                  // 设备黑名单
+  BLACKLIST_TYPE_API = 4;                     // API黑名单
+}
+
+// 用户认证信息
+message UserAuthInfo {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  string phone = 4;
+  repeated string roles = 5;
+  repeated string permissions = 6;
+  map<string, string> metadata = 7;
+  google.protobuf.Timestamp auth_time = 8;
+  google.protobuf.Timestamp expire_time = 9;
+}
+
+// 访问令牌
+message AccessToken {
+  string token = 1;
+  string refresh_token = 2;
+  int32 expires_in = 3;                          // 过期时间（秒）
+  int32 refresh_expires_in = 4;                  // 刷新令牌过期时间（秒）
+  string token_type = 5;                         // 令牌类型
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// API路由配置
+message ApiRoute {
+  string id = 1;
+  string path = 2;                               // API路径
+  HttpMethod method = 3;
+  string service_name = 4;                       // 目标服务名称
+  string service_path = 5;                         // 目标服务路径
+  repeated string middlewares = 6;               // 中间件列表
+  map<string, string> headers = 7;               // 请求头映射
+  bool auth_required = 8;                        // 是否需要认证
+  repeated string required_roles = 9;            // 所需角色
+  repeated string required_permissions = 10;     // 所需权限
+  bool rate_limited = 11;                        // 是否限流
+  map<string, string> metadata = 12;             // 元数据
+  bool enabled = 13;                             // 是否启用
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
+}
+
+// 限流配置
+message RateLimitConfig {
+  string id = 1;
+  string api_path = 2;                           // API路径
+  int32 requests_per_second = 3;                   // 每秒请求数
+  int32 requests_per_minute = 4;                   // 每分钟请求数
+  int32 requests_per_hour = 5;                     // 每小时请求数
+  int32 requests_per_day = 6;                      // 每天请求数
+  int32 burst_size = 7;                            // 突发大小
+  string limit_by = 8;                             // 限流维度：ip, user, api
+  bool enabled = 9;
+  map<string, string> metadata = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+// 负载均衡配置
+message LoadBalanceConfig {
+  string id = 1;
+  string service_name = 2;                         // 服务名称
+  LoadBalanceAlgorithm algorithm = 3;              // 负载均衡算法
+  repeated LoadBalanceServer servers = 4;          // 服务器列表
+  int32 health_check_interval = 5;                 // 健康检查间隔（秒）
+  int32 health_check_timeout = 6;                  // 健康检查超时（秒）
+  int32 max_retries = 7;                           // 最大重试次数
+  int32 retry_interval = 8;                        // 重试间隔（毫秒）
+  bool enabled = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+// 负载均衡服务器
+message LoadBalanceServer {
+  string id = 1;
+  string host = 2;
+  int32 port = 3;
+  int32 weight = 4;                                // 权重
+  bool healthy = 5;                                // 是否健康
+  int32 current_connections = 6;                   // 当前连接数
+  google.protobuf.Timestamp last_check_time = 7;
+}
+
+// 熔断配置
+message CircuitBreakerConfig {
+  string id = 1;
+  string service_name = 2;                         // 服务名称
+  int32 failure_threshold = 3;                     // 失败阈值
+  int32 success_threshold = 4;                     // 成功阈值
+  int32 timeout_duration = 5;                        // 超时时间（秒）
+  int32 reset_timeout = 6;                           // 重置超时（秒）
+  CircuitBreakerStatus status = 7;
+  google.protobuf.Timestamp last_state_change = 8;
+  bool enabled = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+// 访问日志
+message AccessLog {
+  string id = 1;
+  string request_id = 2;
+  string user_id = 3;
+  string ip_address = 4;
+  string user_agent = 5;
+  string method = 6;
+  string path = 7;
+  int32 status_code = 8;
+  int64 request_size = 9;
+  int64 response_size = 10;
+  int64 duration = 11;                             // 请求耗时（毫秒）
+  string service_name = 12;
+  string error_message = 13;
+  map<string, string> headers = 14;
+  map<string, string> query_params = 15;
+  google.protobuf.Timestamp timestamp = 16;
+}
+
+// 错误日志
+message ErrorLog {
+  string id = 1;
+  string request_id = 2;
+  string service_name = 3;
+  string error_type = 4;
+  string error_message = 5;
+  string error_stack = 6;
+  string path = 7;
+  string method = 8;
+  int32 status_code = 9;
+  string user_id = 10;
+  string ip_address = 11;
+  map<string, string> context = 12;
+  google.protobuf.Timestamp timestamp = 13;
+}
+
+// 服务发现信息
+message ServiceDiscoveryInfo {
+  string service_name = 1;
+  string service_id = 2;
+  string host = 3;
+  int32 port = 4;
+  map<string, string> metadata = 5;
+  ServiceStatus status = 6;
+  google.protobuf.Timestamp last_heartbeat = 7;
+  google.protobuf.Timestamp registered_at = 8;
+}
+
+// 监控指标
+message Metric {
+  string name = 1;
+  double value = 2;
+  string unit = 3;
+  map<string, string> labels = 4;
+  google.protobuf.Timestamp timestamp = 5;
+}
+
+// API统计信息
+message ApiStats {
+  string api_path = 1;
+  string method = 2;
+  int64 total_requests = 3;                          // 总请求数
+  int64 success_requests = 4;                        // 成功请求数
+  int64 error_requests = 5;                            // 错误请求数
+  double avg_response_time = 6;                      // 平均响应时间（毫秒）
+  double max_response_time = 7;                      // 最大响应时间（毫秒）
+  double min_response_time = 8;                      // 最小响应时间（毫秒）
+  map<int32, int64> status_code_stats = 9;         // 状态码统计
+  google.protobuf.Timestamp start_time = 10;
+  google.protobuf.Timestamp end_time = 11;
+}
+
+// 用户访问统计
+message UserAccessStats {
+  string user_id = 1;
+  string username = 2;
+  int64 total_requests = 3;
+  int64 success_requests = 4;
+  int64 error_requests = 5;
+  double avg_response_time = 6;
+  map<string, int64> api_access_stats = 7;         // API访问统计
+  google.protobuf.Timestamp last_access_time = 8;
+}
+
+// 黑名单项
+message BlacklistItem {
+  string id = 1;
+  BlacklistType type = 2;
+  string value = 3;                                  // 黑名单值（IP、用户ID等）
+  string reason = 4;
+  string created_by = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp expire_time = 7;
+  bool is_active = 8;
+  map<string, string> metadata = 9;
+}
+
+// 白名单项
+message WhitelistItem {
+  string id = 1;
+  BlacklistType type = 2;
+  string value = 3;
+  string reason = 4;
+  string created_by = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp expire_time = 7;
+  bool is_active = 8;
+  map<string, string> metadata = 9;
+}
+
+// 用户认证请求
+message UserAuthRequest {
+  string username = 1;
+  string password = 2;
+  AuthType auth_type = 3;
+  string captcha_token = 4;                          // 验证码令牌
+  string device_id = 5;                              // 设备ID
+  map<string, string> metadata = 6;
+}
+
+// 用户认证响应
+message UserAuthResponse {
+  bool success = 1;
+  string message = 2;
+  UserAuthInfo user_info = 3;
+  AccessToken token = 4;
+}
+
+// 刷新Token请求
+message RefreshTokenRequest {
+  string refresh_token = 1;
+  string device_id = 2;
+}
+
+// 刷新Token响应
+message RefreshTokenResponse {
+  bool success = 1;
+  string message = 2;
+  AccessToken token = 3;
+}
+
+// 用户登出请求
+message UserLogoutRequest {
+  string user_id = 1;
+  string token = 2;
+  string device_id = 3;
+}
+
+// 代理请求
+message ProxyRequest {
+  string request_id = 1;
+  string method = 2;
+  string path = 3;
+  map<string, string> headers = 4;
+  bytes body = 5;
+  map<string, string> query_params = 6;
+  string user_id = 7;
+  string ip_address = 8;
+  google.protobuf.Timestamp timestamp = 9;
+}
+
+// 代理响应
+message ProxyResponse {
+  int32 status_code = 1;
+  map<string, string> headers = 2;
+  bytes body = 3;
+  string service_name = 4;
+  int64 duration = 5;                                // 处理耗时（毫秒）
+}
+
+// 获取服务状态请求
+message GetServiceStatusRequest {
+  string service_name = 1;
+}
+
+// 获取服务状态响应
+message GetServiceStatusResponse {
+  string service_name = 1;
+  ServiceStatus status = 2;
+  string message = 3;
+  google.protobuf.Timestamp last_check_time = 4;
+  map<string, string> details = 5;
+}
+
+// 获取API路由配置请求
+message GetApiRoutesRequest {
+  string service_name = 1;
+  bool enabled_only = 2;                              // 只获取启用的路由
+}
+
+// 获取API路由配置响应
+message GetApiRoutesResponse {
+  repeated ApiRoute routes = 1;
+  int32 total = 2;
+}
+
+// 更新API路由配置请求
+message UpdateApiRouteRequest {
+  ApiRoute route = 1;
+}
+
+// 更新API路由配置响应
+message UpdateApiRouteResponse {
+  bool success = 1;
+  ApiRoute route = 2;
+}
+
+// 获取限流配置请求
+message GetRateLimitConfigRequest {
+  string api_path = 1;
+}
+
+// 获取限流配置响应
+message GetRateLimitConfigResponse {
+  RateLimitConfig config = 1;
+}
+
+// 更新限流配置请求
+message UpdateRateLimitConfigRequest {
+  RateLimitConfig config = 1;
+}
+
+// 更新限流配置响应
+message UpdateRateLimitConfigResponse {
+  bool success = 1;
+  RateLimitConfig config = 2;
+}
+
+// 获取访问日志请求
+message GetAccessLogsRequest {
+  string user_id = 1;
+  string api_path = 2;
+  string method = 3;
+  int32 status_code = 4;
+  string start_time = 5;                              // 开始时间（ISO 8601）
+  string end_time = 6;                                // 结束时间（ISO 8601）
+  int32 limit = 7;
+  int32 offset = 8;
+}
+
+// 获取访问日志响应
+message GetAccessLogsResponse {
+  repeated AccessLog logs = 1;
+  int32 total = 2;
+}
+
+// 获取错误日志请求
+message GetErrorLogsRequest {
+  string service_name = 1;
+  string error_type = 2;
+  string start_time = 3;
+  string end_time = 4;
+  int32 limit = 5;
+  int32 offset = 6;
+}
+
+// 获取错误日志响应
+message GetErrorLogsResponse {
+  repeated ErrorLog logs = 1;
+  int32 total = 2;
+}
+
+// 健康检查响应
+message HealthCheckResponse {
+  bool healthy = 1;
+  string message = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  map<string, string> details = 4;
+}
+
+// 获取服务发现信息请求
+message GetServiceDiscoveryRequest {
+  string service_name = 1;
+}
+
+// 获取服务发现信息响应
+message GetServiceDiscoveryResponse {
+  repeated ServiceDiscoveryInfo services = 1;
+  int32 total = 2;
+}
+
+// 注册服务请求
+message RegisterServiceRequest {
+  string service_name = 1;
+  string service_id = 2;
+  string host = 3;
+  int32 port = 4;
+  map<string, string> metadata = 5;
+}
+
+// 注册服务响应
+message RegisterServiceResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 注销服务请求
+message UnregisterServiceRequest {
+  string service_name = 1;
+  string service_id = 2;
+}
+
+// 获取负载均衡配置请求
+message GetLoadBalanceConfigRequest {
+  string service_name = 1;
+}
+
+// 获取负载均衡配置响应
+message GetLoadBalanceConfigResponse {
+  LoadBalanceConfig config = 1;
+}
+
+// 更新负载均衡配置请求
+message UpdateLoadBalanceConfigRequest {
+  LoadBalanceConfig config = 1;
+}
+
+// 更新负载均衡配置响应
+message UpdateLoadBalanceConfigResponse {
+  bool success = 1;
+  LoadBalanceConfig config = 2;
+}
+
+// 获取熔断配置请求
+message GetCircuitBreakerConfigRequest {
+  string service_name = 1;
+}
+
+// 获取熔断配置响应
+message GetCircuitBreakerConfigResponse {
+  CircuitBreakerConfig config = 1;
+}
+
+// 更新熔断配置请求
+message UpdateCircuitBreakerConfigRequest {
+  CircuitBreakerConfig config = 1;
+}
+
+// 更新熔断配置响应
+message UpdateCircuitBreakerConfigResponse {
+  bool success = 1;
+  CircuitBreakerConfig config = 2;
+}
+
+// 获取监控指标请求
+message GetMetricsRequest {
+  string metric_name = 1;
+  string start_time = 2;
+  string end_time = 3;
+  int32 interval = 4;                                // 时间间隔（秒）
+}
+
+// 获取监控指标响应
+message GetMetricsResponse {
+  repeated Metric metrics = 1;
+}
+
+// 获取API统计信息请求
+message GetApiStatsRequest {
+  string api_path = 1;
+  string start_time = 2;
+  string end_time = 3;
+}
+
+// 获取API统计信息响应
+message GetApiStatsResponse {
+  ApiStats stats = 1;
+}
+
+// 获取用户访问统计请求
+message GetUserAccessStatsRequest {
+  string user_id = 1;
+  string start_time = 2;
+  string end_time = 3;
+}
+
+// 获取用户访问统计响应
+message GetUserAccessStatsResponse {
+  UserAccessStats stats = 1;
+}
+
+// 添加到黑名单请求
+message AddToBlacklistRequest {
+  BlacklistType type = 1;
+  string value = 2;
+  string reason = 3;
+  string created_by = 4;
+  google.protobuf.Timestamp expire_time = 5;
+  map<string, string> metadata = 6;
+}
+
+// 添加到黑名单响应
+message AddToBlacklistResponse {
+  bool success = 1;
+  BlacklistItem item = 2;
+}
+
+// 从黑名单移除请求
+message RemoveFromBlacklistRequest {
+  string item_id = 1;
+  string removed_by = 2;
+}
+
+// 从黑名单移除响应
+message RemoveFromBlacklistResponse {
+  bool success = 1;
+}
+
+// 获取黑名单请求
+message GetBlacklistRequest {
+  BlacklistType type = 1;
+  bool active_only = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+// 获取黑名单响应
+message GetBlacklistResponse {
+  repeated BlacklistItem items = 1;
+  int32 total = 2;
+}
+
+// 添加到白名单请求
+message AddToWhitelistRequest {
+  BlacklistType type = 1;
+  string value = 2;
+  string reason = 3;
+  string created_by = 4;
+  google.protobuf.Timestamp expire_time = 5;
+  map<string, string> metadata = 6;
+}
+
+// 添加到白名单响应
+message AddToWhitelistResponse {
+  bool success = 1;
+  WhitelistItem item = 2;
+}
+
+// 从白名单移除请求
+message RemoveFromWhitelistRequest {
+  string item_id = 1;
+  string removed_by = 2;
+}
+
+// 从白名单移除响应
+message RemoveFromWhitelistResponse {
+  bool success = 1;
+}
+
+// 获取白名单请求
+message GetWhitelistRequest {
+  BlacklistType type = 1;
+  bool active_only = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+// 获取白名单响应
+message GetWhitelistResponse {
+  repeated WhitelistItem items = 1;
+  int32 total = 2;
+}

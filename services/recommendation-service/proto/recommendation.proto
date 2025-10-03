@@ -1,0 +1,261 @@
+syntax = "proto3";
+
+package recommendation.v1;
+
+option go_package = "github.com/visionworld/recommendation-service/proto/recommendation/v1;recommendation_v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// 推荐服务定义
+service RecommendationService {
+  // 获取个性化推荐
+  rpc GetPersonalizedRecommendations(GetPersonalizedRecommendationsRequest) returns (GetPersonalizedRecommendationsResponse);
+  
+  // 获取相似视频推荐
+  rpc GetSimilarVideos(GetSimilarVideosRequest) returns (GetSimilarVideosResponse);
+  
+  // 获取相关视频推荐
+  rpc GetRelatedVideos(GetRelatedVideosRequest) returns (GetRelatedVideosResponse);
+  
+  // 获取用户兴趣标签
+  rpc GetUserInterests(GetUserInterestsRequest) returns (GetUserInterestsResponse);
+  
+  // 记录用户行为
+  rpc RecordUserBehavior(RecordUserBehaviorRequest) returns (google.protobuf.Empty);
+  
+  // 批量记录用户行为
+  rpc BatchRecordUserBehavior(BatchRecordUserBehaviorRequest) returns (google.protobuf.Empty);
+  
+  // 获取推荐配置
+  rpc GetRecommendationConfig(GetRecommendationConfigRequest) returns (GetRecommendationConfigResponse);
+  
+  // 更新推荐配置
+  rpc UpdateRecommendationConfig(UpdateRecommendationConfigRequest) returns (UpdateRecommendationConfigResponse);
+  
+  // 获取推荐算法列表
+  rpc GetAlgorithmList(GetAlgorithmListRequest) returns (GetAlgorithmListResponse);
+  
+  // 获取算法详情
+  rpc GetAlgorithmDetail(GetAlgorithmDetailRequest) returns (GetAlgorithmDetailResponse);
+}
+
+// 用户行为类型枚举
+enum BehaviorType {
+  BEHAVIOR_TYPE_UNSPECIFIED = 0;
+  BEHAVIOR_TYPE_VIEW = 1;        // 观看
+  BEHAVIOR_TYPE_LIKE = 2;        // 点赞
+  BEHAVIOR_TYPE_UNLIKE = 3;      // 取消点赞
+  BEHAVIOR_TYPE_FAVORITE = 4;    // 收藏
+  BEHAVIOR_TYPE_UNFAVORITE = 5;  // 取消收藏
+  BEHAVIOR_TYPE_SHARE = 6;       // 分享
+  BEHAVIOR_TYPE_COMMENT = 7;     // 评论
+  BEHAVIOR_TYPE_FOLLOW = 8;      // 关注
+  BEHAVIOR_TYPE_UNFOLLOW = 9;    // 取消关注
+  BEHAVIOR_TYPE_SEARCH = 10;     // 搜索
+  BEHAVIOR_TYPE_CLICK = 11;      // 点击
+  BEHAVIOR_TYPE_COMPLETE_VIEW = 12;  // 完整观看
+  BEHAVIOR_TYPE_SKIP = 13;       // 跳过
+}
+
+// 推荐算法类型枚举
+enum AlgorithmType {
+  ALGORITHM_TYPE_UNSPECIFIED = 0;
+  ALGORITHM_TYPE_CF = 1;         // 协同过滤
+  ALGORITHM_TYPE_CONTENT = 2;    // 基于内容
+  ALGORITHM_TYPE_DEEP_LEARNING = 3;  // 深度学习
+  ALGORITHM_TYPE_HYBRID = 4;     // 混合推荐
+  ALGORITHM_TYPE_HOT = 5;        // 热门推荐
+  ALGORITHM_TYPE_LATEST = 6;     // 最新推荐
+  ALGORITHM_TYPE_ASSOCIATION = 7; // 关联规则
+}
+
+// 推荐场景枚举
+enum RecommendationScene {
+  SCENE_UNSPECIFIED = 0;
+  SCENE_HOME_FEED = 1;           // 首页推荐
+  SCENE_RELATED_VIDEOS = 2;      // 相关视频
+  SCENE_SEARCH_RESULT = 3;       // 搜索结果
+  SCENE_USER_PROFILE = 4;        // 用户主页
+  SCENE_TRENDING = 5;            // 热门榜单
+  SCENE_CATEGORY = 6;            // 分类推荐
+}
+
+// 用户行为数据
+message UserBehavior {
+  string user_id = 1;
+  string video_id = 2;
+  BehaviorType behavior_type = 3;
+  double behavior_value = 4;     // 行为权重值
+  google.protobuf.Timestamp behavior_time = 5;
+  map<string, string> context = 6;  // 上下文信息
+  int32 duration = 7;              // 行为持续时间（秒）
+  string device_id = 8;            // 设备ID
+  string ip_address = 9;           // IP地址
+}
+
+// 推荐项
+message RecommendationItem {
+  string video_id = 1;
+  double score = 2;                // 推荐得分
+  AlgorithmType algorithm = 3;   // 推荐算法
+  map<string, string> reasons = 4; // 推荐理由
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// 用户兴趣标签
+message UserInterest {
+  string tag = 1;
+  double weight = 2;               // 权重
+  google.protobuf.Timestamp last_updated = 3;
+  int32 behavior_count = 4;        // 相关行为次数
+}
+
+// 推荐配置
+message RecommendationConfig {
+  string config_id = 1;
+  AlgorithmType algorithm_type = 2;
+  RecommendationScene scene = 3;
+  map<string, double> parameters = 4;  // 算法参数
+  bool is_enabled = 5;
+  int32 priority = 6;                // 优先级
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  string description = 9;
+}
+
+// 算法信息
+message AlgorithmInfo {
+  string algorithm_id = 1;
+  string name = 2;
+  AlgorithmType type = 3;
+  string description = 4;
+  map<string, string> parameters = 5;  // 参数说明
+  bool is_enabled = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+// 获取个性化推荐请求
+message GetPersonalizedRecommendationsRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  RecommendationScene scene = 4;
+  string category_id = 5;        // 分类筛选
+  bool use_cache = 6;            // 是否使用缓存
+  int32 diversity = 7;           // 多样性参数（1-10）
+}
+
+// 获取个性化推荐响应
+message GetPersonalizedRecommendationsResponse {
+  repeated RecommendationItem recommendations = 1;
+  int32 total = 2;
+  google.protobuf.Timestamp generated_at = 3;
+  AlgorithmType algorithm_used = 4;
+  map<string, double> debug_info = 5;  // 调试用信息
+}
+
+// 获取相似视频推荐请求
+message GetSimilarVideosRequest {
+  string video_id = 1;
+  string user_id = 2;            // 可选，用于个性化相似推荐
+  int32 count = 3;               // 推荐数量
+  AlgorithmType algorithm = 4;   // 指定算法，可选
+}
+
+// 获取相似视频推荐响应
+message GetSimilarVideosResponse {
+  repeated RecommendationItem recommendations = 1;
+  google.protobuf.Timestamp generated_at = 2;
+}
+
+// 获取相关视频推荐请求
+message GetRelatedVideosRequest {
+  string video_id = 1;
+  string user_id = 2;            // 可选，用于个性化相关推荐
+  int32 count = 3;               // 推荐数量
+  string category_id = 4;        // 分类筛选
+}
+
+// 获取相关视频推荐响应
+message GetRelatedVideosResponse {
+  repeated RecommendationItem recommendations = 1;
+  google.protobuf.Timestamp generated_at = 2;
+}
+
+// 获取用户兴趣标签请求
+message GetUserInterestsRequest {
+  string user_id = 1;
+  int32 limit = 2;               // 返回前N个兴趣
+  bool include_weights = 3;      // 是否包含权重
+}
+
+// 获取用户兴趣标签响应
+message GetUserInterestsResponse {
+  repeated UserInterest interests = 1;
+  google.protobuf.Timestamp generated_at = 2;
+  int32 total_behaviors = 3;     // 总行为数
+}
+
+// 记录用户行为请求
+message RecordUserBehaviorRequest {
+  UserBehavior behavior = 1;
+  bool real_time = 2;            // 是否实时处理
+}
+
+// 批量记录用户行为请求
+message BatchRecordUserBehaviorRequest {
+  repeated UserBehavior behaviors = 1;
+  bool real_time = 2;            // 是否实时处理
+}
+
+// 获取推荐配置请求
+message GetRecommendationConfigRequest {
+  string config_id = 1;
+  AlgorithmType algorithm_type = 2;
+  RecommendationScene scene = 3;
+}
+
+// 获取推荐配置响应
+message GetRecommendationConfigResponse {
+  RecommendationConfig config = 1;
+}
+
+// 更新推荐配置请求
+message UpdateRecommendationConfigRequest {
+  string config_id = 1;
+  map<string, double> parameters = 2;
+  optional bool is_enabled = 3;
+  optional int32 priority = 4;
+  string description = 5;
+}
+
+// 更新推荐配置响应
+message UpdateRecommendationConfigResponse {
+  RecommendationConfig config = 1;
+}
+
+// 获取算法列表请求
+message GetAlgorithmListRequest {
+  AlgorithmType type = 1;
+  bool include_disabled = 2;     // 是否包含禁用的算法
+}
+
+// 获取算法列表响应
+message GetAlgorithmListResponse {
+  repeated AlgorithmInfo algorithms = 1;
+  int32 total = 2;
+}
+
+// 获取算法详情请求
+message GetAlgorithmDetailRequest {
+  string algorithm_id = 1;
+}
+
+// 获取算法详情响应
+message GetAlgorithmDetailResponse {
+  AlgorithmInfo algorithm = 1;
+  map<string, string> parameters_schema = 2;  // 参数模式
+  repeated string supported_scenes = 3;       // 支持的场景
+}

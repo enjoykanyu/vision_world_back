@@ -1,0 +1,453 @@
+syntax = "proto3";
+
+package social.v1;
+
+option go_package = "github.com/visionworld/social-service/proto/social/v1;social_v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// 社交服务定义
+service SocialService {
+  // 关注用户
+  rpc FollowUser(FollowUserRequest) returns (FollowUserResponse);
+  
+  // 取消关注用户
+  rpc UnfollowUser(UnfollowUserRequest) returns (google.protobuf.Empty);
+  
+  // 获取用户关注列表
+  rpc GetFollowingList(GetFollowingListRequest) returns (GetFollowingListResponse);
+  
+  // 获取用户粉丝列表
+  rpc GetFollowerList(GetFollowerListRequest) returns (GetFollowerListResponse);
+  
+  // 检查是否关注
+  rpc CheckFollowing(CheckFollowingRequest) returns (CheckFollowingResponse);
+  
+  // 获取共同关注
+  rpc GetMutualFollowing(GetMutualFollowingRequest) returns (GetMutualFollowingResponse);
+  
+  // 点赞视频
+  rpc LikeVideo(LikeVideoRequest) returns (LikeVideoResponse);
+  
+  // 取消点赞视频
+  rpc UnlikeVideo(UnlikeVideoRequest) returns (google.protobuf.Empty);
+  
+  // 获取用户点赞的视频列表
+  rpc GetLikedVideos(GetLikedVideosRequest) returns (GetLikedVideosResponse);
+  
+  // 检查是否点赞
+  rpc CheckVideoLiked(CheckVideoLikedRequest) returns (CheckVideoLikedResponse);
+  
+  // 收藏视频
+  rpc FavoriteVideo(FavoriteVideoRequest) returns (FavoriteVideoResponse);
+  
+  // 取消收藏视频
+  rpc UnfavoriteVideo(UnfavoriteVideoRequest) returns (google.protobuf.Empty);
+  
+  // 获取用户收藏的视频列表
+  rpc GetFavoriteVideos(GetFavoriteVideosRequest) returns (GetFavoriteVideosResponse);
+  
+  // 检查是否收藏
+  rpc CheckVideoFavorited(CheckVideoFavoritedRequest) returns (CheckVideoFavoritedResponse);
+  
+  // 发布评论
+  rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse);
+  
+  // 删除评论
+  rpc DeleteComment(DeleteCommentRequest) returns (google.protobuf.Empty);
+  
+  // 获取视频评论列表
+  rpc GetVideoComments(GetVideoCommentsRequest) returns (GetVideoCommentsResponse);
+  
+  // 获取评论回复列表
+  rpc GetCommentReplies(GetCommentRepliesRequest) returns (GetCommentRepliesResponse);
+  
+  // 点赞评论
+  rpc LikeComment(LikeCommentRequest) returns (LikeCommentResponse);
+  
+  // 取消点赞评论
+  rpc UnlikeComment(UnlikeCommentRequest) returns (google.protobuf.Empty);
+  
+  // 分享视频
+  rpc ShareVideo(ShareVideoRequest) returns (ShareVideoResponse);
+  
+  // 获取分享统计
+  rpc GetShareStats(GetShareStatsRequest) returns (GetShareStatsResponse);
+  
+  // 获取用户统计信息
+  rpc GetUserStats(GetUserStatsRequest) returns (GetUserStatsResponse);
+}
+
+// 关系状态枚举
+enum RelationStatus {
+  RELATION_STATUS_UNSPECIFIED = 0;
+  RELATION_STATUS_FOLLOWING = 1;    // 已关注
+  RELATION_STATUS_FOLLOWED = 2;     // 被关注
+  RELATION_STATUS_MUTUAL = 3;       // 互相关注
+  RELATION_STATUS_NONE = 4;         // 无关系
+}
+
+// 评论状态枚举
+enum CommentStatus {
+  COMMENT_STATUS_UNSPECIFIED = 0;
+  COMMENT_STATUS_NORMAL = 1;        // 正常
+  COMMENT_STATUS_DELETED = 2;       // 已删除
+  COMMENT_STATUS_HIDDEN = 3;        // 隐藏
+  COMMENT_STATUS_SPAM = 4;          // 垃圾评论
+}
+
+// 用户基础信息
+message UserBrief {
+  string user_id = 1;
+  string username = 2;
+  string avatar = 3;
+}
+
+// 关注关系信息
+message FollowRelation {
+  string user_id = 1;                // 用户ID
+  string target_user_id = 2;        // 目标用户ID
+  RelationStatus status = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+// 点赞记录
+message LikeRecord {
+  string like_id = 1;
+  string user_id = 2;
+  string target_id = 3;             // 目标ID（视频ID或评论ID）
+  string target_type = 4;            // 目标类型：video, comment
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// 收藏记录
+message FavoriteRecord {
+  string favorite_id = 1;
+  string user_id = 2;
+  string video_id = 3;
+  google.protobuf.Timestamp created_at = 4;
+}
+
+// 评论信息
+message Comment {
+  string comment_id = 1;
+  string video_id = 2;
+  string user_id = 3;
+  UserBrief user = 4;                // 评论用户信息
+  string content = 5;
+  CommentStatus status = 6;
+  int64 like_count = 7;
+  int32 reply_count = 8;
+  string parent_id = 9;              // 父评论ID（回复用）
+  string root_id = 10;               // 根评论ID
+  bool is_liked = 11;                // 当前用户是否点赞
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+  repeated Comment replies = 14;     // 热门回复（最多3条）
+}
+
+// 分享记录
+message ShareRecord {
+  string share_id = 1;
+  string user_id = 2;
+  string video_id = 3;
+  string share_platform = 4;         // 分享平台：wechat, weibo, qq等
+  string share_method = 5;            // 分享方式：link, image, video
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// 关注用户请求
+message FollowUserRequest {
+  string user_id = 1;                // 操作者用户ID
+  string target_user_id = 2;        // 要关注的用户ID
+}
+
+// 关注用户响应
+message FollowUserResponse {
+  bool success = 1;
+  RelationStatus new_status = 2;
+  int64 following_count = 3;        // 用户关注数
+  int64 follower_count = 4;           // 目标用户粉丝数
+}
+
+// 取消关注用户请求
+message UnfollowUserRequest {
+  string user_id = 1;
+  string target_user_id = 2;
+}
+
+// 获取用户关注列表请求
+message GetFollowingListRequest {
+  string user_id = 1;                // 要查询的用户ID
+  string current_user_id = 2;       // 当前登录用户ID（可选）
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// 获取用户关注列表响应
+message GetFollowingListResponse {
+  repeated UserBrief users = 1;
+  int32 total = 2;
+  bool has_next = 3;
+}
+
+// 获取用户粉丝列表请求
+message GetFollowerListRequest {
+  string user_id = 1;
+  string current_user_id = 2;       // 当前登录用户ID（可选）
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// 获取用户粉丝列表响应
+message GetFollowerListResponse {
+  repeated UserBrief users = 1;
+  int32 total = 2;
+  bool has_next = 3;
+}
+
+// 检查是否关注请求
+message CheckFollowingRequest {
+  string user_id = 1;
+  string target_user_id = 2;
+}
+
+// 检查是否关注响应
+message CheckFollowingResponse {
+  bool is_following = 1;
+  RelationStatus status = 2;
+}
+
+// 获取共同关注请求
+message GetMutualFollowingRequest {
+  string user_id = 1;
+  string target_user_id = 2;
+  int32 limit = 3;
+}
+
+// 获取共同关注响应
+message GetMutualFollowingResponse {
+  repeated UserBrief users = 1;
+  int32 total = 2;
+}
+
+// 点赞视频请求
+message LikeVideoRequest {
+  string user_id = 1;
+  string video_id = 2;
+}
+
+// 点赞视频响应
+message LikeVideoResponse {
+  bool success = 1;
+  int64 like_count = 2;            // 视频点赞数
+}
+
+// 取消点赞视频请求
+message UnlikeVideoRequest {
+  string user_id = 1;
+  string video_id = 2;
+}
+
+// 获取用户点赞的视频列表请求
+message GetLikedVideosRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+// 获取用户点赞的视频列表响应
+message GetLikedVideosResponse {
+  repeated string video_ids = 1;     // 视频ID列表
+  int32 total = 2;
+  bool has_next = 3;
+}
+
+// 检查是否点赞请求
+message CheckVideoLikedRequest {
+  string user_id = 1;
+  string video_id = 2;
+}
+
+// 检查是否点赞响应
+message CheckVideoLikedResponse {
+  bool is_liked = 1;
+}
+
+// 收藏视频请求
+message FavoriteVideoRequest {
+  string user_id = 1;
+  string video_id = 2;
+}
+
+// 收藏视频响应
+message FavoriteVideoResponse {
+  bool success = 1;
+  int64 favorite_count = 2;        // 视频收藏数
+}
+
+// 取消收藏视频请求
+message UnfavoriteVideoRequest {
+  string user_id = 1;
+  string video_id = 2;
+}
+
+// 获取用户收藏的视频列表请求
+message GetFavoriteVideosRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+// 获取用户收藏的视频列表响应
+message GetFavoriteVideosResponse {
+  repeated string video_ids = 1;
+  int32 total = 2;
+  bool has_next = 3;
+}
+
+// 检查是否收藏请求
+message CheckVideoFavoritedRequest {
+  string user_id = 1;
+  string video_id = 2;
+}
+
+// 检查是否收藏响应
+message CheckVideoFavoritedResponse {
+  bool is_favorited = 1;
+}
+
+// 发布评论请求
+message CreateCommentRequest {
+  string user_id = 1;
+  string video_id = 2;
+  string content = 3;
+  string parent_id = 4;              // 父评论ID（回复用，可选）
+  string root_id = 5;                // 根评论ID（回复用，可选）
+}
+
+// 发布评论响应
+message CreateCommentResponse {
+  Comment comment = 1;
+}
+
+// 删除评论请求
+message DeleteCommentRequest {
+  string comment_id = 1;
+  string user_id = 2;                // 操作者用户ID
+}
+
+// 获取视频评论列表请求
+message GetVideoCommentsRequest {
+  string video_id = 1;
+  string user_id = 2;                // 当前登录用户ID（可选）
+  int32 page = 3;
+  int32 page_size = 4;
+  string sort_by = 5;                // 排序：hot-热门，new-最新
+}
+
+// 获取视频评论列表响应
+message GetVideoCommentsResponse {
+  repeated Comment comments = 1;
+  int32 total = 2;
+  bool has_next = 3;
+  int32 total_comments = 4;          // 总评论数
+}
+
+// 获取评论回复列表请求
+message GetCommentRepliesRequest {
+  string comment_id = 1;              // 根评论ID
+  string user_id = 2;                // 当前登录用户ID（可选）
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// 获取评论回复列表响应
+message GetCommentRepliesResponse {
+  repeated Comment replies = 1;
+  int32 total = 2;
+  bool has_next = 3;
+}
+
+// 点赞评论请求
+message LikeCommentRequest {
+  string user_id = 1;
+  string comment_id = 2;
+}
+
+// 点赞评论响应
+message LikeCommentResponse {
+  bool success = 1;
+  int64 like_count = 2;              // 评论点赞数
+}
+
+// 取消点赞评论请求
+message UnlikeCommentRequest {
+  string user_id = 1;
+  string comment_id = 2;
+}
+
+// 分享视频请求
+message ShareVideoRequest {
+  string user_id = 1;
+  string video_id = 2;
+  string share_platform = 3;        // 分享平台
+  string share_method = 4;            // 分享方式
+}
+
+// 分享视频响应
+message ShareVideoResponse {
+  string share_id = 1;
+  string share_link = 2;              // 分享链接
+  string share_code = 3;              // 分享码
+}
+
+// 获取分享统计请求
+message GetShareStatsRequest {
+  string video_id = 1;
+  string start_date = 2;              // 开始日期（YYYY-MM-DD）
+  string end_date = 3;                // 结束日期（YYYY-MM-DD）
+}
+
+// 获取分享统计响应
+message GetShareStatsResponse {
+  int64 total_shares = 1;
+  repeated SharePlatformStats platform_stats = 2;
+  repeated ShareDailyStats daily_stats = 3;
+}
+
+// 分享平台统计
+message SharePlatformStats {
+  string platform = 1;
+  int64 share_count = 2;
+  double percentage = 3;
+}
+
+// 分享每日统计
+message ShareDailyStats {
+  string date = 1;
+  int64 share_count = 2;
+}
+
+// 获取用户统计信息请求
+message GetUserStatsRequest {
+  string user_id = 1;
+}
+
+// 获取用户统计信息响应
+message GetUserStatsResponse {
+  int64 follower_count = 1;
+  int64 following_count = 2;
+  int64 like_count = 3;              // 获赞数
+   
+  int64 video_count = 4;             // 视频数
+  int64 total_view_count = 5;        // 总播放量
+  int64 total_like_count = 6;        // 总获赞数
+  int64 total_share_count = 7;       // 总分享数
+  int64 total_comment_count = 8;       // 总评论数
+  
+  int64 favorite_video_count = 9;      // 收藏视频数
+  int64 liked_video_count = 10;        // 点赞视频数
+}

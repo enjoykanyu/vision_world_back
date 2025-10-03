@@ -1,0 +1,538 @@
+syntax = "proto3";
+
+package audit.v1;
+
+option go_package = "github.com/visionworld/audit-service/proto/audit/v1;audit_v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// 审核服务定义
+service AuditService {
+  // 提交内容审核
+  rpc SubmitContentAudit(SubmitContentAuditRequest) returns (SubmitContentAuditResponse);
+  
+  // 获取审核任务
+  rpc GetAuditTask(GetAuditTaskRequest) returns (GetAuditTaskResponse);
+  
+  // 处理审核任务
+  rpc ProcessAuditTask(ProcessAuditTaskRequest) returns (ProcessAuditTaskResponse);
+  
+  // 批量获取审核任务
+  rpc GetAuditTasks(GetAuditTasksRequest) returns (GetAuditTasksResponse);
+  
+  // 获取审核历史
+  rpc GetAuditHistory(GetAuditHistoryRequest) returns (GetAuditHistoryResponse);
+  
+  // 获取审核统计
+  rpc GetAuditStats(GetAuditStatsRequest) returns (GetAuditStatsResponse);
+  
+  // 内容预审核（自动审核）
+  rpc PreContentAudit(PreContentAuditRequest) returns (PreContentAuditResponse);
+  
+  // 更新审核规则
+  rpc UpdateAuditRule(UpdateAuditRuleRequest) returns (UpdateAuditRuleResponse);
+  
+  // 获取审核规则
+  rpc GetAuditRules(GetAuditRulesRequest) returns (GetAuditRulesResponse);
+  
+  // 创建审核规则
+  rpc CreateAuditRule(CreateAuditRuleRequest) returns (CreateAuditRuleResponse);
+  
+  // 删除审核规则
+  rpc DeleteAuditRule(DeleteAuditRuleRequest) returns (google.protobuf.Empty);
+  
+  // 内容申诉
+  rpc AppealContent(AppealContentRequest) returns (AppealContentResponse);
+  
+  // 处理申诉
+  rpc ProcessAppeal(ProcessAppealRequest) returns (ProcessAppealResponse);
+  
+  // 获取申诉列表
+  rpc GetAppeals(GetAppealsRequest) returns (GetAppealsResponse);
+  
+  // 获取敏感词库
+  rpc GetSensitiveWords(GetSensitiveWordsRequest) returns (GetSensitiveWordsResponse);
+  
+  // 添加敏感词
+  rpc AddSensitiveWord(AddSensitiveWordRequest) returns (AddSensitiveWordResponse);
+  
+  // 删除敏感词
+  rpc RemoveSensitiveWord(RemoveSensitiveWordRequest) returns (google.protobuf.Empty);
+  
+  // 批量审核
+  rpc BatchAudit(BatchAuditRequest) returns (BatchAuditResponse);
+  
+  // 获取审核队列状态
+  rpc GetAuditQueueStatus(GetAuditQueueStatusRequest) returns (GetAuditQueueStatusResponse);
+  
+  // 优先级调整
+  rpc UpdatePriority(UpdatePriorityRequest) returns (UpdatePriorityResponse);
+}
+
+// 审核内容类型枚举
+enum ContentType {
+  CONTENT_TYPE_UNSPECIFIED = 0;
+  CONTENT_TYPE_VIDEO = 1;            // 视频内容
+  CONTENT_TYPE_IMAGE = 2;            // 图片内容
+  CONTENT_TYPE_TEXT = 3;             // 文本内容
+  CONTENT_TYPE_AUDIO = 4;            // 音频内容
+  CONTENT_TYPE_LIVE = 5;             // 直播内容
+  CONTENT_TYPE_COMMENT = 6;          // 评论内容
+  CONTENT_TYPE_USER = 7;             // 用户信息
+  CONTENT_TYPE_TITLE = 8;              // 标题内容
+  CONTENT_TYPE_DESCRIPTION = 9;        // 描述内容
+}
+
+// 审核状态枚举
+enum AuditStatus {
+  AUDIT_STATUS_UNSPECIFIED = 0;
+  AUDIT_STATUS_PENDING = 1;          // 待审核
+  AUDIT_STATUS_PRE_AUDITING = 2;     // 预审核中
+  AUDIT_STATUS_PRE_AUDIT_PASSED = 3; // 预审核通过
+  AUDIT_STATUS_PRE_AUDIT_REJECTED = 4; // 预审核拒绝
+  AUDIT_STATUS_MANUAL_AUDITING = 5;  // 人工审核中
+  AUDIT_STATUS_APPROVED = 6;         // 审核通过
+  AUDIT_STATUS_REJECTED = 7;         // 审核拒绝
+  AUDIT_STATUS_APPEALING = 8;        // 申诉中
+  AUDIT_STATUS_APPEAL_APPROVED = 9;  // 申诉通过
+  AUDIT_STATUS_APPEAL_REJECTED = 10; // 申诉拒绝
+}
+
+// 审核优先级枚举
+enum AuditPriority {
+  AUDIT_PRIORITY_UNSPECIFIED = 0;
+  AUDIT_PRIORITY_LOW = 1;              // 低优先级
+  AUDIT_PRIORITY_NORMAL = 2;           // 普通优先级
+  AUDIT_PRIORITY_HIGH = 3;             // 高优先级
+  AUDIT_PRIORITY_URGENT = 4;           // 紧急优先级
+}
+
+// 违规类型枚举
+enum ViolationType {
+  VIOLATION_TYPE_UNSPECIFIED = 0;
+  VIOLATION_TYPE_PORN = 1;             // 色情内容
+  VIOLATION_TYPE_VIOLENCE = 2;         // 暴力内容
+  VIOLATION_TYPE_HATE = 3;               // 仇恨言论
+  VIOLATION_TYPE_SPAM = 4;               // 垃圾信息
+  VIOLATION_TYPE_SCAM = 5;               // 诈骗内容
+  VIOLATION_TYPE_COPYRIGHT = 6;          // 版权问题
+  VIOLATION_TYPE_PRIVACY = 7;            // 隐私泄露
+  VIOLATION_TYPE_ILLEGAL = 8;            // 违法内容
+  VIOLATION_TYPE_ADULT = 9;                // 成人内容
+  VIOLATION_TYPE_GAMBLING = 10;          // 赌博内容
+  VIOLATION_TYPE_DRUGS = 11;             // 毒品内容
+  VIOLATION_TYPE_SENSITIVE = 12;         // 敏感内容
+  VIOLATION_TYPE_MISINFORMATION = 13;    // 虚假信息
+}
+
+// 审核结果枚举
+enum AuditResult {
+  AUDIT_RESULT_UNSPECIFIED = 0;
+  AUDIT_RESULT_PASS = 1;                 // 通过
+  AUDIT_RESULT_REJECT = 2;               // 拒绝
+  AUDIT_RESULT_REVIEW = 3;               // 需要复审
+  AUDIT_RESULT_AUTO_PASS = 4;            // 自动通过
+  AUDIT_RESULT_AUTO_REJECT = 5;          // 自动拒绝
+}
+
+// 审核任务
+message AuditTask {
+  string id = 1;
+  string content_id = 2;
+  ContentType content_type = 3;
+  string user_id = 4;
+  string user_name = 5;
+  AuditStatus status = 6;
+  AuditPriority priority = 7;
+  string content_url = 8;                // 内容URL
+  string content_title = 9;                // 内容标题
+  string content_description = 10;         // 内容描述
+  google.protobuf.Timestamp submit_time = 11;
+  google.protobuf.Timestamp audit_time = 12;
+  string auditor_id = 13;                  // 审核员ID
+  string auditor_name = 14;                // 审核员名称
+  AuditResult result = 15;
+  repeated ViolationType violations = 16;  // 违规类型
+  string audit_comment = 17;               // 审核意见
+  string appeal_reason = 18;               // 申诉理由
+  map<string, string> metadata = 19;       // 元数据
+  repeated AuditEvidence evidences = 20;   // 审核证据
+}
+
+// 审核证据
+message AuditEvidence {
+  string id = 1;
+  string type = 2;                         // 证据类型：screenshot, text, metadata
+  string content = 3;                      // 证据内容
+  string url = 4;                          // 证据URL
+  google.protobuf.Timestamp created_at = 5;
+  map<string, string> metadata = 6;
+}
+
+// 审核规则
+message AuditRule {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  ContentType content_type = 4;
+  repeated ViolationType violation_types = 5;
+  string rule_content = 6;                 // 规则内容（JSON格式）
+  bool is_active = 7;
+  int32 priority = 8;
+  string created_by = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+  map<string, string> conditions = 12;     // 触发条件
+  map<string, string> actions = 13;      // 执行动作
+}
+
+// 敏感词
+message SensitiveWord {
+  string id = 1;
+  string word = 2;
+  int32 level = 3;                         // 敏感级别：1-10
+  ViolationType violation_type = 4;
+  bool is_active = 5;
+  string created_by = 6;
+  google.protobuf.Timestamp created_at = 7;
+  map<string, string> synonyms = 8;        // 同义词
+}
+
+// 申诉信息
+message Appeal {
+  string id = 1;
+  string audit_task_id = 2;
+  string content_id = 3;
+  string user_id = 4;
+  string user_name = 5;
+  string appeal_reason = 6;
+  string appeal_content = 7;
+  repeated string appeal_evidence_urls = 8;  // 申诉证据URL
+  AuditStatus status = 9;
+  string reviewer_id = 10;                   // 复审员ID
+  string reviewer_name = 11;
+  string review_comment = 12;
+  AuditResult review_result = 13;
+  google.protobuf.Timestamp appeal_time = 14;
+  google.protobuf.Timestamp review_time = 15;
+}
+
+// 审核统计信息
+message AuditStats {
+  int32 total_tasks = 1;                     // 总任务数
+  int32 pending_tasks = 2;                   // 待审核任务数
+  int32 approved_tasks = 3;                // 通过任务数
+  int32 rejected_tasks = 4;                  // 拒绝任务数
+  int32 appealed_tasks = 5;                  // 申诉任务数
+  double avg_audit_time = 6;                 // 平均审核时间（分钟）
+  map<string, int32> violation_stats = 7;  // 违规类型统计
+  map<string, int32> auditor_stats = 8;    // 审核员统计
+  int32 today_processed = 9;                 // 今日处理数
+  int32 week_processed = 10;                 // 本周处理数
+  double accuracy_rate = 11;                 // 准确率
+  double appeal_rate = 12;                   // 申诉率
+}
+
+// 提交内容审核请求
+message SubmitContentAuditRequest {
+  string content_id = 1;
+  ContentType content_type = 2;
+  string user_id = 3;
+  string content_url = 4;
+  string content_title = 5;
+  string content_description = 6;
+  AuditPriority priority = 7;
+  map<string, string> metadata = 8;
+  bool skip_pre_audit = 9;                   // 是否跳过预审核
+}
+
+// 提交内容审核响应
+message SubmitContentAuditResponse {
+  string task_id = 1;
+  AuditStatus status = 2;
+  string message = 3;
+}
+
+// 获取审核任务请求
+message GetAuditTaskRequest {
+  string auditor_id = 1;
+  ContentType content_type = 2;
+  AuditPriority priority = 3;
+}
+
+// 获取审核任务响应
+message GetAuditTaskResponse {
+  AuditTask task = 1;
+  bool has_task = 2;
+}
+
+// 处理审核任务请求
+message ProcessAuditTaskRequest {
+  string task_id = 1;
+  string auditor_id = 2;
+  AuditResult result = 3;
+  repeated ViolationType violations = 4;
+  string comment = 5;
+  repeated AuditEvidence evidences = 6;
+}
+
+// 处理审核任务响应
+message ProcessAuditTaskResponse {
+  bool success = 1;
+  string message = 2;
+  AuditTask task = 3;
+}
+
+// 批量获取审核任务请求
+message GetAuditTasksRequest {
+  string auditor_id = 1;
+  int32 limit = 2;
+  ContentType content_type = 3;
+  AuditStatus status = 4;
+  AuditPriority priority = 5;
+  string start_date = 6;                     // 开始日期（YYYY-MM-DD）
+  string end_date = 7;                       // 结束日期（YYYY-MM-DD）
+}
+
+// 批量获取审核任务响应
+message GetAuditTasksResponse {
+  repeated AuditTask tasks = 1;
+  int32 total = 2;
+}
+
+// 获取审核历史请求
+message GetAuditHistoryRequest {
+  string content_id = 1;
+  string user_id = 2;
+  ContentType content_type = 3;
+  int32 limit = 4;
+  int32 offset = 5;
+}
+
+// 获取审核历史响应
+message GetAuditHistoryResponse {
+  repeated AuditTask tasks = 1;
+  int32 total = 2;
+}
+
+// 获取审核统计请求
+message GetAuditStatsRequest {
+  string start_date = 1;                     // 开始日期（YYYY-MM-DD）
+  string end_date = 2;                       // 结束日期（YYYY-MM-DD）
+  string auditor_id = 3;
+  ContentType content_type = 4;
+}
+
+// 获取审核统计响应
+message GetAuditStatsResponse {
+  AuditStats stats = 1;
+  google.protobuf.Timestamp generated_at = 2;
+}
+
+// 内容预审核请求
+message PreContentAuditRequest {
+  string content_id = 1;
+  ContentType content_type = 2;
+  string content_url = 3;
+  string content_text = 4;                   // 文本内容
+  map<string, string> metadata = 5;
+}
+
+// 内容预审核响应
+message PreContentAuditResponse {
+  AuditResult result = 1;
+  repeated ViolationType violations = 2;
+  double confidence = 3;                     // 置信度
+  string message = 4;
+  map<string, float> scores = 5;             // 各项评分
+}
+
+// 更新审核规则请求
+message UpdateAuditRuleRequest {
+  string rule_id = 1;
+  string name = 2;
+  string description = 3;
+  string rule_content = 4;
+  bool is_active = 5;
+  int32 priority = 6;
+  string updated_by = 7;
+  map<string, string> conditions = 8;
+  map<string, string> actions = 9;
+}
+
+// 更新审核规则响应
+message UpdateAuditRuleResponse {
+  AuditRule rule = 1;
+  bool success = 2;
+}
+
+// 获取审核规则请求
+message GetAuditRulesRequest {
+  ContentType content_type = 1;
+  bool is_active = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+// 获取审核规则响应
+message GetAuditRulesResponse {
+  repeated AuditRule rules = 1;
+  int32 total = 2;
+}
+
+// 创建审核规则请求
+message CreateAuditRuleRequest {
+  string name = 1;
+  string description = 2;
+  ContentType content_type = 3;
+  repeated ViolationType violation_types = 4;
+  string rule_content = 5;
+  int32 priority = 6;
+  string created_by = 7;
+  map<string, string> conditions = 8;
+  map<string, string> actions = 9;
+}
+
+// 创建审核规则响应
+message CreateAuditRuleResponse {
+  AuditRule rule = 1;
+  string rule_id = 2;
+}
+
+// 删除审核规则请求
+message DeleteAuditRuleRequest {
+  string rule_id = 1;
+  string deleted_by = 2;
+}
+
+// 内容申诉请求
+message AppealContentRequest {
+  string audit_task_id = 1;
+  string content_id = 2;
+  string user_id = 3;
+  string appeal_reason = 4;
+  string appeal_content = 5;
+  repeated string evidence_urls = 6;
+}
+
+// 内容申诉响应
+message AppealContentResponse {
+  string appeal_id = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+// 处理申诉请求
+message ProcessAppealRequest {
+  string appeal_id = 1;
+  string reviewer_id = 2;
+  string review_comment = 3;
+  AuditResult review_result = 4;
+  repeated string evidence_urls = 5;
+}
+
+// 处理申诉响应
+message ProcessAppealResponse {
+  bool success = 1;
+  Appeal appeal = 2;
+}
+
+// 获取申诉列表请求
+message GetAppealsRequest {
+  string user_id = 1;
+  string reviewer_id = 2;
+  AuditStatus status = 3;
+  int32 limit = 4;
+  int32 offset = 5;
+  string start_date = 6;
+  string end_date = 7;
+}
+
+// 获取申诉列表响应
+message GetAppealsResponse {
+  repeated Appeal appeals = 1;
+  int32 total = 2;
+}
+
+// 获取敏感词库请求
+message GetSensitiveWordsRequest {
+  int32 level = 1;                           // 敏感级别
+  ViolationType violation_type = 2;
+  bool is_active = 3;
+  int32 limit = 4;
+  int32 offset = 5;
+}
+
+// 获取敏感词库响应
+message GetSensitiveWordsResponse {
+  repeated SensitiveWord words = 1;
+  int32 total = 2;
+}
+
+// 添加敏感词请求
+message AddSensitiveWordRequest {
+  string word = 1;
+  int32 level = 2;
+  ViolationType violation_type = 3;
+  string created_by = 4;
+  map<string, string> synonyms = 5;
+}
+
+// 添加敏感词响应
+message AddSensitiveWordResponse {
+  SensitiveWord word = 1;
+  string word_id = 2;
+}
+
+// 删除敏感词请求
+message RemoveSensitiveWordRequest {
+  string word_id = 1;
+  string removed_by = 2;
+}
+
+// 批量审核请求
+message BatchAuditRequest {
+  repeated string task_ids = 1;
+  string auditor_id = 2;
+  AuditResult result = 3;
+  repeated ViolationType violations = 4;
+  string comment = 5;
+}
+
+// 批量审核响应
+message BatchAuditResponse {
+  int32 success_count = 1;
+  int32 fail_count = 2;
+  repeated string failed_task_ids = 3;
+  map<string, string> errors = 4;
+}
+
+// 获取审核队列状态请求
+message GetAuditQueueStatusRequest {
+  ContentType content_type = 1;
+  AuditPriority priority = 2;
+}
+
+// 获取审核队列状态响应
+message GetAuditQueueStatusResponse {
+  int32 pending_count = 1;                   // 待审核数量
+  int32 processing_count = 2;              // 审核中数量
+  double avg_wait_time = 3;                // 平均等待时间（分钟）
+  map<string, int32> priority_stats = 4;   // 优先级统计
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+// 优先级调整请求
+message UpdatePriorityRequest {
+  string task_id = 1;
+  string operator_id = 2;
+  AuditPriority new_priority = 3;
+  string reason = 4;
+}
+
+// 优先级调整响应
+message UpdatePriorityResponse {
+  bool success = 1;
+  AuditTask task = 2;
+}
