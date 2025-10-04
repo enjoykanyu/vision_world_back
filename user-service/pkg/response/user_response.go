@@ -6,33 +6,28 @@ import (
 )
 
 // Login响应
-func NewLoginSuccessResponse(accessToken, refreshToken string, userInfo *pb.UserInfo) *pb.LoginResponse {
-	return &pb.LoginResponse{
-		Code:    0,
-		Message: "登录成功",
-		Data: &pb.LoginData{
+func NewLoginSuccessResponse(accessToken, refreshToken string, userInfo *pb.UserInfo) *pb.LoginByPhoneResponse {
+	return &pb.LoginByPhoneResponse{
+		User: userInfo,
+		Tokens: &pb.TokenInfo{
 			AccessToken:  accessToken,
 			RefreshToken: refreshToken,
 			ExpiresIn:    7200, // 2小时
-			UserInfo:     userInfo,
 		},
 	}
 }
 
-func NewLoginErrorResponse(code codes.Code, message string) *pb.LoginResponse {
-	return &pb.LoginResponse{
-		Code:    int32(code),
-		Message: message,
-		Data:    nil,
+func NewLoginErrorResponse(code codes.Code, message string) *pb.LoginByPhoneResponse {
+	return &pb.LoginByPhoneResponse{
+		User:   nil,
+		Tokens: nil,
 	}
 }
 
 // RefreshToken响应
 func NewRefreshTokenSuccessResponse(accessToken string) *pb.RefreshTokenResponse {
 	return &pb.RefreshTokenResponse{
-		Code:    0,
-		Message: "刷新Token成功",
-		Data: &pb.RefreshTokenData{
+		Tokens: &pb.TokenInfo{
 			AccessToken: accessToken,
 			ExpiresIn:   7200, // 2小时
 		},
@@ -41,61 +36,47 @@ func NewRefreshTokenSuccessResponse(accessToken string) *pb.RefreshTokenResponse
 
 func NewRefreshTokenErrorResponse(code codes.Code, message string) *pb.RefreshTokenResponse {
 	return &pb.RefreshTokenResponse{
-		Code:    int32(code),
-		Message: message,
-		Data:    nil,
+		Tokens: nil,
 	}
 }
 
 // GetUserInfo响应
 func NewGetUserInfoSuccessResponse(userInfo *pb.UserInfo) *pb.GetUserInfoResponse {
 	return &pb.GetUserInfoResponse{
-		Code:    0,
-		Message: "获取用户信息成功",
-		Data: &pb.GetUserInfoData{
-			UserInfo: userInfo,
-		},
+		User:       userInfo,
+		IsFollowed: false,
 	}
 }
 
 func NewGetUserInfoErrorResponse(code codes.Code, message string) *pb.GetUserInfoResponse {
 	return &pb.GetUserInfoResponse{
-		Code:    int32(code),
-		Message: message,
-		Data:    nil,
+		User:       nil,
+		IsFollowed: false,
 	}
 }
 
 // UpdateUserInfo响应
 func NewUpdateUserInfoSuccessResponse() *pb.UpdateUserInfoResponse {
 	return &pb.UpdateUserInfoResponse{
-		Code:    0,
-		Message: "更新用户信息成功",
+		User: nil,
 	}
 }
 
 func NewUpdateUserInfoErrorResponse(code codes.Code, message string) *pb.UpdateUserInfoResponse {
 	return &pb.UpdateUserInfoResponse{
-		Code:    int32(code),
-		Message: message,
+		User: nil,
 	}
 }
 
-// Register响应
-func NewRegisterSuccessResponse(userId string) *pb.RegisterResponse {
-	return &pb.RegisterResponse{
-		Code:    0,
-		Message: "注册成功",
-		Data: &pb.RegisterData{
-			UserId: userId,
-		},
+// SendVerificationCode响应
+func NewSendVerificationCodeSuccessResponse() *pb.SendVerificationCodeResponse {
+	return &pb.SendVerificationCodeResponse{
+		Success: true,
 	}
 }
 
-func NewRegisterErrorResponse(code codes.Code, message string) *pb.RegisterResponse {
-	return &pb.RegisterResponse{
-		Code:    int32(code),
-		Message: message,
-		Data:    nil,
+func NewSendVerificationCodeErrorResponse(code codes.Code, message string) *pb.SendVerificationCodeResponse {
+	return &pb.SendVerificationCodeResponse{
+		Success: false,
 	}
 }

@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/visionworld/user-service/internal/config"
 	"github.com/visionworld/user-service/internal/model"
@@ -46,7 +45,7 @@ func NewUserService(db *sql.DB, redis *redis.Client, jwtManager *jwt.Manager, cf
 }
 
 // LoginByPhone 手机号登录
-func (s *UserService) LoginByPhone(ctx context.Context, req *pb.LoginByPhoneRequest) (*pb.LoginResponse, error) {
+func (s *UserService) LoginByPhone(ctx context.Context, req *pb.LoginByPhoneRequest) (*pb.LoginByPhoneResponse, error) {
 	// 参数验证
 	if req.Phone == "" {
 		return response.NewLoginErrorResponse(codes.InvalidArgument, "手机号不能为空"), nil
@@ -71,23 +70,23 @@ func (s *UserService) LoginByPhone(ctx context.Context, req *pb.LoginByPhoneRequ
 	}
 
 	// 生成Token
-	accessToken, err := s.jwtManager.GenerateAccessToken(user.ID, user.Phone)
+	accessToken, err := s.jwtManager.GenerateAccessToken(user.UserID, user.Username, "")
 	if err != nil {
-		s.logger.Error("生成访问Token失败", zap.Error(err), zap.String("userID", user.ID))
+		s.logger.Error("生成访问Token失败", zap.Error(err), zap.String("userID", user.UserID))
 		return response.NewLoginErrorResponse(codes.Internal, "系统错误"), nil
 	}
 
-	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.ID)
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.UserID)
 	if err != nil {
-		s.logger.Error("生成刷新Token失败", zap.Error(err), zap.String("userID", user.ID))
+		s.logger.Error("生成刷新Token失败", zap.Error(err), zap.String("userID", user.UserID))
 		return response.NewLoginErrorResponse(codes.Internal, "系统错误"), nil
 	}
 
 	// 构建用户信息
 	userInfo := &pb.UserInfo{
 		UserId:    user.UserID,
+		Username:  user.Username,
 		Phone:     user.Phone,
-		Nickname:  user.Nickname,
 		Avatar:    user.Avatar,
 		Gender:    int32(user.Gender),
 		Birthday:  user.Birthday,
@@ -97,14 +96,16 @@ func (s *UserService) LoginByPhone(ctx context.Context, req *pb.LoginByPhoneRequ
 	}
 
 	// 更新最后登录时间
-	if err := s.userModel.UpdateLastLoginTime(ctx, user.ID); err != nil {
-		s.logger.Error("更新最后登录时间失败", zap.Error(err), zap.String("userID", user.ID))
+	if err := s.userModel.UpdateLastLoginTime(ctx, user.UserID); err != nil {
+		s.logger.Error("更新最后登录时间失败", zap.Error(err), zap.String("userID", user.UserID))
+		// 不返回错误，继续执行后续逻辑
 	}
 
 	// 保存刷新Token到Redis
 	refreshKey := fmt.Sprintf("refresh_token:%s", user.UserID)
 	if err := s.redis.Set(ctx, refreshKey, refreshToken, time.Duration(s.config.JWT.RefreshTokenExpire)*time.Second).Err(); err != nil {
 		s.logger.Error("保存刷新Token失败", zap.Error(err), zap.String("userID", user.UserID))
+		// 不返回错误，继续执行后续逻辑
 	}
 
 	return response.NewLoginSuccessResponse(accessToken, refreshToken, userInfo), nil
@@ -114,14 +115,20 @@ func (s *UserService) LoginByPhone(ctx context.Context, req *pb.LoginByPhoneRequ
 func (s *UserService) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
 	// 参数验证
 	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "用户ID不能为空")
+		return &pb.LogoutResponse{
+			Code:    int32(codes.InvalidArgument),
+			Message: "用户ID不能为空",
+		}, nil
 	}
 
 	// 删除Redis中的刷新Token
 	refreshKey := fmt.Sprintf("refresh_token:%s", req.UserId)
 	if err := s.redis.Del(ctx, refreshKey).Err(); err != nil {
 		s.logger.Error("删除刷新Token失败", zap.Error(err), zap.String("userID", req.UserId))
-		return nil, status.Error(codes.Internal, "系统错误")
+		return &pb.LogoutResponse{
+			Code:    int32(codes.Internal),
+			Message: "系统错误",
+		}, nil
 	}
 
 	return &pb.LogoutResponse{
@@ -170,9 +177,9 @@ func (s *UserService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	}
 
 	// 生成新的访问Token
-	accessToken, err := s.jwtManager.GenerateAccessToken(user.ID, user.Phone)
+	accessToken, err := s.jwtManager.GenerateAccessToken(user.UserID, user.Username, "")
 	if err != nil {
-		s.logger.Error("生成访问Token失败", zap.Error(err), zap.String("userID", user.ID))
+		s.logger.Error("生成访问Token失败", zap.Error(err), zap.String("userID", user.UserID))
 		return response.NewRefreshTokenErrorResponse(codes.Internal, "系统错误"), nil
 	}
 
@@ -198,9 +205,8 @@ func (s *UserService) GetUserInfo(ctx context.Context, req *pb.GetUserInfoReques
 
 	// 构建用户信息
 	userInfo := &pb.UserInfo{
-		UserId:    user.ID,
+		UserId:    user.UserID,
 		Phone:     user.Phone,
-		Nickname:  user.Nickname,
 		Avatar:    user.Avatar,
 		Gender:    int32(user.Gender),
 		Birthday:  user.Birthday,
@@ -221,13 +227,10 @@ func (s *UserService) UpdateUserInfo(ctx context.Context, req *pb.UpdateUserInfo
 
 	// 构建更新数据
 	updateData := map[string]interface{}{}
-	if req.Nickname != "" {
-		updateData["nickname"] = req.Nickname
-	}
 	if req.Avatar != "" {
 		updateData["avatar"] = req.Avatar
 	}
-	if req.Gender > 0 {
+	if req.Gender >= 0 && req.Gender <= 2 { // 0:未知, 1:男, 2:女
 		updateData["gender"] = int(req.Gender)
 	}
 	if req.Birthday != "" {
@@ -251,19 +254,16 @@ func (s *UserService) UpdateUserInfo(ctx context.Context, req *pb.UpdateUserInfo
 }
 
 // Register 用户注册
-func (s *UserService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+func (s *UserService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.LoginByPhoneResponse, error) {
 	// 参数验证
 	if req.Phone == "" {
-		return response.NewRegisterErrorResponse(codes.InvalidArgument, "手机号不能为空"), nil
+		return response.NewLoginErrorResponse(codes.InvalidArgument, "手机号不能为空"), nil
 	}
 	if req.Password == "" {
-		return response.NewRegisterErrorResponse(codes.InvalidArgument, "密码不能为空"), nil
+		return response.NewLoginErrorResponse(codes.InvalidArgument, "密码不能为空"), nil
 	}
 	if req.SmsCode == "" {
-		return response.NewRegisterErrorResponse(codes.InvalidArgument, "验证码不能为空"), nil
-	}
-	if req.Nickname == "" {
-		return response.NewRegisterErrorResponse(codes.InvalidArgument, "昵称不能为空"), nil
+		return response.NewLoginErrorResponse(codes.InvalidArgument, "验证码不能为空"), nil
 	}
 
 	// 验证短信验证码
@@ -271,40 +271,38 @@ func (s *UserService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	storedCode, err := s.redis.Get(ctx, smsKey).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return response.NewRegisterErrorResponse(codes.InvalidArgument, "验证码已过期"), nil
+			return response.NewLoginErrorResponse(codes.InvalidArgument, "验证码已过期"), nil
 		}
 		s.logger.Error("获取验证码失败", zap.Error(err), zap.String("phone", req.Phone))
-		return response.NewRegisterErrorResponse(codes.Internal, "系统错误"), nil
+		return response.NewLoginErrorResponse(codes.Internal, "系统错误"), nil
 	}
 
 	if storedCode != req.SmsCode {
-		return response.NewRegisterErrorResponse(codes.InvalidArgument, "验证码错误"), nil
+		return response.NewLoginErrorResponse(codes.InvalidArgument, "验证码错误"), nil
 	}
 
 	// 检查手机号是否已注册
 	if _, err := s.userModel.GetByPhone(ctx, req.Phone); err == nil {
-		return response.NewRegisterErrorResponse(codes.AlreadyExists, "手机号已注册"), nil
+		return response.NewLoginErrorResponse(codes.AlreadyExists, "手机号已注册"), nil
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		s.logger.Error("检查手机号失败", zap.Error(err), zap.String("phone", req.Phone))
-		return response.NewRegisterErrorResponse(codes.Internal, "系统错误"), nil
+		return response.NewLoginErrorResponse(codes.Internal, "系统错误"), nil
 	}
 
 	// 加密密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), s.config.Security.BcryptCost)
 	if err != nil {
 		s.logger.Error("加密密码失败", zap.Error(err))
-		return response.NewRegisterErrorResponse(codes.Internal, "系统错误"), nil
+		return response.NewLoginErrorResponse(codes.Internal, "系统错误"), nil
 	}
 
 	// 创建用户
 	user := &model.User{
-		ID:        crypto.GenerateUUID(),
+		UserID:    crypto.GenerateUUID(),
+		Username:  req.Phone, // 使用手机号作为用户名
 		Phone:     req.Phone,
 		Password:  string(hashedPassword),
-		Nickname:  req.Nickname,
 		Avatar:    req.Avatar,
-		Gender:    int(req.Gender),
-		Birthday:  req.Birthday,
 		Status:    1, // 正常状态
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -312,13 +310,47 @@ func (s *UserService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 
 	if err := s.userModel.Create(ctx, user); err != nil {
 		s.logger.Error("创建用户失败", zap.Error(err))
-		return response.NewRegisterErrorResponse(codes.Internal, "系统错误"), nil
+		return response.NewLoginErrorResponse(codes.Internal, "系统错误"), nil
 	}
 
 	// 删除验证码
 	if err := s.redis.Del(ctx, smsKey).Err(); err != nil {
 		s.logger.Error("删除验证码失败", zap.Error(err), zap.String("phone", req.Phone))
+		// 不返回错误，继续执行后续逻辑
 	}
 
-	return response.NewRegisterSuccessResponse(user.ID), nil
+	// 生成Token
+	accessToken, err := s.jwtManager.GenerateAccessToken(user.UserID, user.Username, "")
+	if err != nil {
+		s.logger.Error("生成访问Token失败", zap.Error(err), zap.String("userID", user.UserID))
+		return response.NewLoginErrorResponse(codes.Internal, "系统错误"), nil
+	}
+
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.UserID)
+	if err != nil {
+		s.logger.Error("生成刷新Token失败", zap.Error(err), zap.String("userID", user.UserID))
+		return response.NewLoginErrorResponse(codes.Internal, "系统错误"), nil
+	}
+
+	// 构建用户信息
+	userInfo := &pb.UserInfo{
+		UserId:    user.UserID,
+		Username:  user.Username,
+		Phone:     user.Phone,
+		Avatar:    user.Avatar,
+		Gender:    int32(user.Gender),
+		Birthday:  user.Birthday,
+		Status:    int32(user.Status),
+		CreatedAt: user.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt: user.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
+
+	// 保存刷新Token到Redis
+	refreshKey := fmt.Sprintf("refresh_token:%s", user.UserID)
+	if err := s.redis.Set(ctx, refreshKey, refreshToken, time.Duration(s.config.JWT.RefreshTokenExpire)*time.Second).Err(); err != nil {
+		s.logger.Error("保存刷新Token失败", zap.Error(err), zap.String("userID", user.UserID))
+		// 不返回错误，继续执行后续逻辑
+	}
+
+	return response.NewLoginSuccessResponse(accessToken, refreshToken, userInfo), nil
 }

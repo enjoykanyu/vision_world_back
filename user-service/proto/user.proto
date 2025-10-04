@@ -32,6 +32,9 @@ service UserService {
   
   // 发送验证码
   rpc SendVerificationCode(SendVerificationCodeRequest) returns (SendVerificationCodeResponse);
+  
+  // 用户注册
+  rpc Register(RegisterRequest) returns (RegisterResponse);
 }
 
 // 基础枚举定义
@@ -176,4 +179,19 @@ message SendVerificationCodeResponse {
   bool success = 1;
   string message = 2;
   int64 expire_time = 3;  // 过期时间（秒）
+}
+
+// 用户注册请求
+message RegisterRequest {
+  string phone = 1;
+  string password = 2;
+  string sms_code = 3;
+  string device_id = 4;
+  DeviceInfo device_info = 5;
+}
+
+// 用户注册响应
+message RegisterResponse {
+  UserInfo user = 1;
+  TokenInfo tokens = 2;
 }
