@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Vision World Gateway
+  - job_name: 'vision-world-gateway'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Prometheus 自身
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter (如果启用)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # 自定义业务指标
+  - job_name: 'vision-world-business'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+    metrics_path: '/metrics'
+    params:
+      collect[]:
+        - 'vision_world_http_requests_total'
+        - 'vision_world_http_request_duration_seconds'
+        - 'vision_world_user_registrations_total'
+        - 'vision_world_user_logins_total'
