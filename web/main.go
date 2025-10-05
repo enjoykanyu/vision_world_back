@@ -9,32 +9,35 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	ginprometheus "github.com/zsais/go-gin-prometheus"
+
+	"web/middleware"
 )
 
 func main() {
 	// 创建Gin引擎
 	router := gin.New()
 
-	// 添加中间件
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	// 初始化Prometheus监控
+	p := ginprometheus.NewPrometheus("vision_world_gateway")
+	p.Use(router)
 
-	// 配置CORS
-	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
-	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
-	router.Use(cors.New(config))
+	// 添加中间件
+	router.Use(middleware.MetricsMiddleware())  // 自定义监控中间件
+	router.Use(middleware.LoggerMiddleware())   // 日志中间件
+	router.Use(middleware.RecoveryMiddleware()) // 恢复中间件
+	router.Use(middleware.CORSMiddleware())     // CORS中间件
 
 	// 健康检查路由
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"message": "Vision World Gateway is running",
-		})
-	})
+	router.GET("/health", middleware.HealthCheck())
+
+	// Prometheus metrics路由
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	// Grafana健康检查路由
+	router.GET("/grafana/health", middleware.GrafanaHealthCheck())
 
 	//// 注册用户服务路由
 	//RegisterUserRoutes(router)
