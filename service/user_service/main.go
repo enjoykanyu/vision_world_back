@@ -13,6 +13,7 @@ import (
 
 	"user_service/internal/config"
 	"user_service/internal/handler"
+	"user_service/internal/model"
 	"user_service/pkg/database"
 	//"user_service/pkg/logger"
 	"user_service/proto/proto_gen"
@@ -44,11 +45,23 @@ func main() {
 	log.Info("Starting user service", "version", "1.0.0")
 
 	// 3. 初始化数据库连接
-	//db, err := database.NewMySQLConnection(cfg.Database)
-	//if err != nil {
-	//	log.Fatal("Failed to connect to database", "error", err)
-	//}
-	//log.Info("Database connected successfully")
+	db, err := database.NewMySQLConnection(cfg.Database)
+	if err != nil {
+		log.Fatal("Failed to connect to database", "error", err)
+	}
+	log.Info("Database connected successfully")
+	defer func() {
+		sqlDB, _ := db.DB()
+		if sqlDB != nil {
+			sqlDB.Close()
+		}
+	}()
+
+	// 初始化模型
+	if err := model.InitDB(db); err != nil {
+		log.Fatal("Failed to initialize models", "error", err)
+	}
+	log.Info("Database models initialized successfully")
 
 	// 4. 初始化Redis连接
 	redisClient, err := database.NewRedisClient(cfg.Redis)
@@ -69,7 +82,7 @@ func main() {
 	healthServer.SetServingStatus("user_service", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	// 7. 注册用户服务
-	userHandler := handler.NewUserServiceHandler(cfg, log)
+	userHandler := handler.NewUserServiceHandler(cfg, log, db, redisClient)
 	proto_gen.RegisterUserServiceServer(grpcServer, userHandler)
 	log.Info("User service registered")
 

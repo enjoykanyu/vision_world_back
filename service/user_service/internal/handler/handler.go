@@ -2,11 +2,14 @@ package handler
 
 import (
 	"context"
+	"time"
+
+	"github.com/go-redis/redis/v8"
+	"gorm.io/gorm"
 	"user_service/internal/config"
+	"user_service/internal/model"
 	"user_service/pkg/logger"
 	"user_service/proto/proto_gen"
-	//"google.golang.org/grpc/codes"
-	//"google.golang.org/grpc/status"
 )
 
 // UserServiceHandler 用户服务处理器
@@ -14,13 +17,17 @@ type UserServiceHandler struct {
 	proto_gen.UnimplementedUserServiceServer
 	config *config.Config
 	logger logger.Logger
+	db     *gorm.DB
+	redis  *redis.Client
 }
 
 // NewUserServiceHandler 创建用户服务处理器
-func NewUserServiceHandler(cfg *config.Config, log logger.Logger) *UserServiceHandler {
+func NewUserServiceHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *redis.Client) *UserServiceHandler {
 	return &UserServiceHandler{
 		config: cfg,
 		logger: log,
+		db:     db,
+		redis:  redis,
 	}
 }
 
@@ -89,11 +96,48 @@ func (h *UserServiceHandler) RefreshToken(ctx context.Context, req *proto_gen.Re
 func (h *UserServiceHandler) GetUserInfo(ctx context.Context, req *proto_gen.GetUserInfoRequest) (*proto_gen.UserResponse, error) {
 	h.logger.Info("GetUserInfo called", "user_id", req.UserId)
 
-	// TODO: 实现获取用户信息逻辑
+	// 从缓存获取用户信息
+	cacheKey := model.GetUserCacheKey(req.UserId)
+	if cachedData, err := h.redis.Get(ctx, cacheKey).Result(); err == nil && cachedData != "" {
+		// 缓存命中，直接返回
+		var user model.UserCache
+		if err := user.FromJSON([]byte(cachedData)); err == nil {
+			return &proto_gen.UserResponse{
+				StatusCode: 0,
+				StatusMsg:  "success",
+				User:       user.ToProto(),
+			}, nil
+		}
+	}
+
+	// 缓存未命中，从数据库获取
+	var user model.User
+	if err := h.db.Where("id = ? AND status = ?", req.UserId, model.UserStatusActive).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return &proto_gen.UserResponse{
+				StatusCode: 404,
+				StatusMsg:  "用户不存在",
+				User:       nil,
+			}, nil
+		}
+		h.logger.Error("Failed to get user from database", "error", err)
+		return &proto_gen.UserResponse{
+			StatusCode: 500,
+			StatusMsg:  "数据库查询失败",
+			User:       nil,
+		}, nil
+	}
+
+	// 缓存用户信息
+	userCache := user.ToCache()
+	if cacheData, err := userCache.ToJSON(); err == nil {
+		h.redis.Set(ctx, cacheKey, cacheData, 15*time.Minute)
+	}
+
 	return &proto_gen.UserResponse{
 		StatusCode: 0,
-		StatusMsg:  "获取用户信息功能开发中",
-		User:       nil,
+		StatusMsg:  "success",
+		User:       user.ToProto(),
 	}, nil
 }
 
