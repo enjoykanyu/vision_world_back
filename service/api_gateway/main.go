@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	ginprometheus "github.com/zsais/go-gin-prometheus"
 
 	"web/middleware"
@@ -32,9 +31,6 @@ func main() {
 
 	// 健康检查路由
 	router.GET("/health", middleware.HealthCheck())
-
-	// Prometheus metrics路由
-	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// Grafana健康检查路由
 	router.GET("/grafana/health", middleware.GrafanaHealthCheck())
