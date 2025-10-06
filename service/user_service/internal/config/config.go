@@ -16,6 +16,8 @@ type Config struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Logger   LoggerConfig   `mapstructure:"logger"`
 	Consul   ConsulConfig   `mapstructure:"consul"`
+	JWT      JWTConfig      `mapstructure:"jwt"`
+	SMS      SMSConfig      `mapstructure:"sms"`
 }
 
 // ServerConfig 服务器配置
@@ -66,6 +68,22 @@ type ConsulConfig struct {
 	Host      string `mapstructure:"host"`
 	Port      int    `mapstructure:"port"`
 	ServiceID string `mapstructure:"service_id"`
+}
+
+// JWTConfig JWT配置
+type JWTConfig struct {
+	Secret            string        `mapstructure:"secret"`
+	RefreshSecret     string        `mapstructure:"refresh_secret"`
+	TokenExpiration   time.Duration `mapstructure:"token_expiration"`
+	RefreshExpiration time.Duration `mapstructure:"refresh_expiration"`
+}
+
+// SMSConfig 短信服务配置
+type SMSConfig struct {
+	AccessKey    string `mapstructure:"access_key"`
+	SecretKey    string `mapstructure:"secret_key"`
+	SignName     string `mapstructure:"sign_name"`
+	TemplateCode string `mapstructure:"template_code"`
 }
 
 // LoadConfig 加载配置
@@ -132,6 +150,14 @@ func (c *Config) Validate() error {
 
 	if c.Redis.Port <= 0 || c.Redis.Port > 65535 {
 		return fmt.Errorf("invalid redis port: %d", c.Redis.Port)
+	}
+
+	if c.JWT.Secret == "" {
+		return fmt.Errorf("jwt secret is required")
+	}
+
+	if c.JWT.TokenExpiration <= 0 {
+		return fmt.Errorf("jwt token expiration must be positive")
 	}
 
 	return nil

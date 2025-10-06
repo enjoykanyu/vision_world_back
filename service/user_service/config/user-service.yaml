@@ -1,0 +1,54 @@
+# 用户服务配置
+server:
+  host: "0.0.0.0"
+  port: 50051
+  mode: "debug"
+  read_timeout: 30s
+  write_timeout: 30s
+
+database:
+  host: "localhost"
+  port: 3306
+  username: "root"
+  password: ""
+  database: "vision_world_user"
+  charset: "utf8mb4"
+  table_prefix: "vw_"
+  log_level: "info"
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  max_retries: 3
+  dial_timeout: 5
+  read_timeout: 3
+  write_timeout: 3
+
+logger:
+  level: "info"
+  format: "json"
+  output_path: "logs/user-service.log"
+
+consul:
+  host: "localhost"
+  port: 8500
+  service_id: "user-service-1"
+
+# JWT配置
+jwt:
+  secret: "your-jwt-secret-key"
+  refresh_secret: "your-jwt-refresh-secret-key"
+  token_expiration: 24h
+  refresh_expiration: 168h
+
+# 短信服务配置
+sms:
+  access_key: "your-sms-access-key"
+  secret_key: "your-sms-secret-key"
+  sign_name: "your-sms-sign-name"
+  template_code: "your-sms-template-code"

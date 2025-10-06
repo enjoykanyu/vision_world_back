@@ -15,6 +15,7 @@ import (
 	"user_service/internal/handler"
 	"user_service/internal/model"
 	"user_service/pkg/database"
+
 	//"user_service/pkg/logger"
 	"user_service/proto/proto_gen"
 
@@ -57,10 +58,8 @@ func main() {
 		}
 	}()
 
-	// 初始化模型
-	if err := model.InitDB(db); err != nil {
-		log.Fatal("Failed to initialize models", "error", err)
-	}
+	// 设置模型数据库连接
+	model.SetDB(db)
 	log.Info("Database models initialized successfully")
 
 	// 4. 初始化Redis连接

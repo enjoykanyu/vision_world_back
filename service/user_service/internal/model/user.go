@@ -6,7 +6,7 @@ import (
 
 // User 用户基础信息表
 type User struct {
-	ID              uint64     `gorm:"primaryKey;autoIncrement;comment:用户ID"`
+	ID              uint32     `gorm:"primaryKey;autoIncrement;comment:用户ID"`
 	Username        string     `gorm:"uniqueIndex;size:50;not null;comment:用户名"`
 	Phone           string     `gorm:"uniqueIndex;size:20;comment:手机号"`
 	Email           string     `gorm:"size:100;comment:邮箱"`
@@ -124,9 +124,15 @@ func (u *User) getLastLoginTimestamp() int64 {
 	return 0
 }
 
+// 用户状态常量
+const (
+	UserStatusDisabled = 0 // 禁用
+	UserStatusActive   = 1 // 正常
+)
+
 // IsActive 检查用户是否活跃
 func (u *User) IsActive() bool {
-	return u.Status == 1 && u.DeletedAt == nil
+	return u.Status == UserStatusActive && u.DeletedAt == nil
 }
 
 // IsOfficial 检查是否为官方账号

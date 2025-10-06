@@ -165,6 +165,16 @@ func GetUserCounterKey(counterType string, userID uint64) string {
 	return fmt.Sprintf(UserCounterKey, counterType, userID)
 }
 
+// GetUserCacheKey 获取用户缓存键（兼容旧代码）
+func GetUserCacheKey(userID uint32) string {
+	return fmt.Sprintf(UserInfoCacheKey, uint64(userID))
+}
+
+// GetSmsCodeCacheKey 获取短信验证码缓存键
+func GetSmsCodeCacheKey(phone string) string {
+	return fmt.Sprintf("sms:code:%s", phone)
+}
+
 // GetGlobalCounterKey 获取全局计数器键
 func GetGlobalCounterKey(counterType string) string {
 	return fmt.Sprintf(GlobalCounterKey, counterType)
@@ -182,6 +192,11 @@ func (c *UserCache) ToJSON() (string, error) {
 // FromJSON 从JSON字符串解析
 func (c *UserCache) FromJSON(data string) error {
 	return json.Unmarshal([]byte(data), c)
+}
+
+// FromJSONBytes 从JSON字节数组解析
+func (c *UserCache) FromJSONBytes(data []byte) error {
+	return json.Unmarshal(data, c)
 }
 
 // ToJSON 转换为JSON字符串
