@@ -1,0 +1,172 @@
+syntax = "proto3";
+package rpc.user;
+option go_package = "api_gateway/proto/proto_gen";
+
+// ==================== 基础请求响应结构 ====================
+
+message UserRequest {
+  uint32 user_id = 1; // 用户id
+  uint32 actor_id = 2; // 发送请求的用户的id
+}
+
+message UserResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  User user = 3; // 用户信息
+}
+
+// ==================== 用户登录相关接口 ====================
+
+// 手机号登录请求
+message PhoneLoginRequest {
+  string phone = 1; // 手机号
+  string password = 2; // 密码 (MD5加密)
+  string device_id = 3; // 设备ID
+  string os_type = 4; // 操作系统类型: ios, android, web
+  string app_version = 5; // 应用版本号
+}
+
+// 验证码登录请求
+message CodeLoginRequest {
+  string phone = 1; // 手机号
+  string code = 2; // 短信验证码 (6位数字)
+  string device_id = 3; // 设备ID
+  string os_type = 4; // 操作系统类型: ios, android, web
+  string app_version = 5; // 应用版本号
+}
+
+// 登录响应
+message LoginResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  string token = 3; // 用户认证token
+  int64 expire_time = 4; // token过期时间戳 (秒)
+  User user = 5; // 用户信息
+  bool is_new_user = 6; // 是否为新用户注册
+}
+
+// 发送短信验证码请求
+message SendSmsRequest {
+  string phone = 1; // 手机号
+  string sms_type = 2; // 验证码类型: login, register, reset_password
+}
+
+message SendSmsResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  int32 expire_seconds = 3; // 验证码有效期 (秒)
+}
+
+// ==================== Token相关接口 ====================
+
+// 验证token请求
+message VerifyTokenRequest {
+  string token = 1; // 用户token
+}
+
+message VerifyTokenResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  bool valid = 3; // token是否有效
+  uint32 user_id = 4; // 用户ID (token有效时返回)
+  int64 expire_time = 5; // 过期时间戳 (秒)
+}
+
+// 刷新token请求
+message RefreshTokenRequest {
+  string refresh_token = 1; // 刷新token
+}
+
+message RefreshTokenResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  string token = 3; // 新的用户认证token
+  int64 expire_time = 4; // token过期时间戳 (秒)
+  string refresh_token = 5; // 新的刷新token
+}
+
+// ==================== 用户信息相关接口 ====================
+
+// 获取用户信息请求
+message GetUserInfoRequest {
+  uint32 user_id = 1; // 目标用户ID
+  string token = 2; // 请求用户的token (可选)
+}
+
+// 批量获取用户信息请求
+message GetUserInfosRequest {
+  repeated uint32 user_ids = 1; // 目标用户ID列表 (最多100个)
+  string token = 2; // 请求用户的token (可选)
+}
+
+message GetUserInfosResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  repeated User users = 3; // 用户信息列表
+}
+
+// 更新用户信息请求
+message UpdateUserRequest {
+  string token = 1; // 用户token
+  optional string name = 2; // 用户名称
+  optional string avatar = 3; // 用户头像URL
+  optional string signature = 4; // 个人简介
+  optional string background_image = 5; // 背景图URL
+}
+
+message UpdateUserResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  User user = 3; // 更新后的用户信息
+}
+
+// 用户存在性检查请求
+message UserExistRequest {
+  uint32 user_id = 1; // 用户id
+}
+
+message UserExistResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  bool existed = 3; // 用户是否存在
+}
+
+// ==================== 用户数据结构 ====================
+
+message User {
+  uint32 id = 1; // 用户id
+  string name = 2; // 用户名称
+  string phone = 3; // 手机号 (脱敏显示)
+  optional uint32 follow_count = 4; // 关注总数
+  optional uint32 follower_count = 5; // 粉丝总数
+  bool is_follow = 6; // true-已关注，false-未关注
+  optional string avatar = 7; // 用户头像URL
+  optional string background_image = 8; // 用户个人页顶部大图
+  optional string signature = 9; // 个人简介
+  optional uint32 total_favorited = 10; // 获赞数量
+  optional uint32 work_count = 11; // 作品数量
+  optional uint32 favorite_count = 12; // 点赞数量
+  int64 create_time = 13; // 用户注册时间戳
+  int64 last_login_time = 14; // 最后登录时间戳
+  bool is_verified = 15; // 是否认证用户
+  string user_type = 16; // 用户类型: normal, verified, official
+}
+
+// ==================== 用户服务接口定义 ====================
+
+service UserService {
+  // 用户登录相关
+  rpc PhoneLogin(PhoneLoginRequest) returns(LoginResponse);
+  rpc CodeLogin(CodeLoginRequest) returns(LoginResponse);
+  rpc SendSmsCode(SendSmsRequest) returns(SendSmsResponse);
+  
+  // Token相关
+  rpc VerifyToken(VerifyTokenRequest) returns(VerifyTokenResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns(RefreshTokenResponse);
+  
+  // 用户信息相关
+  rpc GetUserInfo(GetUserInfoRequest) returns(UserResponse);
+  rpc GetUserInfos(GetUserInfosRequest) returns(GetUserInfosResponse);
+  rpc UpdateUserInfo(UpdateUserRequest) returns(UpdateUserResponse);
+  rpc GetUserExistInformation(UserExistRequest) returns(UserExistResponse);
+}

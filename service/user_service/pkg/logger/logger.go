@@ -1,9 +1,7 @@
 package logger
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -20,9 +18,9 @@ type Logger interface {
 
 // Config 日志配置
 type Config struct {
-	Level      string `mapstructure:"level"`       // 日志级别: debug, info, warn, error
-	Format     string `mapstructure:"format"`      // 输出格式: json, console
-	OutputPath string `mapstructure:"output_path"` // 输出路径，为空则输出到控制台
+	Level      string `yaml:"level"`
+	Format     string `yaml:"format"`
+	OutputPath string `yaml:"output_path"`
 }
 
 // zapLogger zap日志实现
@@ -47,24 +45,12 @@ func NewLogger(cfg Config) (Logger, error) {
 		level = zapcore.InfoLevel
 	}
 
-	// 创建编码器配置
-	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "time",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		FunctionKey:    zapcore.OmitKey,
-		MessageKey:     "msg",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.StringDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-	}
-
-	// 创建编码器
+	// 设置编码器
 	var encoder zapcore.Encoder
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.TimeKey = "timestamp"
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
 	if cfg.Format == "json" {
 		encoder = zapcore.NewJSONEncoder(encoderConfig)
 	} else {
@@ -73,75 +59,59 @@ func NewLogger(cfg Config) (Logger, error) {
 
 	// 设置输出
 	var writeSyncer zapcore.WriteSyncer
-	if cfg.OutputPath != "" {
-		// 确保目录存在
-		dir := filepath.Dir(cfg.OutputPath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return nil, fmt.Errorf("failed to create log directory: %w", err)
-		}
-
-		// 创建日志文件
-		file, err := os.OpenFile(cfg.OutputPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if cfg.OutputPath != "" && cfg.OutputPath != "stdout" {
+		file, err := os.OpenFile(cfg.OutputPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open log file: %w", err)
+			return nil, err
 		}
 		writeSyncer = zapcore.AddSync(file)
 	} else {
 		writeSyncer = zapcore.AddSync(os.Stdout)
 	}
 
-	// 创建核心
+	// 创建core
 	core := zapcore.NewCore(encoder, writeSyncer, level)
 
 	// 创建logger
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 
-	return &zapLogger{
-		logger: logger,
-	}, nil
+	return &zapLogger{logger: logger}, nil
 }
 
 // Debug 调试日志
 func (l *zapLogger) Debug(msg string, fields ...interface{}) {
-	l.logger.Debug(msg, fieldsToZap(fields)...)
+	l.logger.Debug(msg, l.convertFields(fields...)...)
 }
 
 // Info 信息日志
 func (l *zapLogger) Info(msg string, fields ...interface{}) {
-	l.logger.Info(msg, fieldsToZap(fields)...)
+	l.logger.Info(msg, l.convertFields(fields...)...)
 }
 
 // Warn 警告日志
 func (l *zapLogger) Warn(msg string, fields ...interface{}) {
-	l.logger.Warn(msg, fieldsToZap(fields)...)
+	l.logger.Warn(msg, l.convertFields(fields...)...)
 }
 
 // Error 错误日志
 func (l *zapLogger) Error(msg string, fields ...interface{}) {
-	l.logger.Error(msg, fieldsToZap(fields)...)
+	l.logger.Error(msg, l.convertFields(fields...)...)
 }
 
 // Fatal 致命错误日志
 func (l *zapLogger) Fatal(msg string, fields ...interface{}) {
-	l.logger.Fatal(msg, fieldsToZap(fields)...)
+	l.logger.Fatal(msg, l.convertFields(fields...)...)
 }
 
-// fieldsToZap 将字段转换为zap字段
-func fieldsToZap(fields []interface{}) []zap.Field {
-	if len(fields)%2 != 0 {
-		return []zap.Field{zap.String("error", "fields must be key-value pairs")}
-	}
-
-	zapFields := make([]zap.Field, 0, len(fields)/2)
+// convertFields 转换字段格式
+func (l *zapLogger) convertFields(fields ...interface{}) []zap.Field {
+	var zapFields []zap.Field
 	for i := 0; i < len(fields); i += 2 {
-		key, ok := fields[i].(string)
-		if !ok {
-			zapFields = append(zapFields, zap.String(fmt.Sprintf("field_%d", i), fmt.Sprintf("%v", fields[i])))
-			continue
+		if i+1 < len(fields) {
+			key := fields[i].(string)
+			value := fields[i+1]
+			zapFields = append(zapFields, zap.Any(key, value))
 		}
-		value := fields[i+1]
-		zapFields = append(zapFields, zap.Any(key, value))
 	}
-
 	return zapFields
 }

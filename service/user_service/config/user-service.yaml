@@ -7,9 +7,9 @@ server:
 database:
   host: localhost
   port: 3306
-  user: root
-  password: 123456
-  dbname: vision_world
+  username: root
+  password: "901project"
+  database: videoworld
   max_idle_conns: 10
   max_open_conns: 100
   conn_max_lifetime: 3600
@@ -36,13 +36,14 @@ consul:
 etcd:
   endpoints:
     - localhost:2379
-  dial_timeout: 5s
+  dial_timeout: 5
   username: ""
   password: ""
 
 jwt:
-  secret_key: "your-secret-key-here"
-  expire_hours: 24
+  secret: "your-secret-key-here"
+  token_expiration: 24h
+  refresh_expiration: 168h
 
 sms:
   access_key: "your-access-key"

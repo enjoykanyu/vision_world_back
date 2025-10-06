@@ -23,9 +23,13 @@ type UserServiceHandler struct {
 // NewUserServiceHandler 创建用户服务处理器
 func NewUserServiceHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *redis.Client) *UserServiceHandler {
 	// 创建认证服务
+	refreshSecret := cfg.JWT.RefreshSecret
+	if refreshSecret == "" {
+		refreshSecret = cfg.JWT.Secret // 如果没有配置refresh_secret，使用secret作为替代
+	}
 	authService := service.NewAuthService(
 		cfg.JWT.Secret,
-		cfg.JWT.RefreshSecret,
+		refreshSecret,
 		cfg.JWT.TokenExpiration,
 		cfg.JWT.RefreshExpiration,
 	)
@@ -163,7 +167,7 @@ func (h *UserServiceHandler) GetUserInfo(ctx context.Context, req *proto_gen.Get
 	h.logger.Info("GetUserInfo called", "user_id", req.UserId)
 
 	// 调用用户服务获取用户信息
-	_, err := h.userService.GetUserInfo(ctx, req.UserId)
+	user, err := h.userService.GetUserInfo(ctx, req.UserId)
 	if err != nil {
 		h.logger.Error("GetUserInfo failed", "error", err, "user_id", req.UserId)
 		return &proto_gen.UserResponse{
@@ -176,7 +180,7 @@ func (h *UserServiceHandler) GetUserInfo(ctx context.Context, req *proto_gen.Get
 	return &proto_gen.UserResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		//User:       user.ToProto(),
+		User:      ,
 	}, nil
 }
 
