@@ -9,12 +9,12 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"user_service/pkg/logger"
-
 	"user_service/internal/config"
+	"user_service/internal/discovery"
 	"user_service/internal/handler"
 	"user_service/internal/model"
 	"user_service/pkg/database"
+	"user_service/pkg/logger"
 
 	//"user_service/pkg/logger"
 	"user_service/proto/proto_gen"
@@ -70,48 +70,58 @@ func main() {
 	log.Info("Redis connected successfully")
 	defer redisClient.Close()
 
-	// 5. 创建gRPC服务器
+	// 5. 初始化etcd服务注册
+	etcdDiscovery, err := discovery.NewEtcdDiscovery(cfg.Etcd.Endpoints, "user-service")
+	if err != nil {
+		log.Fatal("Failed to connect to etcd", "error", err)
+	}
+	defer etcdDiscovery.Close()
+
+	// 6. 创建gRPC服务器
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(unaryInterceptor(log)),
 	)
 
-	// 6. 注册健康检查服务
+	// 7. 注册健康检查服务
 	healthServer := health.NewServer()
 	grpc_health_v1.RegisterHealthServer(grpcServer, healthServer)
 	healthServer.SetServingStatus("user_service", grpc_health_v1.HealthCheckResponse_SERVING)
 
-	// 7. 注册用户服务
+	// 8. 注册用户服务
 	userHandler := handler.NewUserServiceHandler(cfg, log, db, redisClient)
 	proto_gen.RegisterUserServiceServer(grpcServer, userHandler)
 	log.Info("User service registered")
 
-	// 8. 注册反射服务（用于调试）
+	// 9. 注册反射服务（用于调试）
 	reflection.Register(grpcServer)
 
-	// 9. 启动gRPC服务器
-	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port))
-	if err != nil {
-		log.Fatal("Failed to listen", "error", err)
-	}
-
-	// 10. 启动服务器（异步）
+	// 10. 启动gRPC服务器
 	go func() {
-		log.Info("Starting gRPC server", "address", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port))
+		addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+		lis, err := net.Listen("tcp", addr)
+		if err != nil {
+			log.Fatal("Failed to listen", "error", err)
+		}
+
+		log.Info("gRPC server starting", "address", addr)
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatal("Failed to serve", "error", err)
 		}
 	}()
 
-	// 11. 等待中断信号
+	// 11. 注册服务到etcd
+	serviceAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+	if err := etcdDiscovery.Register(serviceAddr, 10); err != nil {
+		log.Fatal("Failed to register service to etcd", "error", err)
+	}
+	log.Info("Service registered to etcd", "address", serviceAddr)
+
+	// 12. 等待中断信号
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	<-sigChan
 
 	log.Info("Shutting down server...")
-
-	// 12. 优雅关闭
-	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	// 13. 设置健康检查为不健康状态
 	healthServer.SetServingStatus("user_service", grpc_health_v1.HealthCheckResponse_NOT_SERVING)

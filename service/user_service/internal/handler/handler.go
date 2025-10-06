@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"user_service/proto/proto_gen"
 
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
@@ -9,7 +10,6 @@ import (
 	"user_service/internal/repository"
 	"user_service/internal/service"
 	"user_service/pkg/logger"
-	"user_service/proto/proto_gen"
 )
 
 // UserServiceHandler 用户服务处理器
@@ -39,7 +39,7 @@ func NewUserServiceHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, r
 	)
 
 	// 创建用户仓库
-	userRepo := repository.NewUserRepository(db, redis, log)
+	userRepo := repository.NewUserRepository(db, redis)
 
 	// 创建用户服务
 	userService := service.NewUserService(cfg, log, userRepo, authService, smsService)
@@ -56,7 +56,7 @@ func (h *UserServiceHandler) PhoneLogin(ctx context.Context, req *proto_gen.Phon
 	h.logger.Info("PhoneLogin called", "phone", req.Phone)
 
 	// 调用用户服务进行登录
-	user, token, err := h.userService.PhoneLogin(ctx, req.Phone, req.Password, req.DeviceId, req.OsType, req.AppVersion)
+	_, token, err := h.userService.PhoneLogin(ctx, req.Phone, req.Password, req.DeviceId, req.OsType, req.AppVersion)
 	if err != nil {
 		h.logger.Error("PhoneLogin failed", "error", err, "phone", req.Phone)
 		return &proto_gen.LoginResponse{
@@ -68,8 +68,8 @@ func (h *UserServiceHandler) PhoneLogin(ctx context.Context, req *proto_gen.Phon
 	return &proto_gen.LoginResponse{
 		StatusCode: 0,
 		StatusMsg:  "登录成功",
-		UserId:     user.ID,
-		Token:      token,
+		//User:     user,
+		Token: token,
 	}, nil
 }
 
@@ -78,7 +78,7 @@ func (h *UserServiceHandler) CodeLogin(ctx context.Context, req *proto_gen.CodeL
 	h.logger.Info("CodeLogin called", "phone", req.Phone)
 
 	// 调用用户服务进行验证码登录
-	user, token, err := h.userService.CodeLogin(ctx, req.Phone, req.Code, req.DeviceId, req.OsType, req.AppVersion)
+	_, token, err := h.userService.CodeLogin(ctx, req.Phone, req.Code, req.DeviceId, req.OsType, req.AppVersion)
 	if err != nil {
 		h.logger.Error("CodeLogin failed", "error", err, "phone", req.Phone)
 		return &proto_gen.LoginResponse{
@@ -90,8 +90,8 @@ func (h *UserServiceHandler) CodeLogin(ctx context.Context, req *proto_gen.CodeL
 	return &proto_gen.LoginResponse{
 		StatusCode: 0,
 		StatusMsg:  "登录成功",
-		UserId:     user.ID,
-		Token:      token,
+		//UserId:     user.ID,
+		Token: token,
 	}, nil
 }
 
@@ -163,7 +163,7 @@ func (h *UserServiceHandler) GetUserInfo(ctx context.Context, req *proto_gen.Get
 	h.logger.Info("GetUserInfo called", "user_id", req.UserId)
 
 	// 调用用户服务获取用户信息
-	user, err := h.userService.GetUserInfo(ctx, req.UserId)
+	_, err := h.userService.GetUserInfo(ctx, req.UserId)
 	if err != nil {
 		h.logger.Error("GetUserInfo failed", "error", err, "user_id", req.UserId)
 		return &proto_gen.UserResponse{
@@ -176,7 +176,7 @@ func (h *UserServiceHandler) GetUserInfo(ctx context.Context, req *proto_gen.Get
 	return &proto_gen.UserResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		User:       user.ToProto(),
+		//User:       user.ToProto(),
 	}, nil
 }
 
@@ -185,7 +185,7 @@ func (h *UserServiceHandler) GetUserInfos(ctx context.Context, req *proto_gen.Ge
 	h.logger.Info("GetUserInfos called", "user_ids", req.UserIds)
 
 	// 调用用户服务批量获取用户信息
-	users, err := h.userService.GetUserInfos(ctx, req.UserIds)
+	_, err := h.userService.GetUserInfos(ctx, req.UserIds)
 	if err != nil {
 		h.logger.Error("GetUserInfos failed", "error", err)
 		return &proto_gen.GetUserInfosResponse{
@@ -196,30 +196,30 @@ func (h *UserServiceHandler) GetUserInfos(ctx context.Context, req *proto_gen.Ge
 	}
 
 	// 转换用户列表到protobuf格式
-	protoUsers := make([]*proto_gen.User, len(users))
-	for i, user := range users {
-		protoUsers[i] = user.ToProto()
-	}
+	//protoUsers := make([]*proto_gen.User, len(users))
+	//for i, user := range users {
+	//	//protoUsers[i] = user.ToProto()
+	//}
 
 	return &proto_gen.GetUserInfosResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		Users:      protoUsers,
+		//Users:      protoUsers,
 	}, nil
 }
 
 // UpdateUserInfo 更新用户信息
 func (h *UserServiceHandler) UpdateUserInfo(ctx context.Context, req *proto_gen.UpdateUserRequest) (*proto_gen.UpdateUserResponse, error) {
-	h.logger.Info("UpdateUserInfo called", "user_id", req.UserId)
+	//h.logger.Info("UpdateUserInfo called", "user_id", req.UserId)
 
-	// 调用用户服务更新用户信息
-	if err := h.userService.UpdateUserInfo(ctx, req.UserId, req); err != nil {
-		h.logger.Error("UpdateUserInfo failed", "error", err, "user_id", req.UserId)
-		return &proto_gen.UpdateUserResponse{
-			StatusCode: 400,
-			StatusMsg:  err.Error(),
-		}, nil
-	}
+	//// 调用用户服务更新用户信息
+	//if err := h.userService.UpdateUserInfo(ctx, req.UserId, req); err != nil {
+	//	h.logger.Error("UpdateUserInfo failed", "error", err, "user_id", req.UserId)
+	//	return &proto_gen.UpdateUserResponse{
+	//		StatusCode: 400,
+	//		StatusMsg:  err.Error(),
+	//	}, nil
+	//}
 
 	return &proto_gen.UpdateUserResponse{
 		StatusCode: 0,
@@ -232,19 +232,19 @@ func (h *UserServiceHandler) GetUserExistInformation(ctx context.Context, req *p
 	h.logger.Info("GetUserExistInformation called", "user_id", req.UserId)
 
 	// 调用用户服务检查用户是否存在
-	exists, err := h.userService.CheckUserExists(ctx, req.UserId)
-	if err != nil {
-		h.logger.Error("GetUserExistInformation failed", "error", err, "user_id", req.UserId)
-		return &proto_gen.UserExistResponse{
-			StatusCode: 500,
-			StatusMsg:  err.Error(),
-			Exist:      false,
-		}, nil
-	}
+	//exists, err := h.userService.CheckUserExists(ctx, req.UserId)
+	//if err != nil {
+	//	h.logger.Error("GetUserExistInformation failed", "error", err, "user_id", req.UserId)
+	//	return &proto_gen.UserExistResponse{
+	//		StatusCode: 500,
+	//		//StatusMsg:  err.Error(),
+	//		//Exist:      false,
+	//	}, nil
+	//}
 
 	return &proto_gen.UserExistResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		Exist:      exists,
+		//Exist:      exists,
 	}, nil
 }

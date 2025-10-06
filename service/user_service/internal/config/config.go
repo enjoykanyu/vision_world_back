@@ -15,6 +15,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Logger   LoggerConfig   `mapstructure:"logger"`
+	Etcd     EtcdConfig     `mapstructure:"etcd"`
 	Consul   ConsulConfig   `mapstructure:"consul"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	SMS      SMSConfig      `mapstructure:"sms"`
@@ -61,6 +62,14 @@ type LoggerConfig struct {
 	Level      string `mapstructure:"level"`
 	Format     string `mapstructure:"format"`
 	OutputPath string `mapstructure:"output_path"`
+}
+
+// EtcdConfig etcd配置
+type EtcdConfig struct {
+	Endpoints   []string `mapstructure:"endpoints"`
+	DialTimeout int      `mapstructure:"dial_timeout"`
+	Username    string   `mapstructure:"username"`
+	Password    string   `mapstructure:"password"`
 }
 
 // ConsulConfig Consul配置
@@ -150,6 +159,10 @@ func (c *Config) Validate() error {
 
 	if c.Redis.Port <= 0 || c.Redis.Port > 65535 {
 		return fmt.Errorf("invalid redis port: %d", c.Redis.Port)
+	}
+
+	if len(c.Etcd.Endpoints) == 0 {
+		return fmt.Errorf("etcd endpoints are required")
 	}
 
 	if c.JWT.Secret == "" {

@@ -1,54 +1,51 @@
-# 用户服务配置
+# user-service配置文件
 server:
-  host: "0.0.0.0"
+  host: 0.0.0.0
   port: 50051
-  mode: "debug"
-  read_timeout: 30s
-  write_timeout: 30s
+  mode: debug
 
 database:
-  host: "localhost"
+  host: localhost
   port: 3306
-  username: "root"
-  password: ""
-  database: "vision_world_user"
-  charset: "utf8mb4"
-  table_prefix: "vw_"
-  log_level: "info"
+  user: root
+  password: 123456
+  dbname: vision_world
   max_idle_conns: 10
   max_open_conns: 100
   conn_max_lifetime: 3600
 
 redis:
-  host: "localhost"
+  host: localhost
   port: 6379
   password: ""
   db: 0
-  max_retries: 3
-  dial_timeout: 5
-  read_timeout: 3
-  write_timeout: 3
+  pool_size: 10
 
 logger:
-  level: "info"
-  format: "json"
-  output_path: "logs/user-service.log"
+  level: info
+  format: json
+  output_path: logs/user-service.log
 
 consul:
-  host: "localhost"
+  host: localhost
   port: 8500
-  service_id: "user-service-1"
+  health_check:
+    interval: 10s
+    timeout: 5s
 
-# JWT配置
+etcd:
+  endpoints:
+    - localhost:2379
+  dial_timeout: 5s
+  username: ""
+  password: ""
+
 jwt:
-  secret: "your-jwt-secret-key"
-  refresh_secret: "your-jwt-refresh-secret-key"
-  token_expiration: 24h
-  refresh_expiration: 168h
+  secret_key: "your-secret-key-here"
+  expire_hours: 24
 
-# 短信服务配置
 sms:
-  access_key: "your-sms-access-key"
-  secret_key: "your-sms-secret-key"
-  sign_name: "your-sms-sign-name"
-  template_code: "your-sms-template-code"
+  access_key: "your-access-key"
+  secret_key: "your-secret-key"
+  sign_name: "VisionWorld"
+  template_code: "SMS_123456789"

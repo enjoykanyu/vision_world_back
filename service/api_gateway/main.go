@@ -12,10 +12,28 @@ import (
 	"github.com/gin-gonic/gin"
 	ginprometheus "github.com/zsais/go-gin-prometheus"
 
-	"web/middleware"
+	"api_gateway/middleware"
+	"api_gateway/routes"
 )
 
+// EtcdConfig etcd配置
+type EtcdConfig struct {
+	Endpoints []string `mapstructure:"endpoints"`
+}
+
+// Config 应用配置
+type Config struct {
+	Etcd EtcdConfig `mapstructure:"etcd"`
+}
+
 func main() {
+	// 初始化配置
+	cfg := &Config{
+		Etcd: EtcdConfig{
+			Endpoints: []string{"localhost:2379"},
+		},
+	}
+
 	// 创建Gin引擎
 	router := gin.New()
 
@@ -35,8 +53,18 @@ func main() {
 	// Grafana健康检查路由
 	router.GET("/grafana/health", middleware.GrafanaHealthCheck())
 
-	//// 注册用户服务路由
-	//RegisterUserRoutes(router)
+	// 注册用户服务路由
+	userHandler, err := routes.NewUserHandler(cfg.Etcd.Endpoints)
+	if err != nil {
+		log.Fatalf("Failed to connect to user service: %v", err)
+	}
+	defer userHandler.Close()
+
+	// 注册用户相关路由
+	router.POST("/api/user/login/phone", userHandler.PhoneLogin)
+	router.POST("/api/user/login/code", userHandler.CodeLogin)
+	router.POST("/api/user/sms/send", userHandler.SendSmsCode)
+	router.GET("/api/user/info/:id", userHandler.GetUserInfo)
 
 	// 创建HTTP服务器
 	srv := &http.Server{
