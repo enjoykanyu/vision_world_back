@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -57,55 +58,29 @@ type LogConfig struct {
 }
 
 func LoadConfig() (*Config, error) {
-	viper.SetConfigName("video-service")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("/etc/video-service/")
-	viper.AddConfigPath("$HOME/.video-service")
-	viper.AddConfigPath("./config/")
-	viper.AddConfigPath(".")
+	v := viper.New()
 
-	// 设置默认值
-	viper.SetDefault("server.address", ":50052")
-	viper.SetDefault("server.name", "video-service")
-	viper.SetDefault("server.version", "1.0.0")
-	viper.SetDefault("server.environment", "development")
+	// 设置配置文件路径
+	// 默认在当前目录和config目录下查找配置文件
+	v.AddConfigPath(".")
+	v.AddConfigPath("./config")
+	v.AddConfigPath("../config")
+	v.AddConfigPath("../../config")
+	v.SetConfigName("video-service")
+	v.SetConfigType("yaml")
 
-	viper.SetDefault("database.host", "localhost")
-	viper.SetDefault("database.port", 3306)
-	viper.SetDefault("database.username", "root")
-	viper.SetDefault("database.password", "901project")
-	viper.SetDefault("database.database", "videoworld")
-	viper.SetDefault("database.max_open_conns", 25)
-	viper.SetDefault("database.max_idle_conns", 5)
-
-	viper.SetDefault("redis.host", "localhost")
-	viper.SetDefault("redis.port", 6379)
-	viper.SetDefault("redis.db", 0)
-	viper.SetDefault("redis.pool_size", 10)
-
-	viper.SetDefault("discovery.type", "etcd")
-	viper.SetDefault("discovery.address", "localhost:2379")
-	viper.SetDefault("discovery.interval", 10)
-
-	viper.SetDefault("log.level", "info")
-	viper.SetDefault("log.file", "logs/video-service.log")
-
-	// 读取环境变量
-	viper.AutomaticEnv()
-
-	var config Config
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// 配置文件未找到，使用默认值
-			if err := viper.Unmarshal(&config); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal default config: %w", err)
-			}
-			return &config, nil
-		}
+	// 读取配置文件
+	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	if err := viper.Unmarshal(&config); err != nil {
+	// 绑定环境变量
+	v.AutomaticEnv()
+	v.SetEnvPrefix("USER_SERVICE")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	var config Config
+	if err := v.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
