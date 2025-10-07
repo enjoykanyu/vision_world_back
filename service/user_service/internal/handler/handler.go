@@ -7,6 +7,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 	"user_service/internal/config"
+	"user_service/internal/converter"
 	"user_service/internal/repository"
 	"user_service/internal/service"
 	"user_service/pkg/logger"
@@ -18,6 +19,7 @@ type UserServiceHandler struct {
 	config      *config.Config
 	logger      logger.Logger
 	userService service.UserService
+	converter   *converter.UserConverter
 }
 
 // NewUserServiceHandler 创建用户服务处理器
@@ -52,6 +54,7 @@ func NewUserServiceHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, r
 		config:      cfg,
 		logger:      log,
 		userService: userService,
+		converter:   converter.NewUserConverter(),
 	}
 }
 
@@ -180,7 +183,7 @@ func (h *UserServiceHandler) GetUserInfo(ctx context.Context, req *proto_gen.Get
 	return &proto_gen.UserResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		User:      ,
+		User:       h.converter.ModelToProto(user),
 	}, nil
 }
 
