@@ -66,6 +66,9 @@ func main() {
 	router.POST("/api/user/sms/send", userHandler.SendSmsCode)
 	router.GET("/api/user/info/:id", userHandler.GetUserInfo)
 
+	// 直接启动Gin服务器
+	log.Printf("Starting Vision World Gateway on port %s", ":8080")
+
 	// 创建HTTP服务器
 	srv := &http.Server{
 		Addr:    ":8080",
@@ -74,7 +77,6 @@ func main() {
 
 	// 启动服务器
 	go func() {
-		log.Printf("Starting Vision World Gateway on port %s", ":8080")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
 		}
