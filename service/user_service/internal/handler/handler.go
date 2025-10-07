@@ -4,13 +4,14 @@ import (
 	"context"
 	"user_service/proto/proto_gen"
 
-	"github.com/go-redis/redis/v8"
-	"gorm.io/gorm"
 	"user_service/internal/config"
 	"user_service/internal/converter"
 	"user_service/internal/repository"
 	"user_service/internal/service"
 	"user_service/pkg/logger"
+
+	"github.com/go-redis/redis/v8"
+	"gorm.io/gorm"
 )
 
 // UserServiceHandler 用户服务处理器
@@ -168,6 +169,7 @@ func (h *UserServiceHandler) RefreshToken(ctx context.Context, req *proto_gen.Re
 // GetUserInfo 获取用户信息
 func (h *UserServiceHandler) GetUserInfo(ctx context.Context, req *proto_gen.GetUserInfoRequest) (*proto_gen.UserResponse, error) {
 	h.logger.Info("GetUserInfo called", "user_id", req.UserId)
+	converter := converter.NewUserConverter()
 
 	// 调用用户服务获取用户信息
 	user, err := h.userService.GetUserInfo(ctx, req.UserId)
@@ -183,7 +185,7 @@ func (h *UserServiceHandler) GetUserInfo(ctx context.Context, req *proto_gen.Get
 	return &proto_gen.UserResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		User:       h.converter.ModelToProto(user),
+		User:       converter.ModelToProto(user),
 	}, nil
 }
 

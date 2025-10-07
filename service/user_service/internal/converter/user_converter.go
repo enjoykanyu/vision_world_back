@@ -3,7 +3,6 @@ package converter
 import (
 	"time"
 
-	"google.golang.org/protobuf/types/known/wrapperspb"
 	"user_service/internal/model"
 	"user_service/proto/proto_gen"
 )
@@ -33,15 +32,15 @@ func (c *UserConverter) ModelToProto(user *model.User) *proto_gen.User {
 		Id:              user.ID,
 		Name:            user.Nickname, // 使用昵称作为显示名称
 		Phone:           maskedPhone,
-		FollowCount:     wrapperspb.UInt32(user.FollowingCount),
-		FollowerCount:   wrapperspb.UInt32(user.FollowersCount),
+		FollowCount:     &user.FollowingCount,
+		FollowerCount:   &user.FollowersCount,
 		IsFollow:        false, // 默认未关注，实际业务中需要根据上下文判断
 		Avatar:          &user.AvatarURL,
 		BackgroundImage: &user.BackgroundImage,
 		Signature:       &user.Signature,
-		TotalFavorited:  wrapperspb.UInt32(uint32(user.TotalFavorited)),
-		WorkCount:       wrapperspb.UInt32(user.WorkCount),
-		FavoriteCount:   wrapperspb.UInt32(user.FavoriteCount),
+		TotalFavorited:  &[]uint32{uint32(user.TotalFavorited)}[0],
+		WorkCount:       &user.WorkCount,
+		FavoriteCount:   &user.FavoriteCount,
 		CreateTime:      createTime,
 		LastLoginTime:   lastLoginTime,
 		IsVerified:      user.IsVerified,
@@ -121,28 +120,28 @@ func (c *UserConverter) ProtoToModel(protoUser *proto_gen.User) *model.User {
 		ID:              protoUser.Id,
 		Nickname:        protoUser.Name,
 		Phone:           protoUser.Phone,
-		AvatarURL:       protoUser.Avatar,
-		BackgroundImage: protoUser.BackgroundImage,
-		Signature:       protoUser.Signature,
+		AvatarURL:       protoUser.GetAvatar(),
+		BackgroundImage: protoUser.GetBackgroundImage(),
+		Signature:       protoUser.GetSignature(),
 		IsVerified:      protoUser.IsVerified,
 		UserType:        protoUser.UserType,
 	}
 
 	// 处理optional字段
 	if protoUser.FollowCount != nil {
-		user.FollowingCount = protoUser.FollowCount.Value
+		user.FollowingCount = *protoUser.FollowCount
 	}
 	if protoUser.FollowerCount != nil {
-		user.FollowersCount = protoUser.FollowerCount.Value
+		user.FollowersCount = *protoUser.FollowerCount
 	}
 	if protoUser.TotalFavorited != nil {
-		user.TotalFavorited = uint64(protoUser.TotalFavorited.Value)
+		user.TotalFavorited = uint64(*protoUser.TotalFavorited)
 	}
 	if protoUser.WorkCount != nil {
-		user.WorkCount = protoUser.WorkCount.Value
+		user.WorkCount = *protoUser.WorkCount
 	}
 	if protoUser.FavoriteCount != nil {
-		user.FavoriteCount = protoUser.FavoriteCount.Value
+		user.FavoriteCount = *protoUser.FavoriteCount
 	}
 
 	return user
