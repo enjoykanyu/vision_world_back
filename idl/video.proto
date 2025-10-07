@@ -1,0 +1,274 @@
+syntax = "proto3";
+package rpc.video;
+option go_package = "rpc/video/proto_gen";
+
+// ==================== 基础请求响应结构 ====================
+
+message VideoRequest {
+  uint32 video_id = 1; // 视频id
+  uint32 actor_id = 2; // 发送请求的用户的id
+}
+
+message VideoResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  Video video = 3; // 视频信息
+}
+
+// ==================== 视频发布相关接口 ====================
+
+// 发布视频请求
+message PublishVideoRequest {
+  string token = 1; // 用户token
+  string title = 2; // 视频标题
+  string description = 3; // 视频描述
+  string cover_url = 4; // 视频封面URL
+  string video_url = 5; // 视频文件URL
+  repeated string tags = 6; // 视频标签
+  optional string location = 7; // 拍摄地点
+  optional string music_id = 8; // 背景音乐ID
+  optional bool is_public = 9; // 是否公开，默认true
+}
+
+message PublishVideoResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  uint32 video_id = 3; // 发布的视频ID
+}
+
+// 删除视频请求
+message DeleteVideoRequest {
+  string token = 1; // 用户token
+  uint32 video_id = 2; // 要删除的视频ID
+}
+
+message DeleteVideoResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+}
+
+// ==================== 视频信息获取接口 ====================
+
+// 获取单个视频信息请求
+message GetVideoInfoRequest {
+  uint32 video_id = 1; // 视频ID
+  string token = 2; // 用户token (可选)
+}
+
+// 批量获取视频信息请求
+message GetVideoInfosRequest {
+  repeated uint32 video_ids = 1; // 视频ID列表 (最多100个)
+  string token = 2; // 用户token (可选)
+}
+
+message GetVideoInfosResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  repeated Video videos = 3; // 视频信息列表
+}
+
+// ==================== 视频列表相关接口 ====================
+
+// 获取用户发布的视频列表请求
+message GetUserVideosRequest {
+  uint32 user_id = 1; // 目标用户ID
+  string token = 2; // 用户token (可选)
+  uint32 page = 3; // 页码，从1开始
+  uint32 page_size = 4; // 每页数量，默认10，最大50
+}
+
+message GetUserVideosResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  repeated Video videos = 3; // 视频列表
+  uint32 total = 4; // 总视频数量
+  bool has_more = 5; // 是否有更多
+}
+
+// 获取推荐视频列表请求
+message GetRecommendVideosRequest {
+  string token = 1; // 用户token (可选)
+  uint32 page = 2; // 页码，从1开始
+  uint32 page_size = 3; // 每页数量，默认10，最大50
+  optional string category = 4; // 视频分类
+}
+
+message GetRecommendVideosResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  repeated Video videos = 3; // 推荐视频列表
+  bool has_more = 4; // 是否有更多
+}
+
+// 获取关注用户的视频列表请求
+message GetFollowVideosRequest {
+  string token = 1; // 用户token
+  uint32 page = 2; // 页码，从1开始
+  uint32 page_size = 3; // 每页数量，默认10，最大50
+}
+
+message GetFollowVideosResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  repeated Video videos = 3; // 关注用户的视频列表
+  bool has_more = 4; // 是否有更多
+}
+
+// ==================== 视频互动相关接口 ====================
+
+// 点赞/取消点赞视频请求
+message LikeVideoRequest {
+  string token = 1; // 用户token
+  uint32 video_id = 2; // 视频ID
+  bool action_type = 3; // true-点赞，false-取消点赞
+}
+
+message LikeVideoResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  uint32 like_count = 3; // 视频点赞数
+}
+
+// 获取用户点赞的视频列表请求
+message GetUserLikedVideosRequest {
+  uint32 user_id = 1; // 目标用户ID
+  string token = 2; // 用户token (可选)
+  uint32 page = 3; // 页码，从1开始
+  uint32 page_size = 4; // 每页数量，默认10，最大50
+}
+
+message GetUserLikedVideosResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  repeated Video videos = 3; // 点赞的视频列表
+  uint32 total = 4; // 总数量
+  bool has_more = 5; // 是否有更多
+}
+
+// 分享视频请求
+message ShareVideoRequest {
+  string token = 1; // 用户token
+  uint32 video_id = 2; // 视频ID
+  string share_type = 3; // 分享类型: wechat, wechat_moments, qq, weibo, copy_link
+}
+
+message ShareVideoResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  string share_url = 3; // 分享链接
+}
+
+// ==================== 视频评论相关接口 ====================
+
+// 发表评论请求
+message CommentRequest {
+  string token = 1; // 用户token
+  uint32 video_id = 2; // 视频ID
+  string content = 3; // 评论内容
+  optional uint32 parent_id = 4; // 回复的评论ID，如果是回复评论
+}
+
+message CommentResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  Comment comment = 3; // 发表的评论
+}
+
+// 删除评论请求
+message DeleteCommentRequest {
+  string token = 1; // 用户token
+  uint32 comment_id = 2; // 要删除的评论ID
+}
+
+message DeleteCommentResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+}
+
+// 获取视频评论列表请求
+message GetVideoCommentsRequest {
+  uint32 video_id = 1; // 视频ID
+  string token = 2; // 用户token (可选)
+  uint32 page = 3; // 页码，从1开始
+  uint32 page_size = 4; // 每页数量，默认10，最大50
+  string sort_order = 5; // 排序方式: time_desc, time_asc, hot
+}
+
+message GetVideoCommentsResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  repeated Comment comments = 3; // 评论列表
+  uint32 total = 4; // 总评论数
+  bool has_more = 5; // 是否有更多
+}
+
+// ==================== 视频数据结构 ====================
+
+message Video {
+  uint32 id = 1; // 视频id
+  User author = 2; // 视频作者信息
+  string title = 3; // 视频标题
+  string description = 4; // 视频描述
+  string cover_url = 5; // 视频封面URL
+  string video_url = 6; // 视频播放URL
+  uint32 play_count = 7; // 播放次数
+  uint32 like_count = 8; // 点赞数
+  uint32 comment_count = 9; // 评论数
+  uint32 share_count = 10; // 分享数
+  uint32 favorite_count = 11; // 收藏数
+  bool is_liked = 12; // 是否已点赞 (需要token)
+  bool is_favorite = 13; // 是否已收藏 (需要token)
+  repeated string tags = 14; // 视频标签
+  optional string location = 15; // 拍摄地点
+  optional string music_id = 16; // 背景音乐ID
+  optional string music_title = 17; // 音乐标题
+  optional string music_url = 18; // 音乐URL
+  string category = 19; // 视频分类
+  int64 create_time = 20; // 发布时间戳
+  int64 update_time = 21; // 更新时间戳
+  uint32 duration = 22; // 视频时长 (秒)
+  string resolution = 23; // 分辨率，如1080p
+  optional string extra_data = 24; // 扩展数据，JSON格式
+  bool is_public = 25; // 是否公开
+  string status = 26; // 状态: normal, deleted, banned, reviewing
+}
+
+message Comment {
+  uint32 id = 1; // 评论id
+  User user = 2; // 评论用户
+  string content = 3; // 评论内容
+  uint32 video_id = 4; // 视频ID
+  optional uint32 parent_id = 5; // 回复的评论ID
+  optional uint32 reply_to_user_id = 6; // 回复的用户ID
+  uint32 like_count = 7; // 点赞数
+  bool is_liked = 8; // 是否已点赞 (需要token)
+  int64 create_time = 9; // 发布时间戳
+  repeated Comment replies = 10; // 回复列表 (可选，用于嵌套显示)
+}
+
+// ==================== 视频服务接口定义 ====================
+
+service VideoService {
+  // 视频发布相关
+  rpc PublishVideo(PublishVideoRequest) returns(PublishVideoResponse);
+  rpc DeleteVideo(DeleteVideoRequest) returns(DeleteVideoResponse);
+  
+  // 视频信息获取
+  rpc GetVideoInfo(GetVideoInfoRequest) returns(VideoResponse);
+  rpc GetVideoInfos(GetVideoInfosRequest) returns(GetVideoInfosResponse);
+  
+  // 视频列表相关
+  rpc GetUserVideos(GetUserVideosRequest) returns(GetUserVideosResponse);
+  rpc GetRecommendVideos(GetRecommendVideosRequest) returns(GetRecommendVideosResponse);
+  rpc GetFollowVideos(GetFollowVideosRequest) returns(GetFollowVideosResponse);
+  
+  // 视频互动相关
+  rpc LikeVideo(LikeVideoRequest) returns(LikeVideoResponse);
+  rpc GetUserLikedVideos(GetUserLikedVideosRequest) returns(GetUserLikedVideosResponse);
+  rpc ShareVideo(ShareVideoRequest) returns(ShareVideoResponse);
+  
+  // 视频评论相关
+  rpc CommentVideo(CommentRequest) returns(CommentResponse);
+  rpc DeleteComment(DeleteCommentRequest) returns(DeleteCommentResponse);
+  rpc GetVideoComments(GetVideoCommentsRequest) returns(GetVideoCommentsResponse);
+}
