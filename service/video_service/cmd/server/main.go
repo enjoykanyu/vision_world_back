@@ -24,6 +24,10 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	// 调试输出数据库配置
+	log.Printf("Database config - Host: %s, Port: %d, Username: %s, Database: %s",
+		cfg.Database.Host, cfg.Database.Port, cfg.Database.Username, cfg.Database.Database)
+
 	// 初始化日志
 	logger.InitLogger(cfg.Log.Level, cfg.Log.File)
 

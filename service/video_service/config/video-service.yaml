@@ -8,8 +8,8 @@ database:
   host: "localhost"
   port: 3306
   username: "root"
-  password: "password"
-  database: "video_service"
+  password: "333"
+  database: "videoworld"
   max_open_conns: 25
   max_idle_conns: 5
 

@@ -72,6 +72,9 @@ func LoadConfig() (*Config, error) {
 
 	viper.SetDefault("database.host", "localhost")
 	viper.SetDefault("database.port", 3306)
+	viper.SetDefault("database.username", "root")
+	viper.SetDefault("database.password", "901project")
+	viper.SetDefault("database.database", "videoworld")
 	viper.SetDefault("database.max_open_conns", 25)
 	viper.SetDefault("database.max_idle_conns", 5)
 
