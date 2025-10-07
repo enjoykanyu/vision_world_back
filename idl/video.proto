@@ -206,7 +206,7 @@ message GetVideoCommentsResponse {
 
 message Video {
   uint32 id = 1; // 视频id
-  User author = 2; // 视频作者信息
+  uint32 author_id = 2; // 视频作者ID
   string title = 3; // 视频标题
   string description = 4; // 视频描述
   string cover_url = 5; // 视频封面URL
@@ -235,7 +235,7 @@ message Video {
 
 message Comment {
   uint32 id = 1; // 评论id
-  User user = 2; // 评论用户
+  uint32 user_id = 2; // 评论用户ID
   string content = 3; // 评论内容
   uint32 video_id = 4; // 视频ID
   optional uint32 parent_id = 5; // 回复的评论ID

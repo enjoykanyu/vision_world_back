@@ -1,0 +1,35 @@
+server:
+  address: ":50052"
+  name: "video-service"
+  version: "1.0.0"
+  environment: "development"
+
+database:
+  host: "localhost"
+  port: 3306
+  username: "root"
+  password: "password"
+  database: "video_service"
+  max_open_conns: 25
+  max_idle_conns: 5
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+
+kafka:
+  brokers:
+    - "localhost:9092"
+  topic: "video-events"
+
+discovery:
+  type: "etcd"  # etcd, consul
+  address: "localhost:2379"
+  interval: 10
+
+log:
+  level: "info"  # debug, info, warn, error
+  file: "logs/video-service.log"
