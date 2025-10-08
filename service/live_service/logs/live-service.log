@@ -37,3 +37,5 @@
 {"level":"info","timestamp":"2025-10-08T19:28:22.340+0800","caller":"logger/logger.go:109","msg":"Redis connected successfully"}
 {"level":"info","timestamp":"2025-10-08T19:28:22.340+0800","caller":"logger/logger.go:109","msg":"Live service registered"}
 {"level":"info","timestamp":"2025-10-08T19:28:22.341+0800","caller":"logger/logger.go:109","msg":"gRPC server starting","address":"0.0.0.0:50055"}
+{"level":"info","timestamp":"2025-10-08T19:55:25.075+0800","caller":"logger/logger.go:109","msg":"Shutting down server..."}
+{"level":"info","timestamp":"2025-10-08T19:55:25.080+0800","caller":"logger/logger.go:109","msg":"Server stopped gracefully"}

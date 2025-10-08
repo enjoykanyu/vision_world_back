@@ -29,3 +29,55 @@
 {"level":"info","timestamp":"2025-10-06T19:54:03.927+0800","caller":"logger/logger.go:88","msg":"GetUserInfo called","user_id":3}
 {"level":"info","timestamp":"2025-10-06T19:54:03.928+0800","caller":"logger/logger.go:88","msg":"GetUserInfo service called","userID":3}
 {"level":"info","timestamp":"2025-10-06T19:54:03.928+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/rpc.user.UserService/GetUserInfo","duration":0.000690762}
+{"level":"info","timestamp":"2025-10-07T11:42:45.062+0800","caller":"logger/logger.go:88","msg":"Shutting down server..."}
+{"level":"info","timestamp":"2025-10-07T11:42:45.070+0800","caller":"logger/logger.go:88","msg":"Server stopped gracefully"}
+{"level":"info","timestamp":"2025-10-07T11:47:55.587+0800","caller":"logger/logger.go:88","msg":"Starting user service","version":"1.0.0"}
+{"level":"info","timestamp":"2025-10-07T11:47:55.636+0800","caller":"logger/logger.go:88","msg":"Database connected successfully"}
+{"level":"info","timestamp":"2025-10-07T11:47:55.636+0800","caller":"logger/logger.go:88","msg":"Database models initialized successfully"}
+{"level":"info","timestamp":"2025-10-07T11:47:55.636+0800","caller":"logger/logger.go:88","msg":"Redis connected successfully"}
+{"level":"info","timestamp":"2025-10-07T11:47:55.645+0800","caller":"logger/logger.go:88","msg":"User service registered"}
+{"level":"info","timestamp":"2025-10-07T11:47:55.646+0800","caller":"logger/logger.go:88","msg":"gRPC server starting","address":"0.0.0.0:50051"}
+{"level":"info","timestamp":"2025-10-07T11:47:56.000+0800","caller":"logger/logger.go:88","msg":"Service registered to etcd","address":"0.0.0.0:50051"}
+{"level":"info","timestamp":"2025-10-07T11:48:02.694+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/rpc.user.UserService/GetUserInfo","request":"user_id:3"}
+{"level":"info","timestamp":"2025-10-07T11:48:02.694+0800","caller":"logger/logger.go:88","msg":"GetUserInfo called","user_id":3}
+{"level":"info","timestamp":"2025-10-07T11:48:02.694+0800","caller":"logger/logger.go:88","msg":"GetUserInfo service called","userID":3}
+{"level":"info","timestamp":"2025-10-07T11:48:02.715+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/rpc.user.UserService/GetUserInfo","duration":0.021640477}
+{"level":"info","timestamp":"2025-10-07T11:55:16.872+0800","caller":"logger/logger.go:88","msg":"Shutting down server..."}
+{"level":"info","timestamp":"2025-10-07T11:55:16.873+0800","caller":"logger/logger.go:88","msg":"Server stopped gracefully"}
+{"level":"info","timestamp":"2025-10-07T11:55:20.080+0800","caller":"logger/logger.go:88","msg":"Starting user service","version":"1.0.0"}
+{"level":"info","timestamp":"2025-10-07T11:55:20.098+0800","caller":"logger/logger.go:88","msg":"Database connected successfully"}
+{"level":"info","timestamp":"2025-10-07T11:55:20.098+0800","caller":"logger/logger.go:88","msg":"Database models initialized successfully"}
+{"level":"info","timestamp":"2025-10-07T11:55:20.098+0800","caller":"logger/logger.go:88","msg":"Redis connected successfully"}
+{"level":"info","timestamp":"2025-10-07T11:55:20.104+0800","caller":"logger/logger.go:88","msg":"User service registered"}
+{"level":"info","timestamp":"2025-10-07T11:55:20.105+0800","caller":"logger/logger.go:88","msg":"gRPC server starting","address":"0.0.0.0:50051"}
+{"level":"info","timestamp":"2025-10-07T11:55:20.302+0800","caller":"logger/logger.go:88","msg":"Service registered to etcd","address":"0.0.0.0:50051"}
+{"level":"info","timestamp":"2025-10-07T11:55:29.138+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/rpc.user.UserService/GetUserInfo","request":"user_id:3"}
+{"level":"info","timestamp":"2025-10-07T11:55:29.139+0800","caller":"logger/logger.go:88","msg":"GetUserInfo called","user_id":3}
+{"level":"info","timestamp":"2025-10-07T11:55:29.139+0800","caller":"logger/logger.go:88","msg":"GetUserInfo service called","userID":3}
+{"level":"info","timestamp":"2025-10-07T11:55:29.149+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/rpc.user.UserService/GetUserInfo","duration":0.010215142}
+{"level":"info","timestamp":"2025-10-07T13:49:30.271+0800","caller":"logger/logger.go:88","msg":"Starting user service","version":"1.0.0"}
+{"level":"info","timestamp":"2025-10-07T13:49:30.298+0800","caller":"logger/logger.go:88","msg":"Database connected successfully"}
+{"level":"info","timestamp":"2025-10-07T13:49:30.299+0800","caller":"logger/logger.go:88","msg":"Database models initialized successfully"}
+{"level":"info","timestamp":"2025-10-07T13:49:30.299+0800","caller":"logger/logger.go:88","msg":"Redis connected successfully"}
+{"level":"info","timestamp":"2025-10-07T13:49:30.311+0800","caller":"logger/logger.go:88","msg":"User service registered"}
+{"level":"info","timestamp":"2025-10-07T13:49:30.311+0800","caller":"logger/logger.go:88","msg":"gRPC server starting","address":"0.0.0.0:50051"}
+{"level":"info","timestamp":"2025-10-07T13:49:30.455+0800","caller":"logger/logger.go:88","msg":"Service registered to etcd","address":"0.0.0.0:50051"}
+{"level":"info","timestamp":"2025-10-07T14:01:00.306+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/rpc.user.UserService/GetUserInfo","request":"user_id:3"}
+{"level":"info","timestamp":"2025-10-07T14:01:00.307+0800","caller":"logger/logger.go:88","msg":"GetUserInfo called","user_id":3}
+{"level":"info","timestamp":"2025-10-07T14:01:00.308+0800","caller":"logger/logger.go:88","msg":"GetUserInfo service called","userID":3}
+{"level":"info","timestamp":"2025-10-07T14:01:00.335+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/rpc.user.UserService/GetUserInfo","duration":0.02997275}
+{"level":"info","timestamp":"2025-10-07T14:01:09.489+0800","caller":"logger/logger.go:88","msg":"Shutting down server..."}
+{"level":"info","timestamp":"2025-10-07T14:01:09.492+0800","caller":"logger/logger.go:88","msg":"Server stopped gracefully"}
+{"level":"info","timestamp":"2025-10-07T14:01:47.592+0800","caller":"logger/logger.go:88","msg":"Starting user service","version":"1.0.0"}
+{"level":"info","timestamp":"2025-10-07T14:01:47.610+0800","caller":"logger/logger.go:88","msg":"Database connected successfully"}
+{"level":"info","timestamp":"2025-10-07T14:01:47.610+0800","caller":"logger/logger.go:88","msg":"Database models initialized successfully"}
+{"level":"info","timestamp":"2025-10-07T14:01:47.610+0800","caller":"logger/logger.go:88","msg":"Redis connected successfully"}
+{"level":"info","timestamp":"2025-10-07T14:01:47.619+0800","caller":"logger/logger.go:88","msg":"User service registered"}
+{"level":"info","timestamp":"2025-10-07T14:01:47.620+0800","caller":"logger/logger.go:88","msg":"gRPC server starting","address":"0.0.0.0:50051"}
+{"level":"info","timestamp":"2025-10-07T14:01:47.669+0800","caller":"logger/logger.go:88","msg":"Service registered to etcd","address":"0.0.0.0:50051"}
+{"level":"info","timestamp":"2025-10-07T14:01:50.883+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/rpc.user.UserService/GetUserInfo","request":"user_id:3"}
+{"level":"info","timestamp":"2025-10-07T14:01:50.883+0800","caller":"logger/logger.go:88","msg":"GetUserInfo called","user_id":3}
+{"level":"info","timestamp":"2025-10-07T14:01:50.883+0800","caller":"logger/logger.go:88","msg":"GetUserInfo service called","userID":3}
+{"level":"info","timestamp":"2025-10-07T14:01:50.890+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/rpc.user.UserService/GetUserInfo","duration":0.007139604}
+{"level":"info","timestamp":"2025-10-07T14:05:15.895+0800","caller":"logger/logger.go:88","msg":"Shutting down server..."}
+{"level":"info","timestamp":"2025-10-07T14:05:15.896+0800","caller":"logger/logger.go:88","msg":"Server stopped gracefully"}

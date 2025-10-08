@@ -1,0 +1,136 @@
+# live-service配置文件
+server:
+  host: 0.0.0.0
+  port: 50055      # gRPC端口
+  mode: debug
+  enable_http: true  # 是否启用HTTP服务
+
+database:
+  host: localhost
+  port: 3306
+  username: root
+  password: "901project"
+  database: videoworld
+  charset: utf8mb4
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+
+logger:
+  level: info
+  format: json
+  output_path: logs/live-service.log
+
+consul:
+  host: localhost
+  port: 8500
+  health_check:
+    interval: 10s
+    timeout: 5s
+
+etcd:
+  endpoints:
+    - localhost:2379
+  dial_timeout: 5
+  username: ""
+  password: ""
+
+# 直播服务特定配置
+live:
+  # RTMP配置
+  rtmp:
+    host: 0.0.0.0
+    port: 1935
+    chunk_size: 4096
+    idle_timeout: 30s
+  
+  # WebRTC配置
+  webrtc:
+    enabled: true
+    stun_servers:
+      - "stun:stun.l.google.com:19302"
+    turn_servers:
+      - url: "turn:turnserver.com:3478"
+        username: "user"
+        password: "pass"
+  
+  # 直播流配置
+  stream:
+    max_bitrate: 5000000  # 5Mbps
+    max_resolution: "1080p"
+    keyframe_interval: 2  # 秒
+    buffer_size: 1048576  # 1MB (1024 * 1024)
+  
+  # 录制配置
+  recording:
+    enabled: true
+    storage_path: "/data/recordings"
+    format: "mp4"
+    segment_duration: 3600  # 1小时
+    max_file_size: 1073741824  # 1GB
+  
+  # 转码配置
+  transcoding:
+    enabled: true
+    profiles:
+      - name: "240p"
+        resolution: "426x240"
+        bitrate: 400000
+        framerate: 30
+      - name: "480p"
+        resolution: "854x480"
+        bitrate: 800000
+        framerate: 30
+      - name: "720p"
+        resolution: "1280x720"
+        bitrate: 2000000
+        framerate: 30
+      - name: "1080p"
+        resolution: "1920x1080"
+        bitrate: 4000000
+        framerate: 30
+  
+  # 直播限制配置
+  limits:
+    max_concurrent_streams: 1000
+    max_viewers_per_stream: 10000
+    max_stream_duration: 86400  # 24小时
+    ban_duration: 604800  # 7天
+  
+  # CDN配置
+cdn:
+  enabled: true
+  base_url: "https://cdn.example.com"
+  regions:
+    - "us-east-1"
+    - "us-west-2"
+    - "eu-west-1"
+    - "ap-southeast-1"
+
+# JWT配置
+jwt:
+  secret: "live-service-jwt-secret-key-2024"
+  refresh_secret: "live-service-refresh-secret-key-2024"
+  token_expiration: 24h
+  refresh_expiration: 168h  # 7天
+
+# 短信服务配置（如果需要）
+sms:
+  access_key: "your-access-key"
+  secret_key: "your-secret-key"
+  sign_name: "VideoWorld"
+  template_code: "SMS_123456789"
+
+# 服务间调用配置
+services:
+  audit_service:
+    name: "audit-service"
+    address: "localhost:50053"  # audit_service的gRPC地址
+    timeout: 5  # 调用超时时间（秒）

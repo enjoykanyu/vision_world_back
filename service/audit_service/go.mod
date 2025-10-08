@@ -1,4 +1,4 @@
-module github.com/visionworld/service/audit_service
+module audit_service
 
 go 1.25.0
 

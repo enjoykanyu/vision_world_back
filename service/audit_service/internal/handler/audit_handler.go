@@ -34,6 +34,7 @@ func NewAuditServiceHandler(service service.AuditService, logger logger.Logger) 
 
 // SubmitContent submits content for audit
 func (h *AuditServiceHandler) SubmitContent(ctx context.Context, req *auditv1.SubmitContentRequest) (*auditv1.SubmitContentResponse, error) {
+	fmt.Println("进入了audit服务")
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request cannot be nil")
 	}
