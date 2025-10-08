@@ -13,13 +13,19 @@ import (
 
 // NewMySQLConnection 创建MySQL数据库连接
 func NewMySQLConnection(cfg config.DatabaseConfig) (*gorm.DB, error) {
+	// 设置默认字符集
+	charset := cfg.Charset
+	if charset == "" {
+		charset = "utf8mb4"
+	}
+
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
 		cfg.Username,
 		cfg.Password,
 		cfg.Host,
 		cfg.Port,
 		cfg.Database,
-		cfg.Charset,
+		charset,
 	)
 
 	// 配置GORM

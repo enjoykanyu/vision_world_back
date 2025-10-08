@@ -25,6 +25,10 @@ type AuditService interface {
 	AssignManualReview(ctx context.Context, req *AssignManualReviewRequest) (*AssignManualReviewResponse, error)
 	CompleteManualReview(ctx context.Context, req *CompleteManualReviewRequest) (*CompleteManualReviewResponse, error)
 
+	// 审核记录管理
+	ListAuditRecords(ctx context.Context, req *ListAuditRecordsRequest) (*ListAuditRecordsResponse, error)
+	GetManualReviewQueue(ctx context.Context, req *GetManualReviewQueueRequest) (*GetManualReviewQueueResponse, error)
+
 	// 模板管理
 	CreateTemplate(ctx context.Context, req *CreateTemplateRequest) (*CreateTemplateResponse, error)
 	UpdateTemplate(ctx context.Context, req *UpdateTemplateRequest) (*UpdateTemplateResponse, error)
@@ -315,39 +319,29 @@ func (s *auditService) CompleteManualReview(ctx context.Context, req *CompleteMa
 // CreateTemplate 创建审核模板
 func (s *auditService) CreateTemplate(ctx context.Context, req *CreateTemplateRequest) (*CreateTemplateResponse, error) {
 	s.logger.Info("Creating audit template", "name", req.Name, "content_type", req.ContentType)
-	
-	// 转换UploaderID从string到uint64
-	var uploaderID uint64
-	if req.UploaderID != "" {
-		_, err := fmt.Sscanf(req.UploaderID, "%d", &uploaderID)
-		if err != nil {
-			return nil, fmt.Errorf("invalid uploader ID format: %w", err)
-		}
-	}
-	
+
 	template := &model.AuditTemplate{
-		Name:        req.Name,
-		Description: req.Description,
-		ContentType: model.ContentType(req.ContentType),
-		Level:       model.AuditLevel(req.Level),
-		Rules:       req.Rules,
-		Keywords:    req.Keywords,
-		Violations:  req.Violations,
-		Sensitivity: req.Sensitivity,
+		Name:             req.Name,
+		Description:      req.Description,
+		ContentType:      model.ContentType(req.ContentType),
+		Level:            model.AuditLevel(req.Level),
+		Rules:            req.Rules,
+		Keywords:         req.Keywords,
+		Violations:       req.Violations,
+		Sensitivity:      req.Sensitivity,
 		ThirdPartyConfig: req.ThirdPartyConfig,
-		IsActive:    true,
-		CreatedBy:   req.CreatedBy,
-		UpdatedBy:   req.CreatedBy,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		UploaderID:  uploaderID,
+		IsActive:         true,
+		CreatedBy:        req.CreatedBy,
+		UpdatedBy:        req.CreatedBy,
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
 	}
-	
+
 	templateID, err := s.repository.CreateTemplate(ctx, template)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create template: %w", err)
 	}
-	
+
 	return &CreateTemplateResponse{
 		TemplateID: templateID,
 		Message:    "Template created successfully",
@@ -434,21 +428,29 @@ func (s *auditService) ListTemplates(ctx context.Context, req *ListTemplatesRequ
 
 	// 转换为service层的响应类型
 	result := &ListTemplatesResponse{
-		Success: true,
-		Message: "Templates retrieved successfully",
-		Total:   templates.Total,
+		Total:    templates.Total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
 	}
 
 	// 转换模板列表
 	for _, template := range templates.Templates {
 		result.Templates = append(result.Templates, &Template{
-			ID:          template.ID,
-			Name:        template.Name,
-			Description: template.Description,
-			Category:    template.Category,
-			Rules:       template.Rules,
-			CreatedAt:   template.CreatedAt,
-			UpdatedAt:   template.UpdatedAt,
+			ID:               template.ID,
+			Name:             template.Name,
+			Description:      template.Description,
+			ContentType:      string(template.ContentType),
+			Level:            string(template.Level),
+			Rules:            template.Rules,
+			Keywords:         template.Keywords,
+			Violations:       template.Violations,
+			Sensitivity:      template.Sensitivity,
+			ThirdPartyConfig: template.ThirdPartyConfig,
+			IsActive:         template.IsActive,
+			CreatedBy:        template.CreatedBy,
+			UpdatedBy:        template.UpdatedBy,
+			CreatedAt:        template.CreatedAt,
+			UpdatedAt:        template.UpdatedAt,
 		})
 	}
 
@@ -459,10 +461,16 @@ func (s *auditService) ListTemplates(ctx context.Context, req *ListTemplatesRequ
 func (s *auditService) AddToWhitelist(ctx context.Context, req *AddToWhitelistRequest) (*AddToWhitelistResponse, error) {
 	s.logger.Info("Adding to whitelist", "content_id", req.ContentID, "content_type", req.ContentType)
 
+	// Convert string UploaderID to uint64
+	var uploaderID uint64
+	if req.UploaderID != "" {
+		fmt.Sscanf(req.UploaderID, "%d", &uploaderID)
+	}
+
 	whitelist := &model.AuditWhitelist{
 		ContentID:   req.ContentID,
 		ContentType: model.ContentType(req.ContentType),
-		UploaderID:  req.UploaderID,
+		UploaderID:  uploaderID,
 		Reason:      req.Reason,
 		IsPermanent: req.IsPermanent,
 		CreatedAt:   time.Now(),
@@ -502,10 +510,16 @@ func (s *auditService) RemoveFromWhitelist(ctx context.Context, contentID string
 func (s *auditService) AddToBlacklist(ctx context.Context, req *AddToBlacklistRequest) (*AddToBlacklistResponse, error) {
 	s.logger.Info("Adding to blacklist", "content_id", req.ContentID, "content_type", req.ContentType)
 
+	// Convert string UploaderID to uint64
+	var uploaderID uint64
+	if req.UploaderID != "" {
+		fmt.Sscanf(req.UploaderID, "%d", &uploaderID)
+	}
+
 	blacklist := &model.AuditBlacklist{
 		ContentID:   req.ContentID,
 		ContentType: model.ContentType(req.ContentType),
-		UploaderID:  req.UploaderID,
+		UploaderID:  uploaderID,
 		Reason:      req.Reason,
 		Violations:  req.Violations,
 		IsPermanent: req.IsPermanent,
@@ -546,52 +560,203 @@ func (s *auditService) RemoveFromBlacklist(ctx context.Context, contentID string
 func (s *auditService) GetAuditStatistics(ctx context.Context, req *GetAuditStatisticsRequest) (*GetAuditStatisticsResponse, error) {
 	s.logger.Info("Getting audit statistics", "start_date", req.StartDate, "end_date", req.EndDate)
 
+	// 转换为repository层的请求类型
+	repoReq := &repository.GetAuditStatisticsRequest{
+		StartDate: req.StartDate,
+		EndDate:   req.EndDate,
+	}
+
 	// 调用repository获取统计数据
-	stats, err := s.repository.GetAuditStatistics(ctx, req)
+	stats, err := s.repository.GetAuditStatistics(ctx, repoReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get audit statistics: %w", err)
 	}
 
-	return stats, nil
+	// 转换为service层的响应类型
+	result := &GetAuditStatisticsResponse{
+		TotalAudited:  stats.TotalCount,
+		AutoPassed:    0, // 从StatusStats中计算
+		AutoBlocked:   0, // 从StatusStats中计算
+		ManualPassed:  0, // 从StatusStats中计算
+		ManualBlocked: 0, // 从StatusStats中计算
+	}
+
+	// 转换状态统计
+	for _, stat := range stats.StatusStats {
+		result.StatusCounts = append(result.StatusCounts, StatusCount{
+			Status: stat.Status,
+			Count:  stat.Count,
+		})
+
+		// 计算各状态数量
+		switch stat.Status {
+		case string(model.AuditStatusApproved):
+			result.AutoPassed += stat.Count // 假设所有Approved都是自动通过的
+		case string(model.AuditStatusRejected):
+			result.AutoBlocked += stat.Count // 假设所有Rejected都是自动阻止的
+		}
+	}
+
+	// 转换级别统计
+	for _, stat := range stats.LevelStats {
+		result.LevelCounts = append(result.LevelCounts, LevelCount{
+			Level: stat.Level,
+			Count: stat.Count,
+		})
+	}
+
+	// 转换类型统计
+	for _, stat := range stats.TypeStats {
+		result.TypeCounts = append(result.TypeCounts, TypeCount{
+			Type:  stat.ContentType,
+			Count: stat.Count,
+		})
+	}
+
+	return result, nil
 }
 
 // GetViolationTrends 获取违规趋势
 func (s *auditService) GetViolationTrends(ctx context.Context, req *GetViolationTrendsRequest) (*GetViolationTrendsResponse, error) {
 	s.logger.Info("Getting violation trends", "start_date", req.StartDate, "end_date", req.EndDate)
 
+	// 转换为repository层的请求类型
+	repoReq := &repository.GetViolationTrendsRequest{
+		StartDate: req.StartDate,
+		EndDate:   req.EndDate,
+	}
+
 	// 调用repository获取趋势数据
-	trends, err := s.repository.GetViolationTrends(ctx, req)
+	trends, err := s.repository.GetViolationTrends(ctx, repoReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get violation trends: %w", err)
 	}
 
-	return trends, nil
+	// 转换为service层的响应类型
+	result := &GetViolationTrendsResponse{}
+
+	// 转换趋势数据点
+	for _, trend := range trends.Trends {
+		result.Trends = append(result.Trends, ViolationTrend{
+			Date:      trend.Date,
+			Violation: trend.Count,
+		})
+	}
+
+	return result, nil
 }
 
 // ListAuditRecords 获取审核记录列表
 func (s *auditService) ListAuditRecords(ctx context.Context, req *ListAuditRecordsRequest) (*ListAuditRecordsResponse, error) {
 	s.logger.Info("Listing audit records", "content_type", req.ContentType, "page", req.Page)
 
+	// 转换为repository层的请求类型
+	repoReq := &repository.ListAuditRecordsRequest{
+		ContentType: req.ContentType,
+		Status:      req.Status,
+		Level:       req.Level,
+		StartDate:   req.StartDate,
+		EndDate:     req.EndDate,
+		Page:        req.Page,
+		PageSize:    req.PageSize,
+	}
+
 	// 调用repository获取审核记录列表
-	records, err := s.repository.ListAuditRecords(ctx, req)
+	records, err := s.repository.ListAuditRecords(ctx, repoReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list audit records: %w", err)
 	}
 
-	return records, nil
+	// 转换为service层的响应类型
+	result := &ListAuditRecordsResponse{
+		Total:    records.Total,
+		Page:     records.Page,
+		PageSize: records.PageSize,
+	}
+
+	// 转换审核记录
+	for _, record := range records.Records {
+		result.Records = append(result.Records, &AuditRecord{
+			ID:              record.ID,
+			ContentID:       record.ContentID,
+			ContentType:     string(record.ContentType),
+			ContentTitle:    record.ContentTitle,
+			ContentURL:      record.ContentURL,
+			ContentMetadata: record.ContentMetadata,
+			UploaderID:      fmt.Sprintf("%d", record.UploaderID), // 转换为字符串
+			UploaderName:    record.UploaderName,
+			Status:          string(record.Status),
+			Level:           string(record.Level),
+			Score:           record.Score,
+			Reason:          record.Reason,
+			Details:         record.Details,
+			Violations:      record.Violations,
+			AIResult:        record.AIResult,
+			AIConfidence:    record.AIConfidence,
+			ReviewerID:      record.ReviewerID,
+			ReviewerName:    record.ReviewerName,
+			ReviewTime:      record.ReviewTime,
+			CreatedAt:       record.CreatedAt,
+			UpdatedAt:       record.UpdatedAt,
+		})
+	}
+
+	return result, nil
 }
 
 // GetManualReviewQueue 获取人工审核队列
 func (s *auditService) GetManualReviewQueue(ctx context.Context, req *GetManualReviewQueueRequest) (*GetManualReviewQueueResponse, error) {
 	s.logger.Info("Getting manual review queue", "content_type", req.ContentType, "page", req.Page)
 
+	// 转换为repository层的请求类型
+	repoReq := &repository.GetManualReviewQueueRequest{
+		ContentType: req.ContentType,
+		Level:       req.Level,
+		Page:        req.Page,
+		PageSize:    req.PageSize,
+	}
+
 	// 调用repository获取人工审核队列
-	queue, err := s.repository.GetManualReviewQueue(ctx, req)
+	queue, err := s.repository.GetManualReviewQueue(ctx, repoReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get manual review queue: %w", err)
 	}
 
-	return queue, nil
+	// 转换为service层的响应类型
+	result := &GetManualReviewQueueResponse{
+		Total:    queue.Total,
+		Page:     queue.Page,
+		PageSize: queue.PageSize,
+	}
+
+	// 转换审核记录
+	for _, record := range queue.Records {
+		result.Queue = append(result.Queue, &AuditRecord{
+			ID:              record.ID,
+			ContentID:       record.ContentID,
+			ContentType:     string(record.ContentType),
+			ContentTitle:    record.ContentTitle,
+			ContentURL:      record.ContentURL,
+			ContentMetadata: record.ContentMetadata,
+			UploaderID:      fmt.Sprintf("%d", record.UploaderID), // 转换为字符串
+			UploaderName:    record.UploaderName,
+			Status:          string(record.Status),
+			Level:           string(record.Level),
+			Score:           record.Score,
+			Reason:          record.Reason,
+			Details:         record.Details,
+			Violations:      record.Violations,
+			AIResult:        record.AIResult,
+			AIConfidence:    record.AIConfidence,
+			ReviewerID:      record.ReviewerID,
+			ReviewerName:    record.ReviewerName,
+			ReviewTime:      record.ReviewTime,
+			CreatedAt:       record.CreatedAt,
+			UpdatedAt:       record.UpdatedAt,
+		})
+	}
+
+	return result, nil
 }
 
 // determineAuditLevel 确定审核级别

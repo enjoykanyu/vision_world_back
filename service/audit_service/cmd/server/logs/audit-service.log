@@ -1,0 +1,13 @@
+{"level":"info","ts":1759912893.4409049,"caller":"logger/logger.go:85","msg":"Starting audit service","version":"1.0.0"}
+{"level":"info","ts":1759912952.323709,"caller":"logger/logger.go:85","msg":"Starting audit service","version":"1.0.0"}
+{"level":"info","ts":1759912952.345118,"caller":"logger/logger.go:85","msg":"Database connected successfully"}
+{"level":"info","ts":1759912952.3451781,"caller":"logger/logger.go:85","msg":"Database models initialized successfully"}
+{"level":"info","ts":1759912952.377839,"caller":"logger/logger.go:85","msg":"Redis connected successfully"}
+{"level":"info","ts":1759912952.378718,"caller":"logger/logger.go:85","msg":"Audit service registered"}
+{"level":"info","ts":1759912973.620008,"caller":"logger/logger.go:85","msg":"Starting audit service","version":"1.0.0"}
+{"level":"info","ts":1759912973.6312242,"caller":"logger/logger.go:85","msg":"Database connected successfully"}
+{"level":"info","ts":1759912973.631285,"caller":"logger/logger.go:85","msg":"Database models initialized successfully"}
+{"level":"info","ts":1759912973.633069,"caller":"logger/logger.go:85","msg":"Redis connected successfully"}
+{"level":"info","ts":1759912973.634067,"caller":"logger/logger.go:85","msg":"Audit service registered"}
+{"level":"info","ts":1759912973.634294,"caller":"logger/logger.go:85","msg":"gRPC server starting","address":"0.0.0.0:50053"}
+{"level":"info","ts":1759912974.189284,"caller":"logger/logger.go:85","msg":"Service registered to etcd","address":"0.0.0.0:50053"}
