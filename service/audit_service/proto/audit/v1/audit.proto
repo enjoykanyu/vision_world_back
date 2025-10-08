@@ -1,0 +1,294 @@
+syntax = "proto3";
+
+package audit.v1;
+
+option go_package = "github.com/vision_world/audit_service/proto/audit/v1;auditv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// 审核服务
+service AuditService {
+  // 提交内容审核
+  rpc SubmitContent (SubmitContentRequest) returns (SubmitContentResponse);
+  
+  // 获取审核结果
+  rpc GetAuditResult (GetAuditResultRequest) returns (GetAuditResultResponse);
+  
+  // 更新审核状态
+  rpc UpdateAuditStatus (UpdateAuditStatusRequest) returns (UpdateAuditStatusResponse);
+  
+  // 获取审核记录列表
+  rpc ListAuditRecords (ListAuditRecordsRequest) returns (ListAuditRecordsResponse);
+  
+  // 添加到白名单
+  rpc AddToWhitelist (AddToWhitelistRequest) returns (AddToWhitelistResponse);
+  
+  // 从白名单移除
+  rpc RemoveFromWhitelist (RemoveFromWhitelistRequest) returns (RemoveFromWhitelistResponse);
+  
+  // 添加到黑名单
+  rpc AddToBlacklist (AddToBlacklistRequest) returns (AddToBlacklistResponse);
+  
+  // 从黑名单移除
+  rpc RemoveFromBlacklist (RemoveFromBlacklistRequest) returns (RemoveFromBlacklistResponse);
+  
+  // 获取人工审核队列
+  rpc GetManualReviewQueue (GetManualReviewQueueRequest) returns (GetManualReviewQueueResponse);
+  
+  // 分配人工审核
+  rpc AssignManualReview (AssignManualReviewRequest) returns (AssignManualReviewResponse);
+  
+  // 获取审核统计
+  rpc GetAuditStatistics (GetAuditStatisticsRequest) returns (GetAuditStatisticsResponse);
+  
+  // 获取违规趋势
+  rpc GetViolationTrends (GetViolationTrendsRequest) returns (GetViolationTrendsResponse);
+}
+
+// 内容类型
+enum ContentType {
+  CONTENT_TYPE_UNSPECIFIED = 0;
+  CONTENT_TYPE_TEXT = 1;        // 文本
+  CONTENT_TYPE_IMAGE = 2;       // 图片
+  CONTENT_TYPE_VIDEO = 3;       // 视频
+  CONTENT_TYPE_AUDIO = 4;       // 音频
+  CONTENT_TYPE_DOCUMENT = 5;    // 文档
+  CONTENT_TYPE_LIVE = 6;        // 直播
+  CONTENT_TYPE_COMMENT = 7;     // 评论
+  CONTENT_TYPE_PROFILE = 8;     // 个人资料
+}
+
+// 审核状态
+enum AuditStatus {
+  AUDIT_STATUS_UNSPECIFIED = 0;
+  AUDIT_STATUS_PENDING = 1;          // 待审核
+  AUDIT_STATUS_UNDER_REVIEW = 2;     // 审核中
+  AUDIT_STATUS_PENDING_MANUAL = 3;   // 待人工审核
+  AUDIT_STATUS_PASSED = 4;           // 通过
+  AUDIT_STATUS_REJECTED = 5;         // 拒绝
+  AUDIT_STATUS_EXPIRED = 6;          // 过期
+}
+
+// 违规等级
+enum AuditLevel {
+  AUDIT_LEVEL_UNSPECIFIED = 0;
+  AUDIT_LEVEL_LOW = 1;        // 低风险
+  AUDIT_LEVEL_MEDIUM = 2;     // 中风险
+  AUDIT_LEVEL_HIGH = 3;       // 高风险
+  AUDIT_LEVEL_CRITICAL = 4;   // 严重风险
+}
+
+// 提交内容审核请求
+message SubmitContentRequest {
+  string content_id = 1;                    // 内容ID
+  ContentType content_type = 2;             // 内容类型
+  string content = 3;                       // 内容
+  uint64 uploader_id = 4;                   // 上传者ID
+  map<string, string> metadata = 5;         // 元数据
+}
+
+// 提交内容审核响应
+message SubmitContentResponse {
+  uint64 audit_id = 1;                      // 审核ID
+  AuditStatus status = 2;                   // 审核状态
+  string reason = 3;                        // 审核原因
+  AuditLevel level = 4;                     // 违规等级
+  google.protobuf.Timestamp created_at = 5; // 创建时间
+}
+
+// 获取审核结果请求
+message GetAuditResultRequest {
+  uint64 audit_id = 1;                      // 审核ID
+}
+
+// 获取审核结果响应
+message GetAuditResultResponse {
+  uint64 audit_id = 1;                      // 审核ID
+  string content_id = 2;                    // 内容ID
+  ContentType content_type = 3;             // 内容类型
+  AuditStatus status = 4;                  // 审核状态
+  string reason = 5;                        // 审核原因
+  AuditLevel level = 6;                   // 违规等级
+  uint64 reviewer_id = 7;                   // 审核员ID
+  google.protobuf.Timestamp reviewed_at = 8; // 审核时间
+  google.protobuf.Timestamp created_at = 9; // 创建时间
+}
+
+// 更新审核状态请求
+message UpdateAuditStatusRequest {
+  uint64 audit_id = 1;                      // 审核ID
+  AuditStatus status = 2;                   // 审核状态
+  uint64 reviewer_id = 3;                   // 审核员ID
+  string reason = 4;                        // 审核原因
+}
+
+// 更新审核状态响应
+message UpdateAuditStatusResponse {
+  bool success = 1;                         // 是否成功
+  string message = 2;                       // 消息
+}
+
+// 获取审核记录列表请求
+message ListAuditRecordsRequest {
+  ContentType content_type = 1;             // 内容类型
+  AuditStatus status = 2;                   // 审核状态
+  AuditLevel level = 3;                     // 违规等级
+  uint64 uploader_id = 4;                   // 上传者ID
+  uint64 reviewer_id = 5;                   // 审核员ID
+  string start_date = 6;                    // 开始日期
+  string end_date = 7;                      // 结束日期
+  int32 page = 8;                           // 页码
+  int32 page_size = 9;                      // 每页数量
+}
+
+// 审核记录
+message AuditRecord {
+  uint64 audit_id = 1;                      // 审核ID
+  string content_id = 2;                    // 内容ID
+  ContentType content_type = 3;             // 内容类型
+  AuditStatus status = 4;                   // 审核状态
+  string reason = 5;                        // 审核原因
+  AuditLevel level = 6;                   // 违规等级
+  uint64 uploader_id = 7;                   // 上传者ID
+  uint64 reviewer_id = 8;                   // 审核员ID
+  google.protobuf.Timestamp created_at = 9; // 创建时间
+  google.protobuf.Timestamp reviewed_at = 10; // 审核时间
+}
+
+// 获取审核记录列表响应
+message ListAuditRecordsResponse {
+  int64 total = 1;                          // 总数
+  int32 page = 2;                           // 当前页
+  int32 page_size = 3;                    // 每页数量
+  repeated AuditRecord records = 4;         // 审核记录列表
+}
+
+// 添加到白名单请求
+message AddToWhitelistRequest {
+  string content_id = 1;                    // 内容ID
+  ContentType content_type = 2;             // 内容类型
+  string reason = 3;                        // 原因
+  uint64 created_by = 4;                    // 创建者ID
+}
+
+// 添加到白名单响应
+message AddToWhitelistResponse {
+  bool success = 1;                           // 是否成功
+  string message = 2;                       // 消息
+}
+
+// 从白名单移除请求
+message RemoveFromWhitelistRequest {
+  string content_id = 1;                    // 内容ID
+}
+
+// 从白名单移除响应
+message RemoveFromWhitelistResponse {
+  bool success = 1;                           // 是否成功
+  string message = 2;                       // 消息
+}
+
+// 添加到黑名单请求
+message AddToBlacklistRequest {
+  string content_id = 1;                    // 内容ID
+  ContentType content_type = 2;             // 内容类型
+  string reason = 3;                        // 原因
+  uint64 created_by = 4;                    // 创建者ID
+}
+
+// 添加到黑名单响应
+message AddToBlacklistResponse {
+  bool success = 1;                           // 是否成功
+  string message = 2;                       // 消息
+}
+
+// 从黑名单移除请求
+message RemoveFromBlacklistRequest {
+  string content_id = 1;                    // 内容ID
+}
+
+// 从黑名单移除响应
+message RemoveFromBlacklistResponse {
+  bool success = 1;                           // 是否成功
+  string message = 2;                       // 消息
+}
+
+// 获取人工审核队列请求
+message GetManualReviewQueueRequest {
+  ContentType content_type = 1;             // 内容类型
+  AuditLevel level = 2;                     // 违规等级
+  int32 priority = 3;                       // 优先级
+  int32 page = 4;                           // 页码
+  int32 page_size = 5;                    // 每页数量
+}
+
+// 获取人工审核队列响应
+message GetManualReviewQueueResponse {
+  int64 total = 1;                          // 总数
+  int32 page = 2;                           // 当前页
+  int32 page_size = 3;                    // 每页数量
+  repeated AuditRecord records = 4;         // 审核记录列表
+}
+
+// 分配人工审核请求
+message AssignManualReviewRequest {
+  uint64 audit_id = 1;                      // 审核ID
+  uint64 reviewer_id = 2;                   // 审核员ID
+}
+
+// 分配人工审核响应
+message AssignManualReviewResponse {
+  bool success = 1;                           // 是否成功
+  string message = 2;                       // 消息
+}
+
+// 按状态统计
+message StatusCount {
+  AuditStatus status = 1;                   // 审核状态
+  int64 count = 2;                          // 数量
+}
+
+// 按违规等级统计
+message LevelCount {
+  AuditLevel level = 1;                     // 违规等级
+  int64 count = 2;                          // 数量
+}
+
+// 按内容类型统计
+message TypeCount {
+  ContentType content_type = 1;             // 内容类型
+  int64 count = 2;                          // 数量
+}
+
+// 获取审核统计请求
+message GetAuditStatisticsRequest {
+  string start_date = 1;                    // 开始日期
+  string end_date = 2;                      // 结束日期
+}
+
+// 获取审核统计响应
+message GetAuditStatisticsResponse {
+  int64 total_count = 1;                    // 总审核数
+  double pass_rate = 2;                     // 通过率
+  repeated StatusCount status_stats = 3;    // 按状态统计
+  repeated LevelCount level_stats = 4;      // 按违规等级统计
+  repeated TypeCount type_stats = 5;      // 按内容类型统计
+}
+
+// 违规趋势
+message ViolationTrend {
+  string date = 1;                          // 日期
+  int64 count = 2;                          // 数量
+}
+
+// 获取违规趋势请求
+message GetViolationTrendsRequest {
+  string start_date = 1;                    // 开始日期
+  string end_date = 2;                      // 结束日期
+}
+
+// 获取违规趋势响应
+message GetViolationTrendsResponse {
+  repeated ViolationTrend trends = 1;       // 违规趋势
+}

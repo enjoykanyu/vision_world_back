@@ -1,0 +1,84 @@
+# audit-service配置文件
+server:
+  host: 0.0.0.0
+  port: 50052
+  mode: debug
+
+database:
+  host: localhost
+  port: 3306
+  username: root
+  password: "901project"
+  database: videoworld
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+
+logger:
+  level: info
+  format: json
+  output_path: logs/audit-service.log
+
+consul:
+  host: localhost
+  port: 8500
+  health_check:
+    interval: 10s
+    timeout: 5s
+
+etcd:
+  endpoints:
+    - localhost:2379
+  dial_timeout: 5
+  username: ""
+  password: ""
+
+jwt:
+  secret: "your-secret-key-here"
+  token_expiration: 24h
+  refresh_expiration: 168h
+
+# 审核服务特定配置
+audit:
+  # 审核策略配置
+  strategies:
+    content:
+      enabled: true
+      sensitivity_level: medium  # low, medium, high
+      auto_block_threshold: 0.8
+    image:
+      enabled: true
+      allow_ai_review: true
+      manual_review_threshold: 0.7
+    video:
+      enabled: true
+      frame_sample_rate: 1  # 每秒采样帧数
+      ai_review_timeout: 30s
+  
+  # 第三方审核服务配置
+  third_party:
+    text_review_api: ""
+    image_review_api: ""
+    video_review_api: ""
+    api_key: ""
+    secret_key: ""
+  
+  # 审核队列配置
+  queue:
+    max_retry_count: 3
+    retry_interval: 60s
+    batch_size: 100
+    worker_count: 5
+  
+  # 审核结果通知配置
+  notification:
+    webhook_url: ""
+    email_enabled: true
+    email_recipients: []
