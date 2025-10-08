@@ -1,8 +1,8 @@
 package converter
 
 import (
-	"vision_world_back/service/live_service/internal/model"
-	livepb "vision_world_back/service/live_service/proto/proto_gen"
+	"live_service/internal/model"
+	livepb "live_service/proto/proto_gen"
 )
 
 // LiveStreamToProto 直播流转Proto

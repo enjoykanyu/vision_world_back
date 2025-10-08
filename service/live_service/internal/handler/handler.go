@@ -13,6 +13,7 @@ import (
 	"live_service/internal/service"
 	"live_service/pkg/logger"
 	proto_gen "live_service/proto/proto_gen"
+	auditv1 "live_service/proto/proto_gen/audit"
 )
 
 // LiveServiceHandler 直播服务处理器
@@ -22,6 +23,7 @@ type LiveServiceHandler struct {
 	liveService  service.LiveService
 	auditManager interface { // 使用接口定义，降低耦合
 		SubmitContent(ctx context.Context, req interface{}) (interface{}, error)
+		GetAuditResult(ctx context.Context, req *pb.GetAuditResultRequest) (*pb.GetAuditResultResponse, error)
 		Close() error
 	}
 	proto_gen.UnimplementedLiveServiceServer
@@ -39,6 +41,16 @@ func NewLiveServiceHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, r
 	}
 }
 
+// SetAuditManager 设置审计管理器
+func (h *LiveServiceHandler) SetAuditManager(manager interface {
+	SubmitContent(ctx context.Context, req interface{}) (interface{}, error)
+	GetAuditResult(ctx context.Context, req *pb.GetAuditResultRequest) (*pb.GetAuditResultResponse, error)
+	Close() error
+}) {
+	h.auditManager = manager
+	h.logger.Info("Audit manager set successfully")
+}
+
 // StartLive 开始直播
 func (h *LiveServiceHandler) StartLive(ctx context.Context, req *proto_gen.StartLiveRequest) (*proto_gen.StartLiveResponse, error) {
 	h.logger.Info("StartLive called", "user_id", req.UserId, "title", req.Title)
@@ -49,45 +61,70 @@ func (h *LiveServiceHandler) StartLive(ctx context.Context, req *proto_gen.Start
 	// 如果有审核服务客户端管理器，调用审核服务进行直播间审核
 	if h.auditManager != nil {
 		// 创建审核请求 - 使用pb_gen生成的类型
-		auditReq := &pb.SubmitContentRequest{
+		auditReq := &auditv1.SubmitContentRequest{
 			ContentId:   fmt.Sprintf("live_%s", streamID),
-			ContentType: pb.ContentType_CONTENT_TYPE_LIVE, // 使用pb_gen定义的常量
+			ContentType: auditv1.ContentType_CONTENT_TYPE_LIVE, // 使用pb_gen定义的常量
 			UploaderId:  req.UserId,
-			Title:       req.Title,
 			Content:     req.Description,
-			CreateTime:  time.Now().Format(time.RFC3339),
+			Metadata: map[string]string{
+				"title":       req.Title,
+				"create_time": time.Now().Format(time.RFC3339),
+			},
 		}
 
 		// 调用审核服务
 		resp, err := h.auditManager.SubmitContent(ctx, auditReq)
 		if err != nil {
-			h.logger.Error("Failed to submit live content for audit", "error", err)
+			h.logger.Error("Failed to submit live content for audit", "error", err, "content_id", auditReq.ContentId)
 			// 审核服务调用失败，仍然允许直播开始，但记录日志
+			// 这里可以根据业务需求决定是否阻止直播开始
 		} else {
-			// 类型断言转换为pb.SubmitContentResponse
-			auditResp, ok := resp.(*pb.SubmitContentResponse)
+			// 类型断言转换为auditv1.SubmitContentResponse
+			auditResp, ok := resp.(*auditv1.SubmitContentResponse)
 			if !ok {
-				h.logger.Error("Failed to cast audit response to pb.SubmitContentResponse")
+				h.logger.Error("Failed to cast audit response to auditv1.SubmitContentResponse", "content_id", auditReq.ContentId)
 				// 类型转换失败仍允许直播继续
 			} else {
-				if auditResp.Status == pb.AuditStatus_AUDIT_STATUS_REJECTED { // 使用pb_gen定义的常量
-					h.logger.Info("Live content rejected by audit",
+				h.logger.Info("Audit response received",
+					"content_id", auditReq.ContentId,
+					"audit_id", auditResp.AuditId,
+					"status", auditResp.Status,
+					"level", auditResp.Level)
+
+				if auditResp.Status == auditv1.AuditStatus_AUDIT_STATUS_REJECTED { // 使用pb_gen定义的常量
+					h.logger.Warn("Live content rejected by audit",
 						"content_id", auditReq.ContentId,
-						"status", auditResp.Status)
+						"status", auditResp.Status,
+						"reason", auditResp.Reason,
+						"level", auditResp.Level)
 					return &proto_gen.StartLiveResponse{
 						Code:      403,
-						Message:   "直播内容违规，无法开始直播",
+						Message:   fmt.Sprintf("直播内容违规，无法开始直播: %s", auditResp.Reason),
 						RequestId: req.RequestId,
 						Stream:    nil,
 						StreamUrl: "",
 						StreamKey: "",
 					}, nil
 				}
+
+				// 如果审核通过或者是待审核状态，允许直播开始
+				if auditResp.Status == auditv1.AuditStatus_AUDIT_STATUS_PASSED {
+					h.logger.Info("Live content passed audit", "content_id", auditReq.ContentId)
+				} else if auditResp.Status == auditv1.AuditStatus_AUDIT_STATUS_PENDING {
+					h.logger.Info("Live content pending audit", "content_id", auditReq.ContentId)
+				}
 			}
 		}
+	} else {
+		h.logger.Warn("Audit manager not available, skipping content audit", "content_id", streamID)
 	}
 
 	// TODO: 实现开始直播逻辑
+	h.logger.Info("Starting live stream",
+		"stream_id", streamID,
+		"user_id", req.UserId,
+		"title", req.Title)
+
 	return &proto_gen.StartLiveResponse{
 		Code:      200,
 		Message:   "直播开始成功",
@@ -202,10 +239,9 @@ func (h *LiveServiceHandler) GetLiveChatList(ctx context.Context, req *proto_gen
 	// TODO: 实现获取直播聊天列表逻辑
 	return &proto_gen.GetLiveChatListResponse{
 		Code:      200,
-		Message:   "获取聊天列表成功",
+		Message:   "获取直播聊天列表成功",
 		RequestId: req.RequestId,
 		Chats:     []*proto_gen.LiveChat{},
-		Total:     0,
 	}, nil
 }
 

@@ -6,10 +6,10 @@ import (
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 
-	"github.com/visionworld/service/live_service/internal/config"
-	"github.com/visionworld/service/live_service/internal/model"
-	"github.com/visionworld/service/live_service/internal/repository"
-	"github.com/visionworld/service/live_service/pkg/logger"
+	"live_service/internal/config"
+	"live_service/internal/model"
+	"live_service/internal/repository"
+	"live_service/pkg/logger"
 )
 
 // LiveService 直播服务接口

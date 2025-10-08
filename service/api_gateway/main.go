@@ -60,11 +60,24 @@ func main() {
 	}
 	defer userHandler.Close()
 
+	// 注册直播服务路由
+	liveHandler, err := routes.NewLiveHandler(cfg.Etcd.Endpoints)
+	if err != nil {
+		log.Fatalf("Failed to connect to live service: %v", err)
+	}
+	defer liveHandler.Close()
+
 	// 注册用户相关路由
 	router.POST("/api/user/login/phone", userHandler.PhoneLogin)
 	router.POST("/api/user/login/code", userHandler.CodeLogin)
 	router.POST("/api/user/sms/send", userHandler.SendSmsCode)
 	router.GET("/api/user/info/:id", userHandler.GetUserInfo)
+
+	// 注册直播相关路由
+	router.POST("/api/live/start", liveHandler.StartLive)
+	router.POST("/api/live/stop", liveHandler.StopLive)
+	router.GET("/api/live/stream/:id", liveHandler.GetLiveStream)
+	router.GET("/api/live/list", liveHandler.GetLiveList)
 
 	// 直接启动Gin服务器
 	log.Printf("Starting Vision World Gateway on port %s", ":8080")

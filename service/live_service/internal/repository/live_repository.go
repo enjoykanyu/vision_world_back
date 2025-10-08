@@ -6,8 +6,8 @@ import (
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 
-	"vision_world_back/service/live_service/internal/model"
-	"vision_world_back/service/live_service/pkg/logger"
+	"live_service/internal/model"
+	"live_service/pkg/logger"
 )
 
 // LiveRepository 直播数据仓库接口

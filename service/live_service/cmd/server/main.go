@@ -23,7 +23,7 @@ import (
 	"live_service/pkg/logger"
 	"live_service/proto/proto_gen"
 	// 使用审计服务客户端
-	//auditclient "live_service/internal/client"
+	auditclient "live_service/internal/client"
 )
 
 func main() {
@@ -47,7 +47,7 @@ func main() {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
 	log.Printf("Logger initialized successfully")
-	logger.Info("Starting user service", "version", "1.0.0")
+	logger.Info("Starting live service", "version", "1.0.0")
 
 	// 3. 初始化数据库连接
 	log.Printf("Attempting to connect to database")
@@ -78,7 +78,7 @@ func main() {
 	defer redisClient.Close()
 
 	// 5. 初始化etcd服务注册
-	etcdDiscovery, err := discovery.NewEtcdDiscovery(cfg.Etcd.Endpoints, "user-service")
+	etcdDiscovery, err := discovery.NewEtcdDiscovery(cfg.Etcd.Endpoints, "live-service")
 	if err != nil {
 		logger.Fatal("Failed to connect to etcd", "error", err)
 	}
@@ -92,12 +92,29 @@ func main() {
 	// 7. 注册健康检查服务
 	healthServer := health.NewServer()
 	grpc_health_v1.RegisterHealthServer(grpcServer, healthServer)
-	healthServer.SetServingStatus("user_service", grpc_health_v1.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus("live_service", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	// 8. 注册用户服务
 	liveHandler := handler.NewLiveServiceHandler(cfg, logger, db, redisClient)
+
+	// 初始化审计服务客户端管理器
+	if len(cfg.Etcd.Endpoints) > 0 {
+		auditManager, err := auditclient.NewAuditClientManager(cfg.Etcd.Endpoints)
+		if err != nil {
+			logger.Error("Failed to initialize audit client manager", "error", err)
+			// 审计服务初始化失败，服务仍然可以继续运行，但审计功能将不可用
+		} else {
+			// 将审计管理器注入到处理器中
+			liveHandler.SetAuditManager(auditManager)
+			logger.Info("Audit client manager initialized successfully")
+			defer auditManager.Close()
+		}
+	} else {
+		logger.Warn("No etcd endpoints configured, audit service will not be available")
+	}
+
 	proto_gen.RegisterLiveServiceServer(grpcServer, liveHandler)
-	logger.Info("User service registered")
+	logger.Info("Live service registered")
 
 	// 9. 注册反射服务（用于调试）
 	reflection.Register(grpcServer)
@@ -131,7 +148,7 @@ func main() {
 	logger.Info("Shutting down server...")
 
 	// 13. 设置健康检查为不健康状态
-	healthServer.SetServingStatus("user_service", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+	healthServer.SetServingStatus("live_service", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 
 	// 14. 停止gRPC服务器
 	grpcServer.GracefulStop()

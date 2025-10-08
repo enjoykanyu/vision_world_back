@@ -108,7 +108,7 @@ func LoadConfig(configPath string) (*Config, error) {
 		v.AddConfigPath("./config")
 		v.AddConfigPath("../config")
 		v.AddConfigPath("../../config")
-		v.SetConfigName("user-service")
+		v.SetConfigName("live-service")
 		v.SetConfigType("yaml")
 	}
 
@@ -119,7 +119,7 @@ func LoadConfig(configPath string) (*Config, error) {
 
 	// 绑定环境变量
 	v.AutomaticEnv()
-	v.SetEnvPrefix("USER_SERVICE")
+	v.SetEnvPrefix("LIVE_SERVICE")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	var config Config
@@ -180,10 +180,10 @@ func (c *Config) Validate() error {
 func GetDefaultConfigPath() string {
 	// 尝试多个可能的配置文件路径
 	paths := []string{
-		"./config/user-service.yaml",
-		"../config/user-service.yaml",
-		"../../config/user-service.yaml",
-		"./user-service.yaml",
+		"./config/live-service.yaml",
+		"../config/live-service.yaml",
+		"../../config/live-service.yaml",
+		"./live-service.yaml",
 	}
 
 	for _, path := range paths {

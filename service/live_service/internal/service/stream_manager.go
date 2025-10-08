@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	"vision_world_back/service/live_service/internal/config"
-	"vision_world_back/service/live_service/internal/model"
-	"vision_world_back/service/live_service/internal/repository"
-	"vision_world_back/service/live_service/pkg/logger"
+	"live_service/internal/config"
+	"live_service/internal/model"
+	"live_service/internal/repository"
+	"live_service/pkg/logger"
 )
 
 // StreamManager 流管理器接口
