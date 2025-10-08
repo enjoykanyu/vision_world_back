@@ -10,6 +10,10 @@ import (
 	"github.com/vision_world/video_service/pkg/logger"
 	pb "github.com/vision_world/video_service/proto/proto_gen/video"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	auditpb "audit_service/proto_gen/audit/v1"
 )
 
 // VideoHandler 视频服务处理器
@@ -17,6 +21,8 @@ type VideoHandler struct {
 	pb.UnimplementedVideoServiceServer
 	config       *config.Config
 	videoService *service.VideoService
+	auditClient  auditpb.AuditServiceClient
+	auditConn    *grpc.ClientConn
 }
 
 // NewVideoHandler 创建视频处理器
@@ -26,9 +32,28 @@ func NewVideoHandler(cfg *config.Config) (*VideoHandler, error) {
 		return nil, fmt.Errorf("failed to create video service: %w", err)
 	}
 
+	// 创建audit_service客户端连接
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(cfg.Services.AuditService.Timeout)*time.Second)
+	defer cancel()
+
+	conn, err := grpc.DialContext(ctx, cfg.Services.AuditService.Address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to audit service: %w", err)
+	}
+
+	auditClient := auditpb.NewAuditServiceClient(conn)
+
+	logger.Info("Connected to audit service",
+		zap.String("address", cfg.Services.AuditService.Address))
+
 	return &VideoHandler{
 		config:       cfg,
 		videoService: videoService,
+		auditClient:  auditClient,
+		auditConn:    conn,
 	}, nil
 }
 
@@ -43,6 +68,13 @@ func (h *VideoHandler) RegisterService() error {
 
 // Close 关闭处理器
 func (h *VideoHandler) Close() error {
+	// 关闭audit_service连接
+	if h.auditConn != nil {
+		if err := h.auditConn.Close(); err != nil {
+			logger.Error("Failed to close audit service connection", zap.Error(err))
+		}
+	}
+
 	if h.videoService != nil {
 		return h.videoService.Close()
 	}
@@ -53,15 +85,62 @@ func (h *VideoHandler) Close() error {
 
 // PublishVideo 发布视频
 func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoRequest) (*pb.PublishVideoResponse, error) {
-	logger.Info("PublishVideo called", zap.String("title", req.Title), zap.String("user_id", "TODO"))
+	logger.Info("PublishVideo called", zap.String("title", req.Title), zap.String("user_id", req.UserId))
 
 	// TODO: 验证用户token
 	// TODO: 实现视频发布逻辑
 
+	// 生成视频ID (这里简化处理，实际应该从数据库获取)
+	videoID := uint32(time.Now().Unix())
+
+	// 调用审核服务进行内容审核
+	auditReq := &auditpb.SubmitContentRequest{
+		ContentId:   fmt.Sprintf("video_%d", videoID),
+		ContentType: auditpb.ContentType_CONTENT_TYPE_VIDEO,
+		UploaderId:  req.UserId,
+		Title:       req.Title,
+		Content:     req.Description,
+		CreateTime:  time.Now().Format(time.RFC3339),
+	}
+
+	auditResp, err := h.auditClient.SubmitContent(ctx, auditReq)
+	if err != nil {
+		logger.Error("Failed to submit content for audit", zap.Error(err))
+		return &pb.PublishVideoResponse{
+			StatusCode: 500,
+			StatusMsg:  "审核服务调用失败",
+			VideoId:    0,
+		}, nil
+	}
+
+	logger.Info("Content submitted for audit",
+		zap.String("content_id", auditReq.ContentId),
+		zap.String("audit_id", auditResp.AuditId),
+		zap.String("status", auditResp.Status.String()))
+
+	// 根据审核结果决定视频状态
+	var statusMsg string
+	var statusCode int32
+
+	switch auditResp.Status {
+	case auditpb.AuditStatus_AUDIT_STATUS_PASSED:
+		statusCode = 0
+		statusMsg = "视频发布成功"
+	case auditpb.AuditStatus_AUDIT_STATUS_PENDING, auditpb.AuditStatus_AUDIT_STATUS_UNDER_REVIEW:
+		statusCode = 202
+		statusMsg = "视频发布成功，正在审核中"
+	case auditpb.AuditStatus_AUDIT_STATUS_REJECTED:
+		statusCode = 403
+		statusMsg = "视频内容违规，发布失败"
+	default:
+		statusCode = 202
+		statusMsg = "视频发布成功，等待审核"
+	}
+
 	return &pb.PublishVideoResponse{
-		StatusCode: 0,
-		StatusMsg:  "success",
-		VideoId:    1, // TODO: 生成真实的视频ID
+		StatusCode: statusCode,
+		StatusMsg:  statusMsg,
+		VideoId:    videoID,
 	}, nil
 }
 

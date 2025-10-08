@@ -17,16 +17,15 @@ type Config struct {
 	Logger   LoggerConfig   `mapstructure:"logger"`
 	Etcd     EtcdConfig     `mapstructure:"etcd"`
 	Consul   ConsulConfig   `mapstructure:"consul"`
-	Live     LiveConfig     `mapstructure:"live"`
+	JWT      JWTConfig      `mapstructure:"jwt"`
+	SMS      SMSConfig      `mapstructure:"sms"`
 }
 
 // ServerConfig 服务器配置
 type ServerConfig struct {
 	Host         string        `mapstructure:"host"`
 	Port         int           `mapstructure:"port"`
-	HTTPPort     int           `mapstructure:"http_port"`
 	Mode         string        `mapstructure:"mode"`
-	EnableHTTP   bool          `mapstructure:"enable_http"`
 	ReadTimeout  time.Duration `mapstructure:"read_timeout"`
 	WriteTimeout time.Duration `mapstructure:"write_timeout"`
 }
@@ -80,83 +79,20 @@ type ConsulConfig struct {
 	ServiceID string `mapstructure:"service_id"`
 }
 
-// LiveConfig 直播服务配置
-type LiveConfig struct {
-	RTMP        RTMPConfig        `mapstructure:"rtmp"`
-	WebRTC      WebRTCConfig      `mapstructure:"webrtc"`
-	Stream      StreamConfig      `mapstructure:"stream"`
-	Recording   RecordingConfig   `mapstructure:"recording"`
-	Transcoding TranscodingConfig `mapstructure:"transcoding"`
-	Limits      LimitsConfig      `mapstructure:"limits"`
-	CDN         CDNConfig         `mapstructure:"cdn"`
+// JWTConfig JWT配置
+type JWTConfig struct {
+	Secret            string        `mapstructure:"secret"`
+	RefreshSecret     string        `mapstructure:"refresh_secret"`
+	TokenExpiration   time.Duration `mapstructure:"token_expiration"`
+	RefreshExpiration time.Duration `mapstructure:"refresh_expiration"`
 }
 
-// RTMPConfig RTMP配置
-type RTMPConfig struct {
-	Host        string        `mapstructure:"host"`
-	Port        int           `mapstructure:"port"`
-	ChunkSize   int           `mapstructure:"chunk_size"`
-	IdleTimeout time.Duration `mapstructure:"idle_timeout"`
-}
-
-// WebRTCConfig WebRTC配置
-type WebRTCConfig struct {
-	Enabled     bool               `mapstructure:"enabled"`
-	StunServers []string           `mapstructure:"stun_servers"`
-	TurnServers []TurnServerConfig `mapstructure:"turn_servers"`
-}
-
-// TurnServerConfig TURN服务器配置
-type TurnServerConfig struct {
-	URL      string `mapstructure:"url"`
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
-}
-
-// StreamConfig 直播流配置
-type StreamConfig struct {
-	MaxBitrate       int    `mapstructure:"max_bitrate"`
-	MaxResolution    string `mapstructure:"max_resolution"`
-	KeyframeInterval int    `mapstructure:"keyframe_interval"`
-	BufferSize       int    `mapstructure:"buffer_size"`
-}
-
-// RecordingConfig 录制配置
-type RecordingConfig struct {
-	Enabled         bool   `mapstructure:"enabled"`
-	StoragePath     string `mapstructure:"storage_path"`
-	Format          string `mapstructure:"format"`
-	SegmentDuration int    `mapstructure:"segment_duration"`
-	MaxFileSize     int64  `mapstructure:"max_file_size"`
-}
-
-// TranscodingConfig 转码配置
-type TranscodingConfig struct {
-	Enabled  bool               `mapstructure:"enabled"`
-	Profiles []TranscodeProfile `mapstructure:"profiles"`
-}
-
-// TranscodeProfile 转码配置
-type TranscodeProfile struct {
-	Name       string `mapstructure:"name"`
-	Resolution string `mapstructure:"resolution"`
-	Bitrate    int    `mapstructure:"bitrate"`
-	Framerate  int    `mapstructure:"framerate"`
-}
-
-// LimitsConfig 限制配置
-type LimitsConfig struct {
-	MaxConcurrentStreams int `mapstructure:"max_concurrent_streams"`
-	MaxViewersPerStream  int `mapstructure:"max_viewers_per_stream"`
-	MaxStreamDuration    int `mapstructure:"max_stream_duration"`
-	BanDuration          int `mapstructure:"ban_duration"`
-}
-
-// CDNConfig CDN配置
-type CDNConfig struct {
-	Enabled bool     `mapstructure:"enabled"`
-	BaseURL string   `mapstructure:"base_url"`
-	Regions []string `mapstructure:"regions"`
+// SMSConfig 短信服务配置
+type SMSConfig struct {
+	AccessKey    string `mapstructure:"access_key"`
+	SecretKey    string `mapstructure:"secret_key"`
+	SignName     string `mapstructure:"sign_name"`
+	TemplateCode string `mapstructure:"template_code"`
 }
 
 // LoadConfig 加载配置
@@ -172,7 +108,7 @@ func LoadConfig(configPath string) (*Config, error) {
 		v.AddConfigPath("./config")
 		v.AddConfigPath("../config")
 		v.AddConfigPath("../../config")
-		v.SetConfigName("live-service")
+		v.SetConfigName("user-service")
 		v.SetConfigType("yaml")
 	}
 
@@ -183,12 +119,17 @@ func LoadConfig(configPath string) (*Config, error) {
 
 	// 绑定环境变量
 	v.AutomaticEnv()
-	v.SetEnvPrefix("LIVE_SERVICE")
+	v.SetEnvPrefix("USER_SERVICE")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	var config Config
 	if err := v.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
+	// 验证配置
+	if err := config.Validate(); err != nil {
+		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
 	return &config, nil
@@ -198,14 +139,6 @@ func LoadConfig(configPath string) (*Config, error) {
 func (c *Config) Validate() error {
 	if c.Server.Port <= 0 || c.Server.Port > 65535 {
 		return fmt.Errorf("invalid server port: %d", c.Server.Port)
-	}
-
-	if c.Server.HTTPPort <= 0 || c.Server.HTTPPort > 65535 {
-		return fmt.Errorf("invalid http port: %d", c.Server.HTTPPort)
-	}
-
-	if c.Server.Port == c.Server.HTTPPort {
-		return fmt.Errorf("gRPC port and HTTP port cannot be the same")
 	}
 
 	if c.Database.Host == "" {
@@ -228,6 +161,18 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid redis port: %d", c.Redis.Port)
 	}
 
+	if len(c.Etcd.Endpoints) == 0 {
+		return fmt.Errorf("etcd endpoints are required")
+	}
+
+	if c.JWT.Secret == "" {
+		return fmt.Errorf("jwt secret is required")
+	}
+
+	if c.JWT.TokenExpiration <= 0 {
+		return fmt.Errorf("jwt token expiration must be positive")
+	}
+
 	return nil
 }
 
@@ -235,10 +180,10 @@ func (c *Config) Validate() error {
 func GetDefaultConfigPath() string {
 	// 尝试多个可能的配置文件路径
 	paths := []string{
-		"./config/live-service.yaml",
-		"../config/live-service.yaml",
-		"../../config/live-service.yaml",
-		"./live-service.yaml",
+		"./config/user-service.yaml",
+		"../config/user-service.yaml",
+		"../../config/user-service.yaml",
+		"./user-service.yaml",
 	}
 
 	for _, path := range paths {

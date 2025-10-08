@@ -2,21 +2,28 @@ package handler
 
 import (
 	"context"
+	"fmt"
+	pb "live_service/proto/proto_gen/audit"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
 
-	"vision_world_back/service/live_service/internal/config"
-	"vision_world_back/service/live_service/internal/service"
-	"vision_world_back/service/live_service/pkg/logger"
-	proto_gen "vision_world_back/service/live_service/proto/proto_gen"
+	"live_service/internal/config"
+	"live_service/internal/service"
+	"live_service/pkg/logger"
+	proto_gen "live_service/proto/proto_gen"
 )
 
 // LiveServiceHandler 直播服务处理器
 type LiveServiceHandler struct {
-	config      *config.Config
-	logger      logger.Logger
-	liveService service.LiveService
+	config       *config.Config
+	logger       logger.Logger
+	liveService  service.LiveService
+	auditManager interface { // 使用接口定义，降低耦合
+		SubmitContent(ctx context.Context, req interface{}) (interface{}, error)
+		Close() error
+	}
 	proto_gen.UnimplementedLiveServiceServer
 }
 
@@ -34,16 +41,66 @@ func NewLiveServiceHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, r
 
 // StartLive 开始直播
 func (h *LiveServiceHandler) StartLive(ctx context.Context, req *proto_gen.StartLiveRequest) (*proto_gen.StartLiveResponse, error) {
-	h.logger.Info("StartLive called")
+	h.logger.Info("StartLive called", "user_id", req.UserId, "title", req.Title)
+
+	// 生成直播流ID (这里简化处理，实际应该从数据库获取)
+	streamID := fmt.Sprintf("stream_%d", time.Now().Unix())
+
+	// 如果有审核服务客户端管理器，调用审核服务进行直播间审核
+	if h.auditManager != nil {
+		// 创建审核请求 - 使用pb_gen生成的类型
+		auditReq := &pb.SubmitContentRequest{
+			ContentId:   fmt.Sprintf("live_%s", streamID),
+			ContentType: pb.ContentType_CONTENT_TYPE_LIVE, // 使用pb_gen定义的常量
+			UploaderId:  req.UserId,
+			Title:       req.Title,
+			Content:     req.Description,
+			CreateTime:  time.Now().Format(time.RFC3339),
+		}
+
+		// 调用审核服务
+		resp, err := h.auditManager.SubmitContent(ctx, auditReq)
+		if err != nil {
+			h.logger.Error("Failed to submit live content for audit", "error", err)
+			// 审核服务调用失败，仍然允许直播开始，但记录日志
+		} else {
+			// 类型断言转换为pb.SubmitContentResponse
+			auditResp, ok := resp.(*pb.SubmitContentResponse)
+			if !ok {
+				h.logger.Error("Failed to cast audit response to pb.SubmitContentResponse")
+				// 类型转换失败仍允许直播继续
+			} else {
+				if auditResp.Status == pb.AuditStatus_AUDIT_STATUS_REJECTED { // 使用pb_gen定义的常量
+					h.logger.Info("Live content rejected by audit",
+						"content_id", auditReq.ContentId,
+						"status", auditResp.Status)
+					return &proto_gen.StartLiveResponse{
+						Code:      403,
+						Message:   "直播内容违规，无法开始直播",
+						RequestId: req.RequestId,
+						Stream:    nil,
+						StreamUrl: "",
+						StreamKey: "",
+					}, nil
+				}
+			}
+		}
+	}
 
 	// TODO: 实现开始直播逻辑
 	return &proto_gen.StartLiveResponse{
 		Code:      200,
 		Message:   "直播开始成功",
 		RequestId: req.RequestId,
-		Stream:    &proto_gen.LiveStream{},
-		StreamUrl: "",
-		StreamKey: "",
+		Stream: &proto_gen.LiveStream{
+			Id:          3,
+			UserId:      req.UserId,
+			Title:       req.Title,
+			Status:      "live",
+			ViewerCount: 0,
+		},
+		StreamUrl: fmt.Sprintf("rtmp://localhost:1935/live/%s", streamID),
+		StreamKey: streamID,
 	}, nil
 }
 
@@ -257,4 +314,16 @@ func (h *LiveServiceHandler) GetLivePlayback(ctx context.Context, req *proto_gen
 		RequestId: req.RequestId,
 		Playback:  &proto_gen.LivePlayback{},
 	}, nil
+}
+
+// Close 关闭处理器，释放资源
+func (h *LiveServiceHandler) Close() error {
+	if h.auditManager != nil {
+		if err := h.auditManager.Close(); err != nil {
+			h.logger.Error("关闭audit服务客户端管理器失败", "error", err)
+			return err
+		}
+		h.logger.Info("audit服务客户端管理器已关闭")
+	}
+	return nil
 }

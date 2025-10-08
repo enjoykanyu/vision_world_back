@@ -14,6 +14,7 @@ type Config struct {
 	Kafka     KafkaConfig     `mapstructure:"kafka"`
 	Discovery DiscoveryConfig `mapstructure:"discovery"`
 	Log       LogConfig       `mapstructure:"log"`
+	Services  ServicesConfig  `mapstructure:"services"`
 }
 
 type ServerConfig struct {
@@ -55,6 +56,16 @@ type DiscoveryConfig struct {
 type LogConfig struct {
 	Level string `mapstructure:"level"`
 	File  string `mapstructure:"file"`
+}
+
+type ServicesConfig struct {
+	AuditService ServiceConfig `mapstructure:"audit_service"`
+}
+
+type ServiceConfig struct {
+	Name    string `mapstructure:"name"`
+	Address string `mapstructure:"address"`
+	Timeout int    `mapstructure:"timeout"`
 }
 
 func LoadConfig() (*Config, error) {

@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	"vision_world_back/service/live_service/internal/config"
-	"vision_world_back/service/live_service/internal/model"
-	"vision_world_back/service/live_service/internal/repository"
-	"vision_world_back/service/live_service/pkg/logger"
+	"github.com/visionworld/service/live_service/internal/config"
+	"github.com/visionworld/service/live_service/internal/model"
+	"github.com/visionworld/service/live_service/internal/repository"
+	"github.com/visionworld/service/live_service/pkg/logger"
 )
 
 // ChatManager 聊天管理器接口

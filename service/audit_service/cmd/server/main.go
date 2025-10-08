@@ -1,10 +1,16 @@
 package main
 
 import (
+	"audit_service/internal/config"
+	"audit_service/internal/discovery"
+	"audit_service/internal/handler"
+	"audit_service/internal/model"
+	"audit_service/internal/repository"
+	"audit_service/internal/service"
+	"audit_service/pkg/database"
+	"audit_service/pkg/logger"
 	"context"
 	"fmt"
-	"live_service/internal/discovery"
-	"live_service/internal/model"
 	"log"
 	"net"
 	"os"
@@ -12,18 +18,12 @@ import (
 	"syscall"
 	"time"
 
+	auditv1 "audit_service/proto_gen/audit/v1"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
-
-	"live_service/internal/config"
-	"live_service/internal/handler"
-	"live_service/pkg/database"
-	"live_service/pkg/logger"
-	"live_service/proto/proto_gen"
-	// 使用审计服务客户端
-	//auditclient "live_service/internal/client"
 )
 
 func main() {
@@ -47,7 +47,7 @@ func main() {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
 	log.Printf("Logger initialized successfully")
-	logger.Info("Starting user service", "version", "1.0.0")
+	logger.Info("Starting audit service", "version", "1.0.0")
 
 	// 3. 初始化数据库连接
 	log.Printf("Attempting to connect to database")
@@ -78,7 +78,7 @@ func main() {
 	defer redisClient.Close()
 
 	// 5. 初始化etcd服务注册
-	etcdDiscovery, err := discovery.NewEtcdDiscovery(cfg.Etcd.Endpoints, "user-service")
+	etcdDiscovery, err := discovery.NewEtcdDiscovery(cfg.Etcd.Endpoints, "audit-service")
 	if err != nil {
 		logger.Fatal("Failed to connect to etcd", "error", err)
 	}
@@ -92,12 +92,17 @@ func main() {
 	// 7. 注册健康检查服务
 	healthServer := health.NewServer()
 	grpc_health_v1.RegisterHealthServer(grpcServer, healthServer)
-	healthServer.SetServingStatus("user_service", grpc_health_v1.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus("audit_service", grpc_health_v1.HealthCheckResponse_SERVING)
 
-	// 8. 注册用户服务
-	liveHandler := handler.NewLiveServiceHandler(cfg, logger, db, redisClient)
-	proto_gen.RegisterLiveServiceServer(grpcServer, liveHandler)
-	logger.Info("User service registered")
+	// 8. 注册审核服务
+	// 创建repository
+	auditRepo := repository.NewAuditRepository(db)
+	// 创建service
+	auditService := service.NewAuditService(cfg, logger, auditRepo)
+	// 创建handler
+	auditHandler := handler.NewAuditServiceHandler(auditService, logger)
+	auditv1.RegisterAuditServiceServer(grpcServer, auditHandler)
+	logger.Info("Audit service registered")
 
 	// 9. 注册反射服务（用于调试）
 	reflection.Register(grpcServer)
@@ -131,7 +136,7 @@ func main() {
 	logger.Info("Shutting down server...")
 
 	// 13. 设置健康检查为不健康状态
-	healthServer.SetServingStatus("user_service", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+	healthServer.SetServingStatus("audit_service", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 
 	// 14. 停止gRPC服务器
 	grpcServer.GracefulStop()
