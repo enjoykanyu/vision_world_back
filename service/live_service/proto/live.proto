@@ -1,0 +1,440 @@
+syntax = "proto3";
+
+package livepb;
+
+option go_package = "live_service/proto_gen";
+
+// 直播服务
+service LiveService {
+    // 直播流管理
+    rpc StartLive(StartLiveRequest) returns (StartLiveResponse);
+    rpc StopLive(StopLiveRequest) returns (StopLiveResponse);
+    rpc GetLiveStream(GetLiveStreamRequest) returns (GetLiveStreamResponse);
+    rpc GetLiveList(GetLiveListRequest) returns (GetLiveListResponse);
+    rpc GetHotLiveList(GetHotLiveListRequest) returns (GetHotLiveListResponse);
+    
+    // 直播间管理
+    rpc JoinLiveRoom(JoinLiveRoomRequest) returns (JoinLiveRoomResponse);
+    rpc LeaveLiveRoom(LeaveLiveRoomRequest) returns (LeaveLiveRoomResponse);
+    rpc GetLiveViewerList(GetLiveViewerListRequest) returns (GetLiveViewerListResponse);
+    
+    // 聊天消息
+    rpc SendLiveChat(SendLiveChatRequest) returns (SendLiveChatResponse);
+    rpc GetLiveChatList(GetLiveChatListRequest) returns (GetLiveChatListResponse);
+    
+    // 礼物系统
+    rpc SendLiveGift(SendLiveGiftRequest) returns (SendLiveGiftResponse);
+    rpc GetLiveGiftList(GetLiveGiftListRequest) returns (GetLiveGiftListResponse);
+    
+    // 互动功能
+    rpc LikeLive(LikeLiveRequest) returns (LikeLiveResponse);
+    
+    // 搜索和推荐
+    rpc SearchLive(SearchLiveRequest) returns (SearchLiveResponse);
+    rpc GetLiveCategories(GetLiveCategoriesRequest) returns (GetLiveCategoriesResponse);
+    
+    // 统计和分析
+    rpc GetLiveStats(GetLiveStatsRequest) returns (GetLiveStatsResponse);
+    rpc GetLivePlayback(GetLivePlaybackRequest) returns (GetLivePlaybackResponse);
+}
+
+// 基础请求和响应
+message BaseRequest {
+    uint64 user_id = 1;
+    string request_id = 2;
+}
+
+message BaseResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+}
+
+// 直播流相关
+message StartLiveRequest {
+    uint64 user_id = 1;
+    string title = 2;
+    string description = 3;
+    uint32 category_id = 4;
+    string request_id = 5;
+}
+
+message StartLiveResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    LiveStream stream = 4;
+    string stream_url = 5;
+    string stream_key = 6;
+}
+
+message StopLiveRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    string request_id = 3;
+}
+
+message StopLiveResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+}
+
+message GetLiveStreamRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    string request_id = 3;
+}
+
+message GetLiveStreamResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    LiveStream stream = 4;
+}
+
+message GetLiveListRequest {
+    uint64 user_id = 1;
+    int32 page = 2;
+    int32 page_size = 3;
+    uint32 category_id = 4;
+    string request_id = 5;
+}
+
+message GetLiveListResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    repeated LiveStream streams = 4;
+    int64 total = 5;
+}
+
+message GetHotLiveListRequest {
+    uint64 user_id = 1;
+    int32 page = 2;
+    int32 page_size = 3;
+    string request_id = 4;
+}
+
+message GetHotLiveListResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    repeated LiveStream streams = 4;
+    int64 total = 5;
+}
+
+// 直播间相关
+message JoinLiveRoomRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    string request_id = 3;
+}
+
+message JoinLiveRoomResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    LiveViewer viewer = 4;
+}
+
+message LeaveLiveRoomRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    string request_id = 3;
+}
+
+message LeaveLiveRoomResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+}
+
+message GetLiveViewerListRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+    string request_id = 5;
+}
+
+message GetLiveViewerListResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    repeated LiveViewer viewers = 4;
+    int64 total = 5;
+}
+
+// 聊天消息相关
+message SendLiveChatRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    string content = 3;
+    string content_type = 4;
+    string request_id = 5;
+}
+
+message SendLiveChatResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    LiveChat chat = 4;
+}
+
+message GetLiveChatListRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+    string request_id = 5;
+}
+
+message GetLiveChatListResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    repeated LiveChat chats = 4;
+    int64 total = 5;
+}
+
+// 礼物相关
+message SendLiveGiftRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    uint32 gift_id = 3;
+    uint32 gift_count = 4;
+    string message = 5;
+    string request_id = 6;
+}
+
+message SendLiveGiftResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    LiveGift gift = 4;
+}
+
+message GetLiveGiftListRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+    string request_id = 5;
+}
+
+message GetLiveGiftListResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    repeated LiveGift gifts = 4;
+    int64 total = 5;
+}
+
+// 互动相关
+message LikeLiveRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    string request_id = 3;
+}
+
+message LikeLiveResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    uint64 like_count = 4;
+}
+
+// 搜索相关
+message SearchLiveRequest {
+    uint64 user_id = 1;
+    string keyword = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+    string request_id = 5;
+}
+
+message SearchLiveResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    repeated LiveStream streams = 4;
+    int64 total = 5;
+}
+
+message GetLiveCategoriesRequest {
+    uint64 user_id = 1;
+    string request_id = 2;
+}
+
+message GetLiveCategoriesResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    repeated LiveCategory categories = 4;
+}
+
+// 统计相关
+message GetLiveStatsRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    string request_id = 3;
+}
+
+message GetLiveStatsResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    LiveStats stats = 4;
+}
+
+message GetLivePlaybackRequest {
+    uint64 user_id = 1;
+    uint64 stream_id = 2;
+    string request_id = 3;
+}
+
+message GetLivePlaybackResponse {
+    int32 code = 1;
+    string message = 2;
+    string request_id = 3;
+    LivePlayback playback = 4;
+}
+
+// 数据模型
+message LiveStream {
+    uint64 id = 1;
+    uint64 user_id = 2;
+    string title = 3;
+    string description = 4;
+    uint32 category_id = 5;
+    string status = 6;
+    string stream_url = 7;
+    string playback_url = 8;
+    string cover_image = 9;
+    uint32 viewer_count = 10;
+    uint32 like_count = 11;
+    uint32 gift_count = 12;
+    uint64 gift_value = 13;
+    uint32 duration = 14;
+    int64 start_time = 15;
+    int64 end_time = 16;
+    int64 created_at = 17;
+    int64 updated_at = 18;
+}
+
+message LiveRoom {
+    uint64 id = 1;
+    uint64 stream_id = 2;
+    string title = 3;
+    string description = 4;
+    uint32 category_id = 5;
+    string status = 6;
+    uint32 viewer_count = 7;
+    uint32 max_viewer_count = 8;
+    uint32 like_count = 9;
+    uint32 gift_count = 10;
+    uint64 gift_value = 11;
+    uint32 chat_count = 12;
+    int64 created_at = 13;
+    int64 updated_at = 14;
+}
+
+message LiveViewer {
+    uint64 id = 1;
+    uint64 stream_id = 2;
+    uint64 user_id = 3;
+    string user_name = 4;
+    string user_avatar = 5;
+    int64 join_time = 6;
+    int64 leave_time = 7;
+    uint32 duration = 8;
+    bool is_muted = 9;
+    int64 created_at = 10;
+}
+
+message LiveChat {
+    uint64 id = 1;
+    uint64 stream_id = 2;
+    uint64 user_id = 3;
+    string user_name = 4;
+    string user_avatar = 5;
+    string content = 6;
+    string content_type = 7;
+    bool is_system = 8;
+    bool is_deleted = 9;
+    int64 created_at = 10;
+}
+
+message LiveGift {
+    uint64 id = 1;
+    uint64 stream_id = 2;
+    uint64 user_id = 3;
+    string user_name = 4;
+    string user_avatar = 5;
+    uint32 gift_id = 6;
+    string gift_name = 7;
+    string gift_icon = 8;
+    uint64 gift_price = 9;
+    uint32 gift_count = 10;
+    uint64 total_value = 11;
+    string message = 12;
+    string effect_type = 13;
+    int64 created_at = 14;
+}
+
+message GiftConfig {
+    uint32 id = 1;
+    string name = 2;
+    string icon = 3;
+    uint64 price = 4;
+    uint64 coin_price = 5;
+    string category = 6;
+    uint32 level = 7;
+    string effect_type = 8;
+    string effect_value = 9;
+    string description = 10;
+    bool is_active = 11;
+    uint32 sort_order = 12;
+}
+
+message LiveCategory {
+    uint32 id = 1;
+    string name = 2;
+    string icon = 3;
+    uint32 sort_order = 4;
+    bool is_active = 5;
+}
+
+message LiveStats {
+    uint64 stream_id = 1;
+    uint64 total_viewers = 2;
+    uint64 current_viewers = 3;
+    uint64 max_viewers = 4;
+    uint64 like_count = 5;
+    uint64 gift_count = 6;
+    uint64 comment_count = 7;
+    uint64 share_count = 8;
+    uint64 duration = 9;
+    uint64 gift_value = 10;
+}
+
+message LivePlayback {
+    uint64 stream_id = 1;
+    string playback_url = 2;
+    uint64 duration = 3;
+    uint64 file_size = 4;
+    string format = 5;
+    string quality = 6;
+    int64 created_at = 7;
+}
+
+message GiftRankingItem {
+    uint64 user_id = 1;
+    string user_name = 2;
+    string user_avatar = 3;
+    uint64 gift_count = 4;
+    uint64 gift_value = 5;
+    uint32 rank = 6;
+    int64 last_gift_time = 7;
+}
