@@ -1,0 +1,52 @@
+# social-service配置文件
+server:
+  host: 0.0.0.0
+  port: 50051
+  mode: debug
+
+database:
+  host: localhost
+  port: 3306
+  username: root
+  password: "901project"
+  database: videoworld
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+
+logger:
+  level: info
+  format: json
+  output_path: logs/user-service.log
+
+consul:
+  host: localhost
+  port: 8500
+  health_check:
+    interval: 10s
+    timeout: 5s
+
+etcd:
+  endpoints:
+    - localhost:2379
+  dial_timeout: 5
+  username: ""
+  password: ""
+
+jwt:
+  secret: "your-secret-key-here"
+  token_expiration: 24h
+  refresh_expiration: 168h
+
+sms:
+  access_key: "your-access-key"
+  secret_key: "your-secret-key"
+  sign_name: "VisionWorld"
+  template_code: "SMS_123456789"
