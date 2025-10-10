@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package search_service;
+
+option go_package = "./proto_gen;proto_gen";
+
+// 搜索服务
+service SearchService {
+  // 搜索视频、用户或内容
+  rpc Search(SearchRequest) returns (SearchResponse);
+  
+  // 获取搜索建议
+  rpc GetSearchSuggestions(SuggestionRequest) returns (SuggestionResponse);
+}
+
+// 搜索请求
+message SearchRequest {
+  string query = 1;           // 搜索关键词
+  int32 page = 2;             // 页码
+  int32 page_size = 3;        // 每页大小
+  string search_type = 4;     // 搜索类型: video, user, content
+  map<string, string> filters = 5;  // 过滤条件
+  string sort_by = 6;         // 排序字段
+  string sort_order = 7;      // 排序顺序: asc, desc
+  bool fuzzy_search = 8;      // 是否模糊搜索
+}
+
+// 搜索响应
+message SearchResponse {
+  repeated SearchResult results = 1;  // 搜索结果
+  int64 total = 2;                    // 总数
+  int32 page = 3;                     // 当前页码
+  int32 page_size = 4;                // 每页大小
+  int64 elapsed_time = 5;             // 耗时(毫秒)
+}
+
+// 搜索结果
+message SearchResult {
+  string id = 1;                      // ID
+  double score = 2;                   // 相关性得分
+  map<string, string> source = 3;     // 源数据
+  string type = 4;                    // 类型
+}
+
+// 搜索建议请求
+message SuggestionRequest {
+  string prefix = 1;          // 前缀
+  int32 limit = 2;            // 限制数量
+}
+
+// 搜索建议响应
+message SuggestionResponse {
+  repeated string suggestions = 1;    // 建议列表
+}
