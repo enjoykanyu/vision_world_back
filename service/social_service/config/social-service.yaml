@@ -24,7 +24,7 @@ redis:
 logger:
   level: info
   format: json
-  output_path: logs/user-service.log
+  output_path: logs/message-service.log
 
 consul:
   host: localhost
