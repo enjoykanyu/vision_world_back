@@ -33,3 +33,10 @@ discovery:
 log:
   level: "info"  # debug, info, warn, error
   file: "logs/video-service.log"
+
+# 服务间调用配置
+services:
+  audit_service:
+    name: "audit-service"
+    address: "localhost:50053"  # audit_service的gRPC地址
+    timeout: 5  # 调用超时时间（秒）
