@@ -180,10 +180,10 @@ func (c *Config) Validate() error {
 func GetDefaultConfigPath() string {
 	// 尝试多个可能的配置文件路径
 	paths := []string{
-		"./config/user-service.yaml",
-		"../config/user-service.yaml",
-		"../../config/user-service.yaml",
-		"./user-service.yaml",
+		"./config/social-service.yaml",
+		"../config/social-service.yaml",
+		"../../config/social-service.yaml",
+		"./social-service.yaml",
 	}
 
 	for _, path := range paths {
