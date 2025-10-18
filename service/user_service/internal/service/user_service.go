@@ -24,6 +24,7 @@ type UserService interface {
 	SendSmsCode(ctx context.Context, phone string) error
 	VerifyToken(ctx context.Context, token string) (uint32, error)
 	RefreshToken(ctx context.Context, refreshToken string) (string, error)
+	Logout(ctx context.Context, token string) error
 
 	// 用户信息相关
 	GetUserInfo(ctx context.Context, userID uint32) (*model.User, error)
@@ -190,6 +191,7 @@ func (s *userService) CodeLogin(ctx context.Context, phone, code, deviceID, osTy
 	// 从数据库获取用户
 	user, err := s.userRepo.GetByPhone(ctx, phone)
 	if err != nil {
+		s.logger.Error("没有注册过的用户，直接注册成功", "error", err)
 		// 新用户，创建用户
 		newUser := &model.User{
 			Username:  "user_" + phone[7:], // 默认用户名
@@ -402,7 +404,22 @@ func (s *userService) RefreshToken(ctx context.Context, refreshToken string) (st
 		return "", fmt.Errorf("failed to generate token: %w", err)
 	}
 
-	return newToken, nil
+	// 生成新的refresh token
+	newRefreshToken, err := s.authService.GenerateRefreshToken(ctx, user.ID)
+	if err != nil {
+		s.logger.Error("Failed to generate refresh token", "userID", user.ID, "error", err)
+		return "", fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
+	// 将新的refresh token存储在缓存中，以便后续验证
+	refreshTokenKey := fmt.Sprintf("refresh_token:%d", user.ID)
+	if err := s.cacheService.Set(ctx, refreshTokenKey, newRefreshToken, 7*24*time.Hour); err != nil {
+		s.logger.Warn("Failed to cache refresh token", "userID", user.ID, "error", err)
+		// 不影响主流程，只记录警告
+	}
+
+	// 返回新的token和refresh token，用特殊分隔符分隔
+	return fmt.Sprintf("%s|%s", newToken, newRefreshToken), nil
 }
 
 // GetUserInfo 获取用户信息
@@ -483,6 +500,39 @@ func (s *userService) GetUserExistInformation(ctx context.Context, userID uint32
 	}
 
 	return user != nil && user.Status == model.UserStatusActive, nil
+}
+
+// Logout 用户退出登录
+func (s *userService) Logout(ctx context.Context, token string) error {
+	s.logger.Info("Logout service called")
+
+	// 验证token格式
+	if err := s.validateToken(token); err != nil {
+		s.logger.Error("Invalid token format", "error", err)
+		return err
+	}
+
+	// 从token中解析用户ID
+	userID, err := s.authService.VerifyToken(token)
+	if err != nil {
+		s.logger.Error("Failed to verify token", "error", err)
+		return errors.New("invalid token")
+	}
+
+	// 将token加入黑名单
+	if err := s.authService.InvalidateToken(ctx, token); err != nil {
+		s.logger.Error("Failed to invalidate token", "error", err)
+		// 不阻断流程，继续执行
+	}
+
+	// 清除用户缓存
+	if err := s.userRepo.DeleteUserCache(ctx, userID); err != nil {
+		s.logger.Error("Failed to clear user cache", "error", err)
+		// 不阻断流程，继续执行
+	}
+
+	s.logger.Info("User logged out successfully", "userID", userID)
+	return nil
 }
 
 // 辅助方法

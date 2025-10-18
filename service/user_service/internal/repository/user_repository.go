@@ -102,7 +102,7 @@ func (r *userRepository) Update(ctx context.Context, userID uint32, updates map[
 	}
 
 	// 更新时间
-	updates["update_time"] = time.Now()
+	updates["updated_at"] = time.Now()
 
 	if err := r.db.WithContext(ctx).Model(&user).Updates(updates).Error; err != nil {
 		return err

@@ -10,9 +10,9 @@ import (
 func CORSConfig() cors.Config {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
-	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
-	config.ExposeHeaders = []string{"Content-Length"}
+	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "X-Requested-With", "Accept", "Cache-Control", "X-Platform", "X-Client-Version", "X-Request-ID"}
+	config.ExposeHeaders = []string{"Content-Length", "Authorization"}
 	config.AllowCredentials = true
 	config.MaxAge = 12 * time.Hour
 	return config

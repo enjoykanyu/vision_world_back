@@ -23,6 +23,7 @@ type AuthService interface {
 	ParseRefreshToken(tokenString string) (uint32, error)
 	VerifyToken(tokenString string) (uint32, error)
 	VerifyRefreshToken(tokenString string) (uint32, error)
+	InvalidateToken(ctx context.Context, token string) error
 	GetTokenExpiration() time.Duration
 	GetRefreshTokenExpiration() time.Duration
 }
@@ -151,4 +152,42 @@ func (s *authService) GetTokenExpiration() time.Duration {
 // GetRefreshTokenExpiration 获取刷新token过期时间
 func (s *authService) GetRefreshTokenExpiration() time.Duration {
 	return s.refreshExpiration
+}
+
+// InvalidateToken 使token失效（加入黑名单）
+func (s *authService) InvalidateToken(ctx context.Context, token string) error {
+	// 解析token获取过期时间
+	tokenObj, err := jwt.ParseWithClaims(token, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(s.secretKey), nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to parse token for invalidation: %w", err)
+	}
+
+	if claims, ok := tokenObj.Claims.(*TokenClaims); ok && tokenObj.Valid {
+		// 计算token剩余有效时间
+		now := time.Now()
+		expiresAt := claims.ExpiresAt.Time
+		remainingTime := expiresAt.Sub(now)
+
+		// 如果token已过期，无需加入黑名单
+		if remainingTime <= 0 {
+			return nil
+		}
+
+		// TODO: 将token加入Redis黑名单
+		// 使用token的jti（JWT ID）作为key，设置过期时间为token剩余有效时间
+		// key格式: "blacklist:token:{jti}"
+		// 示例: redis.Set(ctx, fmt.Sprintf("blacklist:token:%s", claims.ID), "1", remainingTime)
+
+		// 暂时只打印日志，表示token已被标记为失效
+		fmt.Printf("Token invalidated for user %d, expires in %v\n", claims.UserID, remainingTime)
+		return nil
+	}
+
+	return errors.New("invalid token for invalidation")
 }

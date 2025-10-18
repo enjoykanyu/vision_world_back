@@ -73,6 +73,12 @@ func main() {
 	router.POST("/api/user/sms/send", userHandler.SendSmsCode)
 	router.GET("/api/user/info/:id", userHandler.GetUserInfo)
 
+	// 添加认证相关路由，与前端API路径保持一致
+	router.POST("/api/auth/login", userHandler.CodeLogin) // 使用验证码登录接口
+	router.POST("/api/auth/logout", userHandler.Logout)
+	router.POST("/api/auth/refresh", userHandler.RefreshToken)
+	router.GET("/api/auth/userinfo", userHandler.GetUserInfo)
+
 	// 新增Token相关路由
 	router.POST("/api/user/token/verify", userHandler.VerifyToken)
 	router.POST("/api/user/token/refresh", userHandler.RefreshToken)

@@ -135,3 +135,11 @@ func (c *UserServiceClient) RefreshToken(ctx context.Context, req *pb.RefreshTok
 	}
 	return c.client.RefreshToken(ctx, req)
 }
+
+// 退出登录
+func (c *UserServiceClient) LogOut(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.Logout(ctx, req)
+}

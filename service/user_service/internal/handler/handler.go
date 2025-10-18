@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strings"
 	"user_service/proto/proto_gen"
 
 	"user_service/internal/cache"
@@ -153,7 +154,7 @@ func (h *UserServiceHandler) RefreshToken(ctx context.Context, req *proto_gen.Re
 	h.logger.Info("RefreshToken called", "refresh_token", req.RefreshToken)
 
 	// 调用用户服务刷新token
-	token, err := h.userService.RefreshToken(ctx, req.RefreshToken)
+	tokenResponse, err := h.userService.RefreshToken(ctx, req.RefreshToken)
 	if err != nil {
 		h.logger.Error("RefreshToken failed", "error", err)
 		return &proto_gen.RefreshTokenResponse{
@@ -163,10 +164,25 @@ func (h *UserServiceHandler) RefreshToken(ctx context.Context, req *proto_gen.Re
 		}, nil
 	}
 
+	// 解析返回的token和refresh_token
+	parts := strings.Split(tokenResponse, "|")
+	if len(parts) != 2 {
+		h.logger.Error("Invalid token response format", "response", tokenResponse)
+		return &proto_gen.RefreshTokenResponse{
+			StatusCode: 500,
+			StatusMsg:  "服务器内部错误",
+			Token:      "",
+		}, nil
+	}
+
+	newToken := parts[0]
+	newRefreshToken := parts[1]
+
 	return &proto_gen.RefreshTokenResponse{
-		StatusCode: 0,
-		StatusMsg:  "token刷新成功",
-		Token:      token,
+		StatusCode:   0,
+		StatusMsg:    "token刷新成功",
+		Token:        newToken,
+		RefreshToken: newRefreshToken,
 	}, nil
 }
 
@@ -259,5 +275,24 @@ func (h *UserServiceHandler) GetUserExistInformation(ctx context.Context, req *p
 		StatusCode: 0,
 		StatusMsg:  "success",
 		//Exist:      exists,
+	}, nil
+}
+
+// Logout 用户退出登录
+func (h *UserServiceHandler) Logout(ctx context.Context, req *proto_gen.LogoutRequest) (*proto_gen.LogoutResponse, error) {
+	h.logger.Info("Logout called", "token", req.Token)
+
+	// 调用用户服务进行退出登录
+	if err := h.userService.Logout(ctx, req.Token); err != nil {
+		h.logger.Error("Logout failed", "error", err)
+		return &proto_gen.LogoutResponse{
+			StatusCode: 400,
+			StatusMsg:  err.Error(),
+		}, nil
+	}
+
+	return &proto_gen.LogoutResponse{
+		StatusCode: 0,
+		StatusMsg:  "退出登录成功",
 	}, nil
 }

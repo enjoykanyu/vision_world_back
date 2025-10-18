@@ -85,6 +85,16 @@ message RefreshTokenResponse {
   string refresh_token = 5; // 新的刷新token
 }
 
+// 退出登录请求
+message LogoutRequest {
+  string token = 1; // 用户token
+}
+
+message LogoutResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+}
+
 // ==================== 用户信息相关接口 ====================
 
 // 获取用户信息请求
@@ -163,6 +173,7 @@ service UserService {
   // Token相关
   rpc VerifyToken(VerifyTokenRequest) returns(VerifyTokenResponse);
   rpc RefreshToken(RefreshTokenRequest) returns(RefreshTokenResponse);
+  rpc Logout(LogoutRequest) returns(LogoutResponse);
   
   // 用户信息相关
   rpc GetUserInfo(GetUserInfoRequest) returns(UserResponse);

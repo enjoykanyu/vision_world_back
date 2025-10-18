@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -388,6 +389,48 @@ func (h *UserHandler) RefreshToken(c *gin.Context) {
 	if err != nil {
 		log.Printf("RefreshToken error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token refresh failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"msg":  "success",
+		"data": resp,
+	})
+}
+
+// Logout 用户退出登录
+func (h *UserHandler) Logout(c *gin.Context) {
+	// 从请求头获取token
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing authorization token"})
+		return
+	}
+
+	// 移除Bearer前缀（如果有）
+	if strings.HasPrefix(token, "Bearer ") {
+		token = token[7:]
+	}
+
+	req := &pb.LogoutRequest{
+		Token: token,
+	}
+
+	userClient, err := h.getUserClient()
+	if err != nil {
+		log.Printf("Failed to get user service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "User service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := userClient.LogOut(ctx, req)
+	if err != nil {
+		log.Printf("Logout error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Logout failed"})
 		return
 	}
 
