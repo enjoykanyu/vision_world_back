@@ -3,9 +3,14 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"user_service/internal/cache"
 	"user_service/internal/config"
 	"user_service/internal/model"
 	"user_service/internal/repository"
@@ -28,21 +33,23 @@ type UserService interface {
 
 // userService 用户服务实现
 type userService struct {
-	config      *config.Config
-	logger      logger.Logger
-	userRepo    repository.UserRepository
-	authService AuthService
-	smsService  SmsService
+	config       *config.Config
+	logger       logger.Logger
+	userRepo     repository.UserRepository
+	cacheService cache.CacheService
+	authService  AuthService
+	smsService   SmsService
 }
 
 // NewUserService 创建用户服务
-func NewUserService(cfg *config.Config, log logger.Logger, userRepo repository.UserRepository, authService AuthService, smsService SmsService) UserService {
+func NewUserService(cfg *config.Config, log logger.Logger, userRepo repository.UserRepository, cacheService cache.CacheService, authService AuthService, smsService SmsService) UserService {
 	return &userService{
-		config:      cfg,
-		logger:      log,
-		userRepo:    userRepo,
-		authService: authService,
-		smsService:  smsService,
+		config:       cfg,
+		logger:       log,
+		userRepo:     userRepo,
+		cacheService: cacheService,
+		authService:  authService,
+		smsService:   smsService,
 	}
 }
 
@@ -51,27 +58,70 @@ func (s *userService) PhoneLogin(ctx context.Context, phone, password, deviceID,
 	s.logger.Info("PhoneLogin service called", "phone", phone)
 
 	// 验证手机号格式
-	if !s.isValidPhone(phone) {
-		return nil, "", errors.New("invalid phone format")
+	if err := s.validatePhoneNumber(phone); err != nil {
+		return nil, "", fmt.Errorf("phone validation failed: %w", err)
 	}
 
-	// 查找用户
+	// 验证密码格式
+	if err := s.validatePassword(password); err != nil {
+		return nil, "", fmt.Errorf("password validation failed: %w", err)
+	}
+
+	// 检查登录频率限制
+	rateLimitKey := fmt.Sprintf("login_attempt:%s", phone)
+	allowed, err := s.cacheService.CheckRateLimit(ctx, rateLimitKey, 5, time.Minute)
+	if err != nil {
+		s.logger.Error("Failed to check login rate limit", "phone", phone, "error", err)
+		return nil, "", fmt.Errorf("failed to check rate limit: %w", err)
+	}
+
+	if !allowed {
+		s.logger.Warn("Login attempt rate limit exceeded", "phone", phone)
+		return nil, "", fmt.Errorf("登录尝试过于频繁，请稍后再试")
+	}
+
+	// 从数据库获取用户
 	user, err := s.userRepo.GetByPhone(ctx, phone)
 	if err != nil {
 		s.logger.Error("Failed to query user", "error", err)
 		return nil, "", errors.New("user not found")
 	}
 
-	// 验证密码（这里应该使用加密后的密码比较）
-	if user.PasswordHash != password {
+	// 将用户信息转换为缓存格式并存储到Redis
+	userCache := &model.UserCache{
+		UserID:          uint64(user.ID),
+		Username:        user.Username,
+		Nickname:        user.Nickname,
+		AvatarURL:       user.AvatarURL,
+		BackgroundImage: user.BackgroundImage,
+		Signature:       user.Signature,
+		IsVerified:      user.IsVerified,
+		UserType:        user.UserType,
+		Status:          user.Status,
+		UpdatedAt:       user.UpdatedAt,
+	}
+
+	if cacheErr := s.cacheService.SetUser(ctx, user.ID, userCache, 30*time.Minute); cacheErr != nil {
+		s.logger.Warn("Failed to cache user", "phone", phone, "error", cacheErr)
+		// 不影响主流程，只记录警告
+	}
+
+	// 检查用户状态
+	if user.Status != model.UserStatusActive {
+		return nil, "", errors.New("user account is disabled")
+	}
+
+	// 验证密码（使用bcrypt加密比较）
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		s.logger.Error("Password verification failed", "error", err)
 		return nil, "", errors.New("invalid password")
 	}
 
 	// 生成token
-	token, err := s.authService.GenerateToken(uint32(user.ID))
+	token, err := s.authService.GenerateToken(ctx, user.ID)
 	if err != nil {
 		s.logger.Error("Failed to generate token", "error", err)
-		return nil, "", errors.New("token generation failed")
+		return nil, "", fmt.Errorf("access token generation failed: %w", err)
 	}
 
 	// 更新用户信息（如最后登录时间等）
@@ -83,6 +133,11 @@ func (s *userService) PhoneLogin(ctx context.Context, phone, password, deviceID,
 		s.logger.Error("Failed to update user login info", "error", err)
 	}
 
+	// 清除用户缓存，确保登录状态更新
+	if err := s.userRepo.DeleteUserCache(ctx, user.ID); err != nil {
+		s.logger.Error("Failed to clear user cache", "error", err)
+	}
+
 	return user, token, nil
 }
 
@@ -91,21 +146,55 @@ func (s *userService) CodeLogin(ctx context.Context, phone, code, deviceID, osTy
 	s.logger.Info("CodeLogin service called", "phone", phone)
 
 	// 验证手机号格式
-	if !s.isValidPhone(phone) {
-		return nil, "", errors.New("invalid phone format")
+	if err := s.validatePhoneNumber(phone); err != nil {
+		return nil, "", fmt.Errorf("phone validation failed: %w", err)
+	}
+
+	// 验证验证码格式
+	if err := s.validateSmsCodeFormat(code); err != nil {
+		return nil, "", fmt.Errorf("sms code validation failed: %w", err)
+	}
+
+	// 检查登录频率限制
+	rateLimitKey := fmt.Sprintf("login_attempt:%s", phone)
+	allowed, err := s.cacheService.CheckRateLimit(ctx, rateLimitKey, 5, time.Minute)
+	if err != nil {
+		s.logger.Error("Failed to check login rate limit", "phone", phone, "error", err)
+		return nil, "", fmt.Errorf("failed to check rate limit: %w", err)
+	}
+
+	if !allowed {
+		s.logger.Warn("Login attempt rate limit exceeded", "phone", phone)
+		return nil, "", fmt.Errorf("登录尝试过于频繁，请稍后再试")
+	}
+
+	// 从缓存获取验证码
+	cachedCode, err := s.cacheService.GetSmsCode(ctx, phone)
+	if err != nil {
+		s.logger.Error("Failed to get SMS code", "phone", phone, "error", err)
+		return nil, "", fmt.Errorf("验证码不存在或已过期")
 	}
 
 	// 验证验证码
-	if err := s.validateSmsCode(ctx, phone, code); err != nil {
-		return nil, "", err
+	if cachedCode != code {
+		s.logger.Error("SMS code mismatch", "phone", phone, "cachedCode", cachedCode, "inputCode", code)
+		return nil, "", fmt.Errorf("验证码错误")
 	}
 
-	// 查找或创建用户
+	// 删除已使用的验证码
+	if err := s.cacheService.DeleteSmsCode(ctx, phone); err != nil {
+		s.logger.Warn("Failed to delete used SMS code", "phone", phone, "error", err)
+		// 不影响主流程，只记录警告
+	}
+
+	// 从数据库获取用户
 	user, err := s.userRepo.GetByPhone(ctx, phone)
 	if err != nil {
 		// 新用户，创建用户
 		newUser := &model.User{
+			Username:  "user_" + phone[7:], // 默认用户名
 			Phone:     phone,
+			Nickname:  "用户" + phone[7:], // 默认昵称
 			Status:    model.UserStatusActive,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -117,8 +206,32 @@ func (s *userService) CodeLogin(ctx context.Context, phone, code, deviceID, osTy
 		user = newUser
 	}
 
+	// 将用户信息转换为缓存格式并存储到Redis
+	userCache := &model.UserCache{
+		UserID:          uint64(user.ID),
+		Username:        user.Username,
+		Nickname:        user.Nickname,
+		AvatarURL:       user.AvatarURL,
+		BackgroundImage: user.BackgroundImage,
+		Signature:       user.Signature,
+		IsVerified:      user.IsVerified,
+		UserType:        user.UserType,
+		Status:          user.Status,
+		UpdatedAt:       user.UpdatedAt,
+	}
+
+	if cacheErr := s.cacheService.SetUser(ctx, user.ID, userCache, 30*time.Minute); cacheErr != nil {
+		s.logger.Warn("Failed to cache user", "phone", phone, "error", cacheErr)
+		// 不影响主流程，只记录警告
+	} else {
+		// 验证用户状态
+		if !user.IsActive() {
+			return nil, "", errors.New("user account is disabled")
+		}
+	}
+
 	// 生成token
-	token, err := s.authService.GenerateToken(uint32(user.ID))
+	token, err := s.authService.GenerateToken(ctx, user.ID)
 	if err != nil {
 		s.logger.Error("Failed to generate token", "error", err)
 		return nil, "", errors.New("token generation failed")
@@ -133,6 +246,11 @@ func (s *userService) CodeLogin(ctx context.Context, phone, code, deviceID, osTy
 		s.logger.Error("Failed to update user login info", "error", err)
 	}
 
+	// 清除用户缓存，确保登录状态更新
+	if err := s.userRepo.DeleteUserCache(ctx, user.ID); err != nil {
+		s.logger.Error("Failed to clear user cache", "error", err)
+	}
+
 	return user, token, nil
 }
 
@@ -141,8 +259,21 @@ func (s *userService) SendSmsCode(ctx context.Context, phone string) error {
 	s.logger.Info("SendSmsCode service called", "phone", phone)
 
 	// 验证手机号格式
-	if !s.isValidPhone(phone) {
-		return errors.New("invalid phone format")
+	if err := s.validatePhoneNumber(phone); err != nil {
+		return fmt.Errorf("phone validation failed: %w", err)
+	}
+
+	// 检查发送频率限制
+	rateLimitKey := fmt.Sprintf("sms_send:%s", phone)
+	allowed, err := s.cacheService.CheckRateLimit(ctx, rateLimitKey, 1, time.Minute)
+	if err != nil {
+		s.logger.Error("Failed to check rate limit", "phone", phone, "error", err)
+		return fmt.Errorf("failed to check rate limit: %w", err)
+	}
+
+	if !allowed {
+		s.logger.Warn("SMS send rate limit exceeded", "phone", phone)
+		return fmt.Errorf("发送过于频繁，请稍后再试")
 	}
 
 	// 生成6位验证码
@@ -151,15 +282,16 @@ func (s *userService) SendSmsCode(ctx context.Context, phone string) error {
 	// 发送验证码
 	if err := s.smsService.SendCode(ctx, phone, code); err != nil {
 		s.logger.Error("Failed to send SMS code", "error", err)
-		return errors.New("sms send failed")
+		return fmt.Errorf("sms send failed: %w", err)
 	}
 
-	// 缓存验证码，5分钟有效
-	if err := s.userRepo.SetSmsCode(ctx, phone, code, 5*time.Minute); err != nil {
+	// 使用缓存服务存储验证码，5分钟有效
+	if err := s.cacheService.SetSmsCode(ctx, phone, code, 5*time.Minute); err != nil {
 		s.logger.Error("Failed to cache SMS code", "error", err)
-		return errors.New("cache error")
+		return fmt.Errorf("cache set failed: %w", err)
 	}
 
+	s.logger.Info("SMS code sent successfully", "phone", phone)
 	return nil
 }
 
@@ -167,32 +299,110 @@ func (s *userService) SendSmsCode(ctx context.Context, phone string) error {
 func (s *userService) VerifyToken(ctx context.Context, token string) (uint32, error) {
 	s.logger.Info("VerifyToken service called")
 
+	// 验证token格式
+	if token == "" {
+		return 0, errors.New("token cannot be empty")
+	}
+
 	// 验证token
-	userID, err := s.authService.ParseToken(token)
+	userID, err := s.authService.VerifyToken(token)
 	if err != nil {
-		return 0, errors.New("invalid token")
+		s.logger.Error("Token parsing failed", "error", err)
+		return 0, fmt.Errorf("token verification failed: %w", err)
+	}
+
+	// 从数据库获取用户
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return 0, errors.New("user not found")
+		}
+		s.logger.Error("Failed to get user", "error", err)
+		return 0, errors.New("database error")
+	}
+
+	// 将用户信息转换为缓存格式并存储到Redis
+	userCache := &model.UserCache{
+		UserID:          uint64(user.ID),
+		Username:        user.Username,
+		Nickname:        user.Nickname,
+		AvatarURL:       user.AvatarURL,
+		BackgroundImage: user.BackgroundImage,
+		Signature:       user.Signature,
+		IsVerified:      user.IsVerified,
+		UserType:        user.UserType,
+		Status:          user.Status,
+		UpdatedAt:       user.UpdatedAt,
+	}
+
+	if cacheErr := s.cacheService.SetUser(ctx, user.ID, userCache, 30*time.Minute); cacheErr != nil {
+		s.logger.Warn("Failed to cache user", "userID", userID, "error", cacheErr)
+		// 不影响主流程，只记录警告
+	}
+
+	// 检查用户状态
+	if user.Status != model.UserStatusActive {
+		return 0, errors.New("user account is disabled")
 	}
 
 	return userID, nil
 }
 
-// RefreshToken 刷新Token
+// RefreshToken 刷新token
 func (s *userService) RefreshToken(ctx context.Context, refreshToken string) (string, error) {
-	s.logger.Info("RefreshToken service called")
+	// 验证refresh token格式
+	if err := s.validateToken(refreshToken); err != nil {
+		s.logger.Error("Invalid refresh token format", "error", err)
+		return "", fmt.Errorf("invalid refresh token format: %w", err)
+	}
 
-	// 验证refresh token
-	userID, err := s.authService.VerifyRefreshToken(refreshToken)
+	// 解析refresh token
+	userID, err := s.authService.ParseRefreshToken(refreshToken)
 	if err != nil {
-		return "", errors.New("invalid refresh token")
+		s.logger.Error("Failed to parse refresh token", "error", err)
+		return "", fmt.Errorf("failed to parse refresh token: %w", err)
+	}
+
+	// 从数据库获取用户
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to get user by ID", "userID", userID, "error", err)
+		return "", fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// 将用户信息转换为缓存格式并存储到Redis
+	userCache := &model.UserCache{
+		UserID:          uint64(user.ID),
+		Username:        user.Username,
+		Nickname:        user.Nickname,
+		AvatarURL:       user.AvatarURL,
+		BackgroundImage: user.BackgroundImage,
+		Signature:       user.Signature,
+		IsVerified:      user.IsVerified,
+		UserType:        user.UserType,
+		Status:          user.Status,
+		UpdatedAt:       user.UpdatedAt,
+	}
+
+	if cacheErr := s.cacheService.SetUser(ctx, user.ID, userCache, 30*time.Minute); cacheErr != nil {
+		s.logger.Warn("Failed to cache user", "userID", userID, "error", cacheErr)
+		// 不影响主流程，只记录警告
+	}
+
+	// 检查用户状态
+	if user.Status != model.UserStatusActive {
+		s.logger.Error("User account is not active", "userID", userID, "status", user.Status)
+		return "", fmt.Errorf("account is not active")
 	}
 
 	// 生成新的token
-	token, err := s.authService.GenerateToken(userID)
+	newToken, err := s.authService.GenerateToken(ctx, user.ID)
 	if err != nil {
-		return "", errors.New("token generation failed")
+		s.logger.Error("Failed to generate token", "userID", user.ID, "error", err)
+		return "", fmt.Errorf("failed to generate token: %w", err)
 	}
 
-	return token, nil
+	return newToken, nil
 }
 
 // GetUserInfo 获取用户信息
@@ -278,12 +488,38 @@ func (s *userService) GetUserExistInformation(ctx context.Context, userID uint32
 // 辅助方法
 
 func (s *userService) isValidPhone(phone string) bool {
-	// 简单的手机号格式验证
+	// 简单的手机号格式验证（中国大陆手机号）
 	if len(phone) != 11 {
 		return false
 	}
-	// 这里应该使用更严格的正则表达式验证
+	// 检查是否以1开头，第二位是3-9之间的数字
+	if phone[0] != '1' || phone[1] < '3' || phone[1] > '9' {
+		return false
+	}
+	// 检查是否全为数字
+	for _, ch := range phone {
+		if ch < '0' || ch > '9' {
+			return false
+		}
+	}
 	return true
+}
+
+// HashPassword 生成密码哈希
+func (s *userService) HashPassword(password string) (string, error) {
+	// 使用bcrypt生成密码哈希，默认cost为10
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		s.logger.Error("Failed to hash password", "error", err)
+		return "", err
+	}
+	return string(hash), nil
+}
+
+// VerifyPassword 验证密码
+func (s *userService) VerifyPassword(hashedPassword, password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	return err == nil
 }
 
 func (s *userService) validateSmsCode(ctx context.Context, phone, code string) error {
@@ -299,6 +535,80 @@ func (s *userService) validateSmsCode(ctx context.Context, phone, code string) e
 	// 验证成功后删除验证码
 	if err := s.userRepo.DeleteSmsCode(ctx, phone); err != nil {
 		s.logger.Error("Failed to delete SMS code", "error", err)
+	}
+
+	s.logger.Info("SMS code validated successfully", "phone", phone)
+	return nil
+}
+
+// validatePhoneNumber 验证手机号格式
+func (s *userService) validatePhoneNumber(phone string) error {
+	if phone == "" {
+		return errors.New("phone number cannot be empty")
+	}
+
+	// 中国大陆手机号正则表达式
+	pattern := `^1[3-9]\d{9}$`
+	matched, err := regexp.MatchString(pattern, phone)
+	if err != nil {
+		return fmt.Errorf("phone validation regex error: %w", err)
+	}
+	if !matched {
+		return errors.New("invalid phone number format")
+	}
+
+	return nil
+}
+
+// validatePassword 验证密码格式
+func (s *userService) validatePassword(password string) error {
+	if password == "" {
+		return errors.New("password cannot be empty")
+	}
+
+	if len(password) < 6 {
+		return errors.New("password must be at least 6 characters")
+	}
+
+	if len(password) > 20 {
+		return errors.New("password must be less than 20 characters")
+	}
+
+	return nil
+}
+
+// validateSmsCodeFormat 验证短信验证码格式
+func (s *userService) validateSmsCodeFormat(code string) error {
+	if code == "" {
+		return errors.New("verification code cannot be empty")
+	}
+
+	if len(code) != 6 {
+		return errors.New("verification code must be 6 digits")
+	}
+
+	pattern := `^\d{6}$`
+	matched, err := regexp.MatchString(pattern, code)
+	if err != nil {
+		return fmt.Errorf("code validation regex error: %w", err)
+	}
+	if !matched {
+		return errors.New("verification code must contain only digits")
+	}
+
+	return nil
+}
+
+// validateToken 验证token格式
+func (s *userService) validateToken(token string) error {
+	if token == "" {
+		return errors.New("token cannot be empty")
+	}
+
+	// JWT token通常由三部分组成，用点分隔
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return errors.New("invalid token format")
 	}
 
 	return nil

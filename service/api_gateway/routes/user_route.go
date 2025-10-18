@@ -333,3 +333,67 @@ func (h *UserHandler) Close() error {
 	}
 	return nil
 }
+
+// VerifyToken 验证Token
+func (h *UserHandler) VerifyToken(c *gin.Context) {
+	var req pb.VerifyTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	userClient, err := h.getUserClient()
+	if err != nil {
+		log.Printf("Failed to get user service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "User service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := userClient.VerifyToken(ctx, &req)
+	if err != nil {
+		log.Printf("VerifyToken error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token verification failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"msg":  "success",
+		"data": resp,
+	})
+}
+
+// RefreshToken 刷新Token
+func (h *UserHandler) RefreshToken(c *gin.Context) {
+	var req pb.RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	userClient, err := h.getUserClient()
+	if err != nil {
+		log.Printf("Failed to get user service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "User service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := userClient.RefreshToken(ctx, &req)
+	if err != nil {
+		log.Printf("RefreshToken error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token refresh failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"msg":  "success",
+		"data": resp,
+	})
+}

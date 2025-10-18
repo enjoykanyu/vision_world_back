@@ -119,3 +119,19 @@ func (c *UserServiceClient) GetUserInfo(ctx context.Context, req *pb.GetUserInfo
 	}
 	return c.client.GetUserInfo(ctx, req)
 }
+
+// VerifyToken 验证Token
+func (c *UserServiceClient) VerifyToken(ctx context.Context, req *pb.VerifyTokenRequest) (*pb.VerifyTokenResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.VerifyToken(ctx, req)
+}
+
+// RefreshToken 刷新Token
+func (c *UserServiceClient) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.RefreshToken(ctx, req)
+}

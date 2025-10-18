@@ -73,6 +73,10 @@ func main() {
 	router.POST("/api/user/sms/send", userHandler.SendSmsCode)
 	router.GET("/api/user/info/:id", userHandler.GetUserInfo)
 
+	// 新增Token相关路由
+	router.POST("/api/user/token/verify", userHandler.VerifyToken)
+	router.POST("/api/user/token/refresh", userHandler.RefreshToken)
+
 	// 注册直播相关路由
 	router.POST("/api/live/start", liveHandler.StartLive)
 	router.POST("/api/live/stop", liveHandler.StopLive)

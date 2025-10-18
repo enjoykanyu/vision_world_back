@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -16,12 +17,14 @@ type TokenClaims struct {
 
 // AuthService 认证服务接口
 type AuthService interface {
-	GenerateToken(userID uint32) (string, error)
-	GenerateRefreshToken(userID uint32) (string, error)
+	GenerateToken(ctx context.Context, userID uint32) (string, error)
+	GenerateRefreshToken(ctx context.Context, userID uint32) (string, error)
 	ParseToken(tokenString string) (uint32, error)
 	ParseRefreshToken(tokenString string) (uint32, error)
 	VerifyToken(tokenString string) (uint32, error)
 	VerifyRefreshToken(tokenString string) (uint32, error)
+	GetTokenExpiration() time.Duration
+	GetRefreshTokenExpiration() time.Duration
 }
 
 // authService 认证服务实现
@@ -30,6 +33,8 @@ type authService struct {
 	refreshSecretKey  string
 	tokenExpiration   time.Duration
 	refreshExpiration time.Duration
+	issuer            string
+	audience          string
 }
 
 // NewAuthService 创建认证服务
@@ -39,14 +44,18 @@ func NewAuthService(secretKey, refreshSecretKey string, tokenExpiration, refresh
 		refreshSecretKey:  refreshSecretKey,
 		tokenExpiration:   tokenExpiration,
 		refreshExpiration: refreshExpiration,
+		issuer:            "vision-world-user-service",
+		audience:          "vision-world-app",
 	}
 }
 
 // GenerateToken 生成访问token
-func (s *authService) GenerateToken(userID uint32) (string, error) {
+func (s *authService) GenerateToken(ctx context.Context, userID uint32) (string, error) {
 	claims := TokenClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    s.issuer,
+			Audience:  jwt.ClaimStrings{s.audience},
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.tokenExpiration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
@@ -63,10 +72,12 @@ func (s *authService) GenerateToken(userID uint32) (string, error) {
 }
 
 // GenerateRefreshToken 生成刷新token
-func (s *authService) GenerateRefreshToken(userID uint32) (string, error) {
+func (s *authService) GenerateRefreshToken(ctx context.Context, userID uint32) (string, error) {
 	claims := TokenClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    s.issuer,
+			Audience:  jwt.ClaimStrings{s.audience},
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.refreshExpiration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
@@ -130,4 +141,14 @@ func (s *authService) VerifyToken(tokenString string) (uint32, error) {
 // VerifyRefreshToken 验证刷新token（兼容接口）
 func (s *authService) VerifyRefreshToken(tokenString string) (uint32, error) {
 	return s.ParseRefreshToken(tokenString)
+}
+
+// GetTokenExpiration 获取访问token过期时间
+func (s *authService) GetTokenExpiration() time.Duration {
+	return s.tokenExpiration
+}
+
+// GetRefreshTokenExpiration 获取刷新token过期时间
+func (s *authService) GetRefreshTokenExpiration() time.Duration {
+	return s.refreshExpiration
 }

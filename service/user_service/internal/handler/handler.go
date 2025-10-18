@@ -4,6 +4,7 @@ import (
 	"context"
 	"user_service/proto/proto_gen"
 
+	"user_service/internal/cache"
 	"user_service/internal/config"
 	"user_service/internal/converter"
 	"user_service/internal/repository"
@@ -48,8 +49,11 @@ func NewUserServiceHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, r
 	// 创建用户仓库
 	userRepo := repository.NewUserRepository(db, redis)
 
+	// 创建缓存服务
+	cacheService := cache.NewCacheService(redis, log)
+
 	// 创建用户服务
-	userService := service.NewUserService(cfg, log, userRepo, authService, smsService)
+	userService := service.NewUserService(cfg, log, userRepo, cacheService, authService, smsService)
 
 	return &UserServiceHandler{
 		config:      cfg,
