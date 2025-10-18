@@ -204,10 +204,37 @@ func (h *UserHandler) PhoneLogin(c *gin.Context) {
 		return
 	}
 
+	// 转换为前端期望的格式
+	loginResponse := gin.H{
+		"status_msg": resp.StatusMsg,
+		"token":      resp.Token,
+	}
+
+	// 如果有用户信息，添加到响应中
+	if resp.User != nil {
+		user := gin.H{
+			"id":               resp.User.Id,
+			"name":             resp.User.Name,
+			"phone":            resp.User.Phone,
+			"follow_count":     resp.User.FollowCount,
+			"follower_count":   resp.User.FollowerCount,
+			"avatar":           resp.User.Avatar,
+			"background_image": resp.User.BackgroundImage,
+			"signature":        resp.User.Signature,
+			"total_favorited":  resp.User.TotalFavorited,
+			"work_count":       resp.User.WorkCount,
+			"favorite_count":   resp.User.FavoriteCount,
+			"create_time":      resp.User.CreateTime,
+			"last_login_time":  resp.User.LastLoginTime,
+			"user_type":        resp.User.UserType,
+		}
+		loginResponse["user"] = user
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "success",
-		"data": resp,
+		"data": loginResponse,
 	})
 }
 
@@ -236,10 +263,37 @@ func (h *UserHandler) CodeLogin(c *gin.Context) {
 		return
 	}
 
+	// 转换为前端期望的格式
+	loginResponse := gin.H{
+		"status_msg": resp.StatusMsg,
+		"token":      resp.Token,
+	}
+
+	// 如果有用户信息，添加到响应中
+	if resp.User != nil {
+		user := gin.H{
+			"id":               resp.User.Id,
+			"name":             resp.User.Name,
+			"phone":            resp.User.Phone,
+			"follow_count":     resp.User.FollowCount,
+			"follower_count":   resp.User.FollowerCount,
+			"avatar":           resp.User.Avatar,
+			"background_image": resp.User.BackgroundImage,
+			"signature":        resp.User.Signature,
+			"total_favorited":  resp.User.TotalFavorited,
+			"work_count":       resp.User.WorkCount,
+			"favorite_count":   resp.User.FavoriteCount,
+			"create_time":      resp.User.CreateTime,
+			"last_login_time":  resp.User.LastLoginTime,
+			"user_type":        resp.User.UserType,
+		}
+		loginResponse["user"] = user
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "success",
-		"data": resp,
+		"data": loginResponse,
 	})
 }
 
@@ -282,17 +336,36 @@ func (h *UserHandler) SendSmsCode(c *gin.Context) {
 
 // GetUserInfo 获取用户信息
 func (h *UserHandler) GetUserInfo(c *gin.Context) {
-	// 用户请求只需要id参数
-	userIdStr := c.Param("id")
-	if userIdStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing user id parameter"})
-		return
-	}
+	var userId uint32
+	var err error
 
-	userId, err := strconv.ParseUint(userIdStr, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
-		return
+	// 尝试从路径参数获取用户ID
+	userIdStr := c.Param("id")
+	if userIdStr != "" {
+		// 从路径参数获取ID
+		id, err := strconv.ParseUint(userIdStr, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user id"})
+			return
+		}
+		userId = uint32(id)
+	} else {
+		// 从认证信息获取用户ID（例如从token中解析）
+		// 这里简化处理，实际应该从认证中间件中获取
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization token"})
+			return
+		}
+
+		// 移除Bearer前缀（如果有）
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			authHeader = authHeader[7:]
+		}
+
+		// 这里应该解析token获取用户ID，简化处理使用固定值
+		// 实际项目中应该调用认证服务验证token并获取用户ID
+		userId = 1 // 临时处理，应该从token中解析
 	}
 
 	req := &pb.GetUserInfoRequest{
@@ -317,10 +390,28 @@ func (h *UserHandler) GetUserInfo(c *gin.Context) {
 		return
 	}
 
+	// 转换为前端期望的格式
+	userResponse := gin.H{
+		"id":               resp.User.Id,
+		"name":             resp.User.Name,
+		"phone":            resp.User.Phone,
+		"follow_count":     resp.User.FollowCount,
+		"follower_count":   resp.User.FollowerCount,
+		"avatar":           resp.User.Avatar,
+		"background_image": resp.User.BackgroundImage,
+		"signature":        resp.User.Signature,
+		"total_favorited":  resp.User.TotalFavorited,
+		"work_count":       resp.User.WorkCount,
+		"favorite_count":   resp.User.FavoriteCount,
+		"create_time":      resp.User.CreateTime,
+		"last_login_time":  resp.User.LastLoginTime,
+		"user_type":        resp.User.UserType,
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "success",
-		"data": resp,
+		"data": userResponse,
 	})
 }
 

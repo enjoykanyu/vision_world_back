@@ -69,7 +69,7 @@ func (h *UserServiceHandler) PhoneLogin(ctx context.Context, req *proto_gen.Phon
 	h.logger.Info("PhoneLogin called", "phone", req.Phone)
 
 	// 调用用户服务进行登录
-	_, token, err := h.userService.PhoneLogin(ctx, req.Phone, req.Password, req.DeviceId, req.OsType, req.AppVersion)
+	user, token, err := h.userService.PhoneLogin(ctx, req.Phone, req.Password, req.DeviceId, req.OsType, req.AppVersion)
 	if err != nil {
 		h.logger.Error("PhoneLogin failed", "error", err, "phone", req.Phone)
 		return &proto_gen.LoginResponse{
@@ -81,8 +81,8 @@ func (h *UserServiceHandler) PhoneLogin(ctx context.Context, req *proto_gen.Phon
 	return &proto_gen.LoginResponse{
 		StatusCode: 0,
 		StatusMsg:  "登录成功",
-		//User:     user,
-		Token: token,
+		User:       h.converter.ModelToProto(user),
+		Token:      token,
 	}, nil
 }
 
@@ -91,7 +91,7 @@ func (h *UserServiceHandler) CodeLogin(ctx context.Context, req *proto_gen.CodeL
 	h.logger.Info("CodeLogin called", "phone", req.Phone)
 
 	// 调用用户服务进行验证码登录
-	_, token, err := h.userService.CodeLogin(ctx, req.Phone, req.Code, req.DeviceId, req.OsType, req.AppVersion)
+	user, token, err := h.userService.CodeLogin(ctx, req.Phone, req.Code, req.DeviceId, req.OsType, req.AppVersion)
 	if err != nil {
 		h.logger.Error("CodeLogin failed", "error", err, "phone", req.Phone)
 		return &proto_gen.LoginResponse{
@@ -103,8 +103,8 @@ func (h *UserServiceHandler) CodeLogin(ctx context.Context, req *proto_gen.CodeL
 	return &proto_gen.LoginResponse{
 		StatusCode: 0,
 		StatusMsg:  "登录成功",
-		//UserId:     user.ID,
-		Token: token,
+		User:       h.converter.ModelToProto(user),
+		Token:      token,
 	}, nil
 }
 
