@@ -3,9 +3,11 @@ package handler
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/vision_world/video_service/internal/config"
+	"github.com/vision_world/video_service/internal/model"
 	"github.com/vision_world/video_service/internal/service"
 	"github.com/vision_world/video_service/pkg/logger"
 	pb "github.com/vision_world/video_service/proto/proto_gen/video"
@@ -163,27 +165,38 @@ func (h *VideoHandler) DeleteVideo(ctx context.Context, req *pb.DeleteVideoReque
 func (h *VideoHandler) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoRequest) (*pb.VideoResponse, error) {
 	logger.Info("GetVideoInfo called", zap.Uint32("video_id", req.VideoId))
 
-	// TODO: 实现获取视频信息逻辑
+	// 调用service层获取视频信息
+	videoID := strconv.FormatUint(uint64(req.VideoId), 10)
+	video, err := h.videoService.GetVideoByID(ctx, videoID)
+	if err != nil {
+		logger.Error("Failed to get video info", zap.Error(err))
+		return &pb.VideoResponse{
+			StatusCode: 500,
+			StatusMsg:  "获取视频信息失败",
+		}, nil
+	}
+
+	if video == nil {
+		return &pb.VideoResponse{
+			StatusCode: 404,
+			StatusMsg:  "视频不存在",
+		}, nil
+	}
+
+	// 增加播放量
+	_, err = h.videoService.UpdateVideoViewCount(ctx, videoID, 1)
+	if err != nil {
+		logger.Error("Failed to update view count", zap.Error(err))
+		// 不影响主流程，只记录错误
+	}
+
+	// 转换为protobuf格式
+	pbVideo := h.convertToProtoVideo(video)
 
 	return &pb.VideoResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		Video: &pb.Video{
-			Id:           req.VideoId,
-			Title:        "TODO: Video Title",
-			Description:  "TODO: Video Description",
-			CoverUrl:     "TODO: Cover URL",
-			VideoUrl:     "TODO: Video URL",
-			PlayCount:    100,
-			LikeCount:    50,
-			CommentCount: 20,
-			ShareCount:   10,
-			CreateTime:   time.Now().Unix(),
-			Duration:     60,
-			Resolution:   "1080p",
-			Status:       "normal",
-			IsPublic:     true,
-		},
+		Video:      pbVideo,
 	}, nil
 }
 
@@ -191,25 +204,32 @@ func (h *VideoHandler) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoReq
 func (h *VideoHandler) GetVideoInfos(ctx context.Context, req *pb.GetVideoInfosRequest) (*pb.GetVideoInfosResponse, error) {
 	logger.Info("GetVideoInfos called", zap.Int("video_count", len(req.VideoIds)))
 
-	// TODO: 实现批量获取视频信息逻辑
-
-	videos := make([]*pb.Video, 0, len(req.VideoIds))
+	// 转换视频ID列表
+	videoIDs := make([]string, 0, len(req.VideoIds))
 	for _, videoId := range req.VideoIds {
-		videos = append(videos, &pb.Video{
-			Id:         videoId,
-			Title:      "TODO: Video Title",
-			CoverUrl:   "TODO: Cover URL",
-			VideoUrl:   "TODO: Video URL",
-			PlayCount:  100,
-			LikeCount:  50,
-			CreateTime: time.Now().Unix(),
-		})
+		videoIDs = append(videoIDs, strconv.FormatUint(uint64(videoId), 10))
+	}
+
+	// 调用service层获取视频信息
+	videos, err := h.videoService.GetVideosByIDs(ctx, videoIDs)
+	if err != nil {
+		logger.Error("Failed to get videos info", zap.Error(err))
+		return &pb.GetVideoInfosResponse{
+			StatusCode: 500,
+			StatusMsg:  "获取视频信息失败",
+		}, nil
+	}
+
+	// 转换为protobuf格式
+	pbVideos := make([]*pb.Video, 0, len(videos))
+	for _, video := range videos {
+		pbVideos = append(pbVideos, h.convertToProtoVideo(video))
 	}
 
 	return &pb.GetVideoInfosResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		Videos:     videos,
+		Videos:     pbVideos,
 	}, nil
 }
 
@@ -251,26 +271,30 @@ func (h *VideoHandler) GetRecommendVideos(ctx context.Context, req *pb.GetRecomm
 	}
 	logger.Info("GetRecommendVideos called", zap.Uint32("page", req.Page), zap.String("category", category))
 
-	// TODO: 实现推荐算法逻辑
+	// 调用service层获取热门视频作为推荐视频
+	page := int(req.Page)
+	pageSize := int(req.PageSize)
 
-	videos := make([]*pb.Video, 0)
-	for i := uint32(0); i < req.PageSize; i++ {
-		videos = append(videos, &pb.Video{
-			Id:         uint32(i + 1),
-			Title:      "TODO: Recommended Video Title",
-			CoverUrl:   "TODO: Cover URL",
-			VideoUrl:   "TODO: Video URL",
-			PlayCount:  1000,
-			LikeCount:  500,
-			CreateTime: time.Now().Unix(),
-		})
+	videos, hasMore, err := h.videoService.GetHotVideos(ctx, page, pageSize, category)
+	if err != nil {
+		logger.Error("Failed to get recommend videos", zap.Error(err))
+		return &pb.GetRecommendVideosResponse{
+			StatusCode: 500,
+			StatusMsg:  "获取推荐视频失败",
+		}, nil
+	}
+
+	// 转换为protobuf格式
+	pbVideos := make([]*pb.Video, 0, len(videos))
+	for _, video := range videos {
+		pbVideos = append(pbVideos, h.convertToProtoVideo(video))
 	}
 
 	return &pb.GetRecommendVideosResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		Videos:     videos,
-		HasMore:    true,
+		Videos:     pbVideos,
+		HasMore:    hasMore,
 	}, nil
 }
 
@@ -302,6 +326,107 @@ func (h *VideoHandler) GetFollowVideos(ctx context.Context, req *pb.GetFollowVid
 	}, nil
 }
 
+// GetHotVideos 获取热门视频列表
+func (h *VideoHandler) GetHotVideos(ctx context.Context, req *pb.GetHotVideosRequest) (*pb.GetHotVideosResponse, error) {
+	category := ""
+	if req.Category != nil {
+		category = *req.Category
+	}
+	logger.Info("GetHotVideos called", zap.Uint32("page", req.Page), zap.String("category", category))
+
+	// 调用service层获取热门视频
+	page := int(req.Page)
+	pageSize := int(req.PageSize)
+
+	videos, hasMore, err := h.videoService.GetHotVideos(ctx, page, pageSize, category)
+	if err != nil {
+		logger.Error("Failed to get hot videos", zap.Error(err))
+		return &pb.GetHotVideosResponse{
+			StatusCode: 500,
+			StatusMsg:  "获取热门视频失败",
+		}, nil
+	}
+
+	// 转换为protobuf格式
+	pbVideos := make([]*pb.Video, 0, len(videos))
+	for _, video := range videos {
+		pbVideos = append(pbVideos, h.convertToProtoVideo(video))
+	}
+
+	return &pb.GetHotVideosResponse{
+		StatusCode: 0,
+		StatusMsg:  "success",
+		Videos:     pbVideos,
+		HasMore:    hasMore,
+	}, nil
+}
+
+// GetCategoryVideos 获取分类视频列表
+func (h *VideoHandler) GetCategoryVideos(ctx context.Context, req *pb.GetCategoryVideosRequest) (*pb.GetCategoryVideosResponse, error) {
+	logger.Info("GetCategoryVideos called", zap.String("category", req.Category), zap.Uint32("page", req.Page))
+
+	// 调用service层获取分类视频
+	page := int(req.Page)
+	pageSize := int(req.PageSize)
+
+	videos, hasMore, err := h.videoService.GetCategoryVideos(ctx, req.Category, page, pageSize)
+	if err != nil {
+		logger.Error("Failed to get category videos", zap.Error(err))
+		return &pb.GetCategoryVideosResponse{
+			StatusCode: 500,
+			StatusMsg:  "获取分类视频失败",
+		}, nil
+	}
+
+	// 转换为protobuf格式
+	pbVideos := make([]*pb.Video, 0, len(videos))
+	for _, video := range videos {
+		pbVideos = append(pbVideos, h.convertToProtoVideo(video))
+	}
+
+	return &pb.GetCategoryVideosResponse{
+		StatusCode: 0,
+		StatusMsg:  "success",
+		Videos:     pbVideos,
+		HasMore:    hasMore,
+	}, nil
+}
+
+// SearchVideos 搜索视频
+func (h *VideoHandler) SearchVideos(ctx context.Context, req *pb.SearchVideosRequest) (*pb.SearchVideosResponse, error) {
+	category := ""
+	if req.Category != nil {
+		category = *req.Category
+	}
+	logger.Info("SearchVideos called", zap.String("keyword", req.Keyword), zap.String("category", category), zap.Uint32("page", req.Page))
+
+	// 调用service层搜索视频
+	page := int(req.Page)
+	pageSize := int(req.PageSize)
+
+	videos, hasMore, err := h.videoService.SearchVideos(ctx, req.Keyword, page, pageSize, category)
+	if err != nil {
+		logger.Error("Failed to search videos", zap.Error(err))
+		return &pb.SearchVideosResponse{
+			StatusCode: 500,
+			StatusMsg:  "搜索视频失败",
+		}, nil
+	}
+
+	// 转换为protobuf格式
+	pbVideos := make([]*pb.Video, 0, len(videos))
+	for _, video := range videos {
+		pbVideos = append(pbVideos, h.convertToProtoVideo(video))
+	}
+
+	return &pb.SearchVideosResponse{
+		StatusCode: 0,
+		StatusMsg:  "success",
+		Videos:     pbVideos,
+		HasMore:    hasMore,
+	}, nil
+}
+
 // ==================== 视频互动相关接口 ====================
 
 // LikeVideo 点赞/取消点赞视频
@@ -313,12 +438,30 @@ func (h *VideoHandler) LikeVideo(ctx context.Context, req *pb.LikeVideoRequest) 
 	logger.Info("LikeVideo called", zap.Uint32("video_id", req.VideoId), zap.String("action_type", actionType))
 
 	// TODO: 验证用户token
-	// TODO: 实现点赞/取消点赞逻辑
+
+	// 调用service层更新点赞数
+	videoID := strconv.FormatUint(uint64(req.VideoId), 10)
+	var increment int32
+	if req.ActionType {
+		increment = 1
+	} else {
+		increment = -1
+	}
+
+	likeCount, err := h.videoService.UpdateVideoLikeCount(ctx, videoID, increment)
+	if err != nil {
+		logger.Error("Failed to update like count", zap.Error(err))
+		return &pb.LikeVideoResponse{
+			StatusCode: 500,
+			StatusMsg:  "更新点赞数失败",
+			LikeCount:  0,
+		}, nil
+	}
 
 	return &pb.LikeVideoResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		LikeCount:  150, // TODO: 真实的点赞数
+		LikeCount:  uint32(likeCount),
 	}, nil
 }
 
@@ -424,4 +567,40 @@ func (h *VideoHandler) GetVideoComments(ctx context.Context, req *pb.GetVideoCom
 		Total:      100, // TODO: 真实的总数
 		HasMore:    true,
 	}, nil
+}
+
+// ==================== 辅助方法 ====================
+
+// convertToProtoVideo 将模型转换为protobuf格式
+func (h *VideoHandler) convertToProtoVideo(video *model.RecommendationVideo) *pb.Video {
+	if video == nil {
+		return nil
+	}
+
+	// 解析视频ID
+	videoID, err := strconv.ParseUint(video.ID, 10, 32)
+	if err != nil {
+		logger.Error("Failed to parse video ID", zap.String("video_id", video.ID), zap.Error(err))
+		videoID = 0
+	}
+
+	return &pb.Video{
+		Id:           uint32(videoID),
+		Title:        video.Title,
+		Description:  video.Description,
+		CoverUrl:     video.CoverURL,
+		VideoUrl:     video.VideoURL,
+		PlayCount:    uint32(video.PlayCount),
+		LikeCount:    uint32(video.LikeCount),
+		CommentCount: uint32(video.CommentCount),
+		ShareCount:   uint32(video.ShareCount),
+		CreateTime:   video.CreatedAt.Unix(),
+		Duration:     uint32(video.Duration),
+		Resolution:   video.Resolution,
+		Status:       video.Status,
+		IsPublic:     video.IsPublic,
+		Category:     video.Category,
+		Author:       video.Author,
+		Tags:         video.Tags,
+	}
 }

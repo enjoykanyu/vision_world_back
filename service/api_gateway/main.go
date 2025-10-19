@@ -89,6 +89,9 @@ func main() {
 	router.GET("/api/live/stream/:id", liveHandler.GetLiveStream)
 	router.GET("/api/live/list", liveHandler.GetLiveList)
 
+	// 注册视频相关路由
+	routes.RegisterVideoRoutes(router, cfg.Etcd.Endpoints)
+
 	// 直接启动Gin服务器
 	log.Printf("Starting Vision World Gateway on port %s", ":8080")
 

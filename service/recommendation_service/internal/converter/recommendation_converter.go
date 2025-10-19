@@ -10,6 +10,9 @@ import (
 // UserConverter 用户模型转换器
 type UserConverter struct{}
 
+// RecommendationConverter 推荐服务转换器
+type RecommendationConverter struct{}
+
 // NewUserConverter 创建用户转换器
 func NewUserConverter() *UserConverter {
 	return &UserConverter{}
@@ -145,4 +148,122 @@ func (c *UserConverter) ProtoToModel(protoUser *proto_gen.User) *model.User {
 	}
 
 	return user
+}
+
+// NewRecommendationConverter 创建推荐服务转换器
+func NewRecommendationConverter() *RecommendationConverter {
+	return &RecommendationConverter{}
+}
+
+// ModelToProto 将视频模型转换为proto
+func (c *RecommendationConverter) ModelToProto(video *model.Video) *proto_gen.Video {
+	if video == nil {
+		return nil
+	}
+
+	return &proto_gen.Video{
+		VideoId:     video.VideoID,
+		Title:       video.Title,
+		Description: video.Description,
+		Author:      video.Author,
+		Category:    video.Category,
+		Tags:        video.Tags,
+		Duration:    video.Duration,
+		CoverUrl:    video.CoverURL,
+		PlayUrl:     video.PlayURL,
+		ViewCount:   video.ViewCount,
+		LikeCount:   video.LikeCount,
+		Score:       video.Score,
+		CreatedAt:   video.CreatedAt.Unix(),
+		UpdatedAt:   video.UpdatedAt.Unix(),
+	}
+}
+
+// ProtoToModel 将proto转换为视频模型
+func (c *RecommendationConverter) ProtoToModel(protoVideo *proto_gen.Video) *model.Video {
+	if protoVideo == nil {
+		return nil
+	}
+
+	return &model.Video{
+		VideoID:     protoVideo.VideoId,
+		Title:       protoVideo.Title,
+		Description: protoVideo.Description,
+		Author:      protoVideo.Author,
+		Category:    protoVideo.Category,
+		Tags:        protoVideo.Tags,
+		Duration:    protoVideo.Duration,
+		CoverURL:    protoVideo.CoverUrl,
+		PlayURL:     protoVideo.PlayUrl,
+		ViewCount:   protoVideo.ViewCount,
+		LikeCount:   protoVideo.LikeCount,
+		Score:       protoVideo.Score,
+	}
+}
+
+// ModelToProtoUserPreference 将用户偏好模型转换为proto
+func (c *RecommendationConverter) ModelToProtoUserPreference(preference *model.UserPreference) *proto_gen.UserPreference {
+	if preference == nil {
+		return nil
+	}
+
+	return &proto_gen.UserPreference{
+		UserId:          preference.UserID,
+		Categories:      preference.Categories,
+		Tags:            preference.Tags,
+		CategoryWeights: preference.CategoryWeights,
+		TagWeights:      preference.TagWeights,
+		CreatedAt:       preference.CreatedAt.Unix(),
+		UpdatedAt:       preference.UpdatedAt.Unix(),
+	}
+}
+
+// ProtoToModelUserPreference 将proto转换为用户偏好模型
+func (c *RecommendationConverter) ProtoToModelUserPreference(protoPreference *proto_gen.UserPreference) *model.UserPreference {
+	if protoPreference == nil {
+		return nil
+	}
+
+	return &model.UserPreference{
+		UserID:          protoPreference.UserId,
+		Categories:      protoPreference.Categories,
+		Tags:            protoPreference.Tags,
+		CategoryWeights: protoPreference.CategoryWeights,
+		TagWeights:      protoPreference.TagWeights,
+	}
+}
+
+// ModelToProtoUserAction 将用户行为模型转换为proto
+func (c *RecommendationConverter) ModelToProtoUserAction(action *model.UserAction) *proto_gen.UserAction {
+	if action == nil {
+		return nil
+	}
+
+	return &proto_gen.UserAction{
+		ActionId:      action.ActionID,
+		UserId:        action.UserID,
+		VideoId:       action.VideoID,
+		ActionType:    action.ActionType,
+		Duration:      action.Duration,
+		TotalDuration: action.TotalDuration,
+		Timestamp:     action.Timestamp,
+		CreatedAt:     action.CreatedAt.Unix(),
+	}
+}
+
+// ProtoToModelUserAction 将proto转换为用户行为模型
+func (c *RecommendationConverter) ProtoToModelUserAction(protoAction *proto_gen.UserAction) *model.UserAction {
+	if protoAction == nil {
+		return nil
+	}
+
+	return &model.UserAction{
+		ActionID:      protoAction.ActionId,
+		UserID:        protoAction.UserId,
+		VideoID:       protoAction.VideoId,
+		ActionType:    protoAction.ActionType,
+		Duration:      protoAction.Duration,
+		TotalDuration: protoAction.TotalDuration,
+		Timestamp:     protoAction.Timestamp,
+	}
 }
