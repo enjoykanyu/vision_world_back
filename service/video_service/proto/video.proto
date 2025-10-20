@@ -1,0 +1,143 @@
+syntax = "proto3";
+
+package video;
+
+option go_package = "video_service/proto/proto_gen/video";
+
+// 视频服务定义
+service VideoService {
+  // 获取视频详情
+  rpc GetVideo(GetVideoRequest) returns (GetVideoResponse);
+  
+  // 获取视频列表
+  rpc GetVideoList(GetVideoListRequest) returns (GetVideoListResponse);
+  
+  // 获取热门视频
+  rpc GetHotVideos(GetHotVideosRequest) returns (GetHotVideosResponse);
+  
+  // 获取分类视频
+  rpc GetCategoryVideos(GetCategoryVideosRequest) returns (GetCategoryVideosResponse);
+  
+  // 搜索视频
+  rpc SearchVideos(SearchVideosRequest) returns (SearchVideosResponse);
+  
+  // 更新视频播放量
+  rpc UpdateVideoViewCount(UpdateVideoViewCountRequest) returns (UpdateVideoViewCountResponse);
+  
+  // 更新视频点赞数
+  rpc UpdateVideoLikeCount(UpdateVideoLikeCountRequest) returns (UpdateVideoLikeCountResponse);
+}
+
+// 视频信息
+message Video {
+  string video_id = 1;        // 视频ID
+  string title = 2;           // 视频标题
+  string description = 3;     // 视频描述
+  string author = 4;          // 作者
+  string category = 5;        // 分类
+  string tags = 6;            // 标签，多个标签用逗号分隔
+  int32 duration = 7;         // 视频时长（秒）
+  string cover_url = 8;       // 封面图URL
+  string play_url = 9;        // 播放URL
+  int64 view_count = 10;      // 播放量
+  int64 like_count = 11;      // 点赞数
+  double score = 12;          // 推荐分数
+  int64 created_at = 13;      // 创建时间戳
+  int64 updated_at = 14;      // 更新时间戳
+}
+
+// 获取视频详情请求
+message GetVideoRequest {
+  string video_id = 1;        // 视频ID
+}
+
+// 获取视频详情响应
+message GetVideoResponse {
+  int32 status_code = 1;      // 状态码，0表示成功
+  string status_msg = 2;      // 状态消息
+  Video video = 3;            // 视频信息
+}
+
+// 获取视频列表请求
+message GetVideoListRequest {
+  repeated string video_ids = 1;  // 视频ID列表
+}
+
+// 获取视频列表响应
+message GetVideoListResponse {
+  int32 status_code = 1;      // 状态码，0表示成功
+  string status_msg = 2;      // 状态消息
+  repeated Video videos = 3;  // 视频列表
+}
+
+// 获取热门视频请求
+message GetHotVideosRequest {
+  int32 page = 1;             // 页码，从1开始
+  int32 page_size = 2;        // 每页大小
+  string category = 3;        // 分类，可选
+}
+
+// 获取热门视频响应
+message GetHotVideosResponse {
+  int32 status_code = 1;      // 状态码，0表示成功
+  string status_msg = 2;      // 状态消息
+  repeated Video videos = 3;  // 视频列表
+  bool has_more = 4;          // 是否有更多数据
+}
+
+// 获取分类视频请求
+message GetCategoryVideosRequest {
+  string category = 1;        // 分类
+  int32 page = 2;             // 页码，从1开始
+  int32 page_size = 3;        // 每页大小
+}
+
+// 获取分类视频响应
+message GetCategoryVideosResponse {
+  int32 status_code = 1;      // 状态码，0表示成功
+  string status_msg = 2;      // 状态消息
+  repeated Video videos = 3;  // 视频列表
+  bool has_more = 4;          // 是否有更多数据
+}
+
+// 搜索视频请求
+message SearchVideosRequest {
+  string keyword = 1;         // 搜索关键词
+  int32 page = 2;             // 页码，从1开始
+  int32 page_size = 3;        // 每页大小
+  string category = 4;        // 分类，可选
+}
+
+// 搜索视频响应
+message SearchVideosResponse {
+  int32 status_code = 1;      // 状态码，0表示成功
+  string status_msg = 2;      // 状态消息
+  repeated Video videos = 3;  // 视频列表
+  bool has_more = 4;          // 是否有更多数据
+}
+
+// 更新视频播放量请求
+message UpdateVideoViewCountRequest {
+  string video_id = 1;        // 视频ID
+  int64 increment = 2;        // 增量，默认为1
+}
+
+// 更新视频播放量响应
+message UpdateVideoViewCountResponse {
+  int32 status_code = 1;      // 状态码，0表示成功
+  string status_msg = 2;      // 状态消息
+  int64 view_count = 3;       // 更新后的播放量
+}
+
+// 更新视频点赞数请求
+message UpdateVideoLikeCountRequest {
+  string video_id = 1;        // 视频ID
+  int32 increment = 2;        // 增量，正数表示增加，负数表示减少
+}
+
+// 更新视频点赞数响应
+message UpdateVideoLikeCountResponse {
+  int32 status_code = 1;      // 状态码，0表示成功
+  string status_msg = 2;      // 状态消息
+  int64 like_count = 3;       // 更新后的点赞数
+}

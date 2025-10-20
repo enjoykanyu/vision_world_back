@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package recommendation;
+
+option go_package = "recommendation_service/proto/proto_gen/recommendation";
+
+// 推荐服务
+service RecommendationService {
+  // 获取个性化推荐
+  rpc GetPersonalizedRecommendations(GetPersonalizedRecommendationsRequest) returns (GetPersonalizedRecommendationsResponse);
+  
+  // 获取通用推荐
+  rpc GetGeneralRecommendations(GetGeneralRecommendationsRequest) returns (GetGeneralRecommendationsResponse);
+  
+  // 更新用户偏好
+  rpc UpdateUserPreferences(UpdateUserPreferencesRequest) returns (UpdateUserPreferencesResponse);
+  
+  // 记录用户行为
+  rpc RecordUserAction(RecordUserActionRequest) returns (RecordUserActionResponse);
+}
+
+// 获取个性化推荐请求
+message GetPersonalizedRecommendationsRequest {
+  string user_id = 1;        // 用户ID
+  uint32 page = 2;           // 页码
+  uint32 page_size = 3;      // 每页数量
+  optional string category = 4; // 分类筛选
+  string user_tags = 5;      // 用户标签
+  string request_id = 6;     // 请求ID
+}
+
+// 获取个性化推荐响应
+message GetPersonalizedRecommendationsResponse {
+  int32 status_code = 1;     // 状态码
+  string status_msg = 2;     // 状态消息
+  repeated Video videos = 3; // 视频列表
+  bool has_more = 4;         // 是否有更多
+}
+
+// 获取通用推荐请求
+message GetGeneralRecommendationsRequest {
+  uint32 page = 1;           // 页码
+  uint32 page_size = 2;      // 每页数量
+  optional string category = 3; // 分类筛选
+  string request_id = 4;     // 请求ID
+}
+
+// 获取通用推荐响应
+message GetGeneralRecommendationsResponse {
+  int32 status_code = 1;     // 状态码
+  string status_msg = 2;     // 状态消息
+  repeated Video videos = 3; // 视频列表
+  bool has_more = 4;         // 是否有更多
+}
+
+// 更新用户偏好请求
+message UpdateUserPreferencesRequest {
+  string user_id = 1;        // 用户ID
+  repeated string categories = 2; // 偏好分类
+  repeated string tags = 3;  // 偏好标签
+  map<string, float> category_weights = 4; // 分类权重
+  map<string, float> tag_weights = 5; // 标签权重
+}
+
+// 更新用户偏好响应
+message UpdateUserPreferencesResponse {
+  int32 status_code = 1;     // 状态码
+  string status_msg = 2;     // 状态消息
+}
+
+// 记录用户行为请求
+message RecordUserActionRequest {
+  string user_id = 1;        // 用户ID
+  string video_id = 2;       // 视频ID
+  string action_type = 3;    // 行为类型 (view, like, share, comment, complete)
+  float duration = 4;        // 观看时长（秒）
+  float total_duration = 5;  // 视频总时长（秒）
+  int64 timestamp = 6;       // 时间戳
+}
+
+// 记录用户行为响应
+message RecordUserActionResponse {
+  int32 status_code = 1;     // 状态码
+  string status_msg = 2;     // 状态消息
+}
+
+// 视频信息
+message Video {
+  string video_id = 1;       // 视频ID
+  string title = 2;          // 标题
+  string description = 3;    // 描述
+  string cover_url = 4;      // 封面URL
+  string video_url = 5;      // 视频URL
+  uint32 duration = 6;       // 时长（秒）
+  uint32 view_count = 7;     // 观看次数
+  uint32 like_count = 8;     // 点赞数
+  uint32 comment_count = 9;  // 评论数
+  uint32 share_count = 10;   // 分享数
+  string author_id = 11;     // 作者ID
+  string author_name = 12;   // 作者名称
+  string author_avatar = 13; // 作者头像
+  repeated string tags = 14; // 标签
+  string category = 15;      // 分类
+  int64 create_time = 16;    // 创建时间
+  float score = 17;          // 推荐分数
+}

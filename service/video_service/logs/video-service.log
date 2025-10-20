@@ -1,0 +1,7 @@
+{"level":"info","time":"2025-10-07T19:04:47.116+0800","caller":"repository/video_repository.go:33","msg":"Video repository initialized successfully"}
+{"level":"info","time":"2025-10-07T19:04:47.117+0800","caller":"handler/handler.go:38","msg":"Registering video service to discovery","service":"video-service","address":":50052"}
+{"level":"info","time":"2025-10-07T19:04:47.117+0800","caller":"server/main.go:74","msg":"Video service starting","address":":50052"}
+{"level":"info","time":"2025-10-07T19:08:32.573+0800","caller":"server/main.go:68","msg":"Shutting down server..."}
+{"level":"info","time":"2025-10-07T19:15:25.213+0800","caller":"repository/video_repository.go:33","msg":"Video repository initialized successfully"}
+{"level":"info","time":"2025-10-07T19:15:25.214+0800","caller":"handler/handler.go:38","msg":"Registering video service to discovery","service":"video-service","address":":50052"}
+{"level":"info","time":"2025-10-07T19:15:25.214+0800","caller":"server/main.go:74","msg":"Video service starting","address":":50052"}
