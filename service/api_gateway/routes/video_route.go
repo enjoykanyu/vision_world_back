@@ -475,6 +475,27 @@ func RegisterVideoRoutes(router *gin.Engine, etcdEndpoints []string) {
 		log.Fatalf("Failed to create video handler: %v", err)
 	}
 
+	RegisterVideoRoutesWithHandler(router, videoHandler)
+}
+
+// RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
+func (h *VideoHandler) Close() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if h.videoClient != nil {
+		h.videoClient.Close()
+		h.videoClient = nil
+	}
+
+	if h.recommendClient != nil {
+		h.recommendClient.Close()
+		h.recommendClient = nil
+	}
+}
+
+// RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
+func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandler) {
 	// 视频相关路由组
 	videoGroup := router.Group("/api/videos")
 	{
