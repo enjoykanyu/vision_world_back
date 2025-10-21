@@ -92,6 +92,17 @@ func main() {
 	// 注册视频相关路由
 	routes.RegisterVideoRoutes(router, cfg.Etcd.Endpoints)
 
+	// 注册首页相关路由
+	router.GET("/api/home/recommended", func(c *gin.Context) {
+		// 重定向到视频推荐接口
+		c.Redirect(302, "/api/videos/recommended?"+c.Request.URL.RawQuery)
+	})
+
+	router.GET("/api/home/hot", func(c *gin.Context) {
+		// 重定向到热门视频接口
+		c.Redirect(302, "/api/videos/hot?"+c.Request.URL.RawQuery)
+	})
+
 	// 直接启动Gin服务器
 	log.Printf("Starting Vision World Gateway on port %s", ":8080")
 
