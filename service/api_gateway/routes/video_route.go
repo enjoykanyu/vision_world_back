@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"api_gateway/client"
 	"api_gateway/discovery"
+	"api_gateway/pkg/minio"
 	pb "api_gateway/proto/proto_gen/proto"
 
 	"github.com/gin-gonic/gin"
@@ -492,6 +495,106 @@ func (h *VideoHandler) Close() {
 		h.recommendClient.Close()
 		h.recommendClient = nil
 	}
+}
+
+// HandleVideoUpload 处理视频上传请求
+func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
+	// 获取用户ID（必须已登录）
+	userIDValue, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	userID, ok := userIDValue.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// 获取表单数据
+	title := c.PostForm("title")
+	description := c.PostForm("description")
+	category := c.PostForm("category")
+	tags := c.PostForm("tags")
+
+	// 验证必填字段
+	if title == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Title is required"})
+		return
+	}
+
+	// 获取上传的文件
+	file, header, err := c.Request.FormFile("video")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Video file is required"})
+		return
+	}
+	defer file.Close()
+
+	// 验证文件大小（最大500MB）
+	const maxFileSize = 500 * 1024 * 1024 // 500MB
+	if header.Size > maxFileSize {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File size exceeds 500MB limit"})
+		return
+	}
+
+	// 验证文件类型
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	allowedExts := []string{".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"}
+	isValid := false
+	for _, allowed := range allowedExts {
+		if ext == allowed {
+			isValid = true
+			break
+		}
+	}
+	if !isValid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video file format. Allowed formats: mp4, avi, mov, wmv, flv, mkv, webm"})
+		return
+	}
+
+	// 生成唯一的文件名
+	fileName := fmt.Sprintf("videos/%s/%s%s", userID, time.Now().Format("20060102150405"), ext)
+
+	// 上传文件到MinIO
+	objectInfo, err := minioClient.UploadFile(fileName, file, header.Size, "video/"+ext[1:])
+	if err != nil {
+		log.Printf("Failed to upload video to MinIO: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video"})
+		return
+	}
+
+	// 获取视频文件的预签名URL
+	presignedURL, err := minioClient.GeneratePresignedURL(fileName, 7*24*time.Hour)
+	if err != nil {
+		log.Printf("Failed to generate presigned URL: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate video URL"})
+		return
+	}
+
+	// 准备响应数据
+	response := gin.H{
+		"message":      "Video uploaded successfully",
+		"video_id":     objectInfo.ETag, // 使用ETag作为视频ID
+		"title":        title,
+		"description":  description,
+		"category":     category,
+		"tags":         tags,
+		"file_name":    header.Filename,
+		"file_size":    header.Size,
+		"content_type": header.Header.Get("Content-Type"),
+		"url":          presignedURL,
+		"etag":         objectInfo.ETag,
+		"upload_time":  time.Now().Format(time.RFC3339),
+	}
+
+	// 如果有视频服务客户端，可以尝试保存视频信息到数据库
+	// 这里简化处理，实际应该调用视频服务的PublishVideo接口
+	log.Printf("Video uploaded successfully: user=%s, file=%s, size=%d, etag=%s",
+		userID, fileName, header.Size, objectInfo.ETag)
+
+	c.JSON(http.StatusOK, response)
 }
 
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
