@@ -14,6 +14,7 @@ type Config struct {
 	Server ServerConfig `mapstructure:"server"`
 	Etcd   EtcdConfig   `mapstructure:"etcd"`
 	Logger LoggerConfig `mapstructure:"logger"`
+e	MinIO  MinIOConfig  `mapstructure:"minio"`
 }
 
 // ServerConfig 服务器配置
@@ -32,6 +33,16 @@ type EtcdConfig struct {
 type LoggerConfig struct {
 	Level  string `mapstructure:"level"`
 	Format string `mapstructure:"format"`
+}
+
+// MinIOConfig MinIO配置
+type MinIOConfig struct {
+	Endpoint        string `mapstructure:"endpoint"`
+	AccessKeyID     string `mapstructure:"access_key_id"`
+	SecretAccessKey string `mapstructure:"secret_access_key"`
+	UseSSL          bool   `mapstructure:"use_ssl"`
+	BucketName      string `mapstructure:"bucket_name"`
+	Location        string `mapstructure:"location"`
 }
 
 // LoadConfig 加载配置
@@ -58,6 +69,12 @@ func LoadConfig(configPath string) (*Config, error) {
 	v.SetDefault("etcd.endpoints", []string{"localhost:2379"})
 	v.SetDefault("logger.level", "info")
 	v.SetDefault("logger.format", "json")
+	v.SetDefault("minio.endpoint", "localhost:9000")
+	v.SetDefault("minio.access_key_id", "minioadmin")
+	v.SetDefault("minio.secret_access_key", "minioadmin")
+	v.SetDefault("minio.use_ssl", false)
+	v.SetDefault("minio.bucket_name", "videos")
+	v.SetDefault("minio.location", "us-east-1")
 
 	// 读取配置文件
 	if err := v.ReadInConfig(); err != nil {

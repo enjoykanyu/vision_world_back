@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +13,12 @@ import (
 	"github.com/gin-gonic/gin"
 	ginprometheus "github.com/zsais/go-gin-prometheus"
 
+	"api_gateway/client"
+	"api_gateway/config"
+	"api_gateway/discovery"
 	"api_gateway/middleware"
+	"api_gateway/pkg/minio"
+	"api_gateway/pkg/redis"
 	"api_gateway/routes"
 )
 
@@ -27,12 +33,32 @@ type Config struct {
 }
 
 func main() {
-	// 初始化配置
-	cfg := &Config{
-		Etcd: EtcdConfig{
-			Endpoints: []string{"localhost:2379"},
-		},
+	// 加载配置
+	cfg, err := config.LoadConfig("")
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
 	}
+
+	// 初始化Redis客户端
+	redisClient, err := redis.NewClient(cfg.Redis)
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
+	defer redisClient.Close()
+
+	// 初始化MinIO客户端
+	minioClient, err := minio.NewClient(minio.Config{
+		Endpoint:        cfg.MinIO.Endpoint,
+		AccessKeyID:     cfg.MinIO.AccessKeyID,
+		SecretAccessKey: cfg.MinIO.SecretAccessKey,
+		UseSSL:          cfg.MinIO.UseSSL,
+		BucketName:      cfg.MinIO.BucketName,
+		Location:        cfg.MinIO.Location,
+	})
+	if err != nil {
+		log.Fatalf("Failed to create MinIO client: %v", err)
+	}
+	defer minioClient.Close()
 
 	// 创建Gin引擎
 	router := gin.New()
@@ -67,6 +93,21 @@ func main() {
 	}
 	defer liveHandler.Close()
 
+	// 注册视频服务路由
+	videoHandler, err := routes.NewVideoHandler(cfg.Etcd.Endpoints)
+	if err != nil {
+		log.Fatalf("Failed to connect to video service: %v", err)
+	}
+	defer videoHandler.Close()
+
+	// 注册视频相关路由
+	routes.RegisterVideoRoutesWithHandler(router, videoHandler)
+
+	// 注册视频上传路由（需要认证）
+	router.POST("/api/video/upload", middleware.RequireAuthMiddleware(), func(c *gin.Context) {
+		routes.HandleVideoUpload(c, minioClient)
+	})
+
 	// 注册用户相关路由
 	router.POST("/api/user/login/phone", userHandler.PhoneLogin)
 	router.POST("/api/user/login/code", userHandler.CodeLogin)
@@ -88,15 +129,6 @@ func main() {
 	router.POST("/api/live/stop", liveHandler.StopLive)
 	router.GET("/api/live/stream/:id", liveHandler.GetLiveStream)
 	router.GET("/api/live/list", liveHandler.GetLiveList)
-
-	// 注册视频相关路由
-	videoHandler, err := routes.NewVideoHandler(cfg.Etcd.Endpoints)
-	if err != nil {
-		log.Fatalf("Failed to connect to video service: %v", err)
-	}
-	defer videoHandler.Close()
-
-	routes.RegisterVideoRoutesWithHandler(router, videoHandler)
 
 	// 注册首页相关路由
 	router.GET("/api/home/recommended", videoHandler.GetRecommendedVideos)
