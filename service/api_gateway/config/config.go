@@ -14,7 +14,8 @@ type Config struct {
 	Server ServerConfig `mapstructure:"server"`
 	Etcd   EtcdConfig   `mapstructure:"etcd"`
 	Logger LoggerConfig `mapstructure:"logger"`
-e	MinIO  MinIOConfig  `mapstructure:"minio"`
+	MinIO  MinIOConfig  `mapstructure:"minio"`
+	Redis  RedisConfig  `mapstructure:"redis"`
 }
 
 // ServerConfig 服务器配置
@@ -43,6 +44,13 @@ type MinIOConfig struct {
 	UseSSL          bool   `mapstructure:"use_ssl"`
 	BucketName      string `mapstructure:"bucket_name"`
 	Location        string `mapstructure:"location"`
+}
+
+// RedisConfig Redis配置
+type RedisConfig struct {
+	Addr     string `mapstructure:"addr"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
 }
 
 // LoadConfig 加载配置
@@ -75,6 +83,9 @@ func LoadConfig(configPath string) (*Config, error) {
 	v.SetDefault("minio.use_ssl", false)
 	v.SetDefault("minio.bucket_name", "videos")
 	v.SetDefault("minio.location", "us-east-1")
+	v.SetDefault("redis.addr", "localhost:6379")
+	v.SetDefault("redis.password", "")
+	v.SetDefault("redis.db", 0)
 
 	// 读取配置文件
 	if err := v.ReadInConfig(); err != nil {

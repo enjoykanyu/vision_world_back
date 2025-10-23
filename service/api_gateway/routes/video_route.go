@@ -13,6 +13,7 @@ import (
 
 	"api_gateway/client"
 	"api_gateway/discovery"
+	"api_gateway/middleware"
 	"api_gateway/pkg/minio"
 	pb "api_gateway/proto/proto_gen/proto"
 
@@ -608,7 +609,7 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 
 		// 需要认证的路由
 		authGroup := videoGroup.Group("/")
-		authGroup.Use(AuthMiddleware()) // 假设有认证中间件
+		authGroup.Use(middleware.RequireAuthMiddleware())
 		{
 			authGroup.GET("/personalized", videoHandler.GetPersonalizedVideos)
 			authGroup.GET("/follow", videoHandler.GetFollowVideos)

@@ -3,6 +3,7 @@ package minio
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"mime"
 	"path/filepath"
@@ -105,7 +106,7 @@ func (c *Client) UploadFile(ctx context.Context, objectName string, filePath str
 }
 
 // UploadFileFromReader 从reader上传文件到MinIO
-func (c *Client) UploadFileFromReader(ctx context.Context, objectName string, reader interface{}, size int64, contentType string) (string, error) {
+func (c *Client) UploadFileFromReader(ctx context.Context, objectName string, reader io.Reader, size int64, contentType string) (string, error) {
 	// 上传文件
 	info, err := c.client.PutObject(ctx, c.bucketName, objectName, reader, size, minio.PutObjectOptions{
 		ContentType: contentType,

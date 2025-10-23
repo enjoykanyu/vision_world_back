@@ -67,11 +67,15 @@ func main() {
 	p := ginprometheus.NewPrometheus("vision_world_gateway")
 	p.Use(router)
 
-	// 添加中间件
-	router.Use(middleware.MetricsMiddleware())  // 自定义监控中间件
-	router.Use(middleware.LoggerMiddleware())   // 日志中间件
-	router.Use(middleware.RecoveryMiddleware()) // 恢复中间件
-	router.Use(middleware.CORSMiddleware())     // CORS中间件
+	// 初始化统一鉴权（基于 etcd 的 user-service 验证）
+	middleware.InitAuth(cfg.Etcd.Endpoints)
+
+	// 添加中间件（将鉴权放在业务路由前，全局生效）
+	router.Use(middleware.MetricsMiddleware())     // 自定义监控中间件
+	router.Use(middleware.LoggerMiddleware())      // 日志中间件
+	router.Use(middleware.RecoveryMiddleware())    // 恢复中间件
+	router.Use(middleware.CORSMiddleware())        // CORS中间件
+	router.Use(middleware.RequireAuthMiddleware()) // 统一鉴权中间件
 
 	// 健康检查路由
 	router.GET("/health", middleware.HealthCheck())

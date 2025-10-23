@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	pb "api_gateway/proto/proto_gen/video"
+	pb "api_gateway/proto/proto_gen/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
