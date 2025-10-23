@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,9 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	ginprometheus "github.com/zsais/go-gin-prometheus"
 
-	"api_gateway/client"
 	"api_gateway/config"
-	"api_gateway/discovery"
 	"api_gateway/middleware"
 	"api_gateway/pkg/minio"
 	"api_gateway/pkg/redis"
@@ -39,10 +36,17 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// 初始化Redis客户端
-	redisClient, err := redis.NewClient(cfg.Redis)
+	// Redis客户端初始化
+	redisConfig := redis.Config{
+		Host:     "localhost",
+		Port:     6379,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+		PoolSize: 10,
+	}
+	redisClient, err := redis.NewClient(redisConfig)
 	if err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
+		log.Fatalf("Failed to initialize Redis client: %v", err)
 	}
 	defer redisClient.Close()
 

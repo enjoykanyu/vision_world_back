@@ -18,6 +18,7 @@ import (
 	pb "api_gateway/proto/proto_gen/proto"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/cast"
 )
 
 // VideoHandler 视频处理器
@@ -221,9 +222,6 @@ func (h *VideoHandler) GetRecommendedVideos(c *gin.Context) {
 	// 获取查询参数
 	pageStr := c.DefaultQuery("page", "1")
 	pageSizeStr := c.DefaultQuery("page_size", "20")
-	category := c.Query("category")
-	userTags := c.Query("user_tags")
-	requestID := c.Query("request_id")
 
 	// 转换参数
 	page, err := strconv.Atoi(pageStr)
@@ -255,12 +253,7 @@ func (h *VideoHandler) GetRecommendedVideos(c *gin.Context) {
 			defer cancel()
 
 			req := &pb.GetPersonalizedRecommendationsRequest{
-				UserId:    userID,
-				Page:      uint32(page),
-				PageSize:  uint32(pageSize),
-				Category:  &category,
-				UserTags:  userTags,
-				RequestId: requestID,
+				UserId: uint32(cast.ToUint64(userID)),
 			}
 
 			resp, err := recommendClient.GetPersonalizedRecommendations(ctx, req)
@@ -285,16 +278,11 @@ func (h *VideoHandler) GetRecommendedVideos(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	req := &pb.GetRecommendVideosRequest{
-		Page:     uint32(page),
-		PageSize: uint32(pageSize),
+	req := &pb.GetRecommendedVideosRequest{
+		Limit: int32(pageSize),
 	}
 
-	if category != "" {
-		req.Category = &category
-	}
-
-	resp, err := videoClient.GetRecommendVideos(ctx, req)
+	resp, err := videoClient.GetRecommendedVideos(ctx, req)
 	if err != nil {
 		log.Printf("Failed to get recommended videos: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get recommended videos"})
@@ -309,9 +297,6 @@ func (h *VideoHandler) GetPersonalizedVideos(c *gin.Context) {
 	// 获取查询参数
 	pageStr := c.DefaultQuery("page", "1")
 	pageSizeStr := c.DefaultQuery("page_size", "20")
-	category := c.Query("category")
-	userTags := c.Query("user_tags")
-	requestID := c.Query("request_id")
 
 	// 转换参数
 	page, err := strconv.Atoi(pageStr)
@@ -349,12 +334,7 @@ func (h *VideoHandler) GetPersonalizedVideos(c *gin.Context) {
 	defer cancel()
 
 	req := &pb.GetPersonalizedRecommendationsRequest{
-		UserId:    userID,
-		Page:      uint32(page),
-		PageSize:  uint32(pageSize),
-		Category:  &category,
-		UserTags:  userTags,
-		RequestId: requestID,
+		UserId: uint32(cast.ToUint64(userID)),
 	}
 
 	resp, err := recommendClient.GetPersonalizedRecommendations(ctx, req)
@@ -409,9 +389,7 @@ func (h *VideoHandler) GetFollowVideos(c *gin.Context) {
 	defer cancel()
 
 	req := &pb.GetFollowVideosRequest{
-		UserId:   userID,
-		Page:     uint32(page),
-		PageSize: uint32(pageSize),
+		UserId: uint32(cast.ToUint64(userID)),
 	}
 
 	resp, err := videoClient.GetFollowVideos(ctx, req)
@@ -429,8 +407,6 @@ func (h *VideoHandler) GetHotVideos(c *gin.Context) {
 	// 获取查询参数
 	pageStr := c.DefaultQuery("page", "1")
 	pageSizeStr := c.DefaultQuery("page_size", "20")
-	category := c.Query("category")
-	requestID := c.Query("request_id")
 
 	// 转换参数
 	page, err := strconv.Atoi(pageStr)
@@ -454,12 +430,7 @@ func (h *VideoHandler) GetHotVideos(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	req := &pb.GetHotVideosRequest{
-		Page:      uint32(page),
-		PageSize:  uint32(pageSize),
-		Category:  &category,
-		RequestId: requestID,
-	}
+	req := &pb.GetHotVideosRequest{}
 
 	resp, err := videoClient.GetHotVideos(ctx, req)
 	if err != nil {
@@ -559,7 +530,7 @@ func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
 	fileName := fmt.Sprintf("videos/%s/%s%s", userID, time.Now().Format("20060102150405"), ext)
 
 	// 上传文件到MinIO
-	objectInfo, err := minioClient.UploadFile(fileName, file, header.Size, "video/"+ext[1:])
+	_, err = minioClient.UploadFileFromReader(context.Background(), fileName, file, header.Size, "video/"+ext[1:])
 	if err != nil {
 		log.Printf("Failed to upload video to MinIO: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video"})
@@ -567,7 +538,7 @@ func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
 	}
 
 	// 获取视频文件的预签名URL
-	presignedURL, err := minioClient.GeneratePresignedURL(fileName, 7*24*time.Hour)
+	presignedURL, err := minioClient.GeneratePresignedURL(context.Background(), fileName, 7*24*time.Hour)
 	if err != nil {
 		log.Printf("Failed to generate presigned URL: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate video URL"})
@@ -577,7 +548,7 @@ func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
 	// 准备响应数据
 	response := gin.H{
 		"message":      "Video uploaded successfully",
-		"video_id":     objectInfo.ETag, // 使用ETag作为视频ID
+		"video_id":     fileName, // 使用文件名作为视频ID
 		"title":        title,
 		"description":  description,
 		"category":     category,
@@ -586,14 +557,13 @@ func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
 		"file_size":    header.Size,
 		"content_type": header.Header.Get("Content-Type"),
 		"url":          presignedURL,
-		"etag":         objectInfo.ETag,
 		"upload_time":  time.Now().Format(time.RFC3339),
 	}
 
 	// 如果有视频服务客户端，可以尝试保存视频信息到数据库
 	// 这里简化处理，实际应该调用视频服务的PublishVideo接口
-	log.Printf("Video uploaded successfully: user=%s, file=%s, size=%d, etag=%s",
-		userID, fileName, header.Size, objectInfo.ETag)
+	log.Printf("Video uploaded successfully: user=%s, file=%s, size=%d, url=%s",
+		userID, fileName, header.Size, presignedURL)
 
 	c.JSON(http.StatusOK, response)
 }
