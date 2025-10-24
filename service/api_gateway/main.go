@@ -111,8 +111,8 @@ func main() {
 	// 注册视频相关路由
 	routes.RegisterVideoRoutesWithHandler(router, videoHandler)
 
-	// 注册视频上传路由（需要认证）
-	router.POST("/api/video/upload", middleware.RequireAuthMiddleware(), func(c *gin.Context) {
+	// 注册视频上传路由（全局鉴权中间件已生效，无需重复添加）
+	router.POST("/api/video/upload", func(c *gin.Context) {
 		routes.HandleVideoUpload(c, minioClient)
 	})
 
