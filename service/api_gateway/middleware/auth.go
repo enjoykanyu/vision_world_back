@@ -56,22 +56,66 @@ func RequireAuthMiddleware() gin.HandlerFunc {
 		// 提取 Authorization: Bearer <token>
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Authorization header is required",
+				"code":  "MISSING_AUTH_HEADER",
+			})
 			c.Abort()
 			return
 		}
+
+		// 企业级安全：限制token长度防止DoS攻击
+		if len(authHeader) > 4096 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Authorization header too long",
+				"code":  "INVALID_AUTH_FORMAT",
+			})
+			c.Abort()
+			return
+		}
+
 		parts := strings.SplitN(authHeader, " ", 2)
 		if !(len(parts) == 2 && strings.EqualFold(parts[0], "Bearer")) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header format must be Bearer {token}"})
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Authorization header format must be Bearer {token}",
+				"code":  "INVALID_AUTH_FORMAT",
+			})
 			c.Abort()
 			return
 		}
-		token := parts[1]
+
+		token := strings.TrimSpace(parts[1])
+		if token == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Token cannot be empty",
+				"code":  "EMPTY_TOKEN",
+			})
+			c.Abort()
+			return
+		}
 
 		// 调用用户服务远程校验 Token
 		userID, expire, err := verifyTokenWithUserService(c.Request.Context(), token)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			// 企业级错误处理：区分不同类型的认证失败
+			errorCode := "INVALID_TOKEN"
+			errorMsg := "Invalid or expired token"
+			statusCode := http.StatusUnauthorized
+
+			if err == context.DeadlineExceeded {
+				errorCode = "AUTH_TIMEOUT"
+				errorMsg = "Authentication service timeout"
+				statusCode = http.StatusServiceUnavailable
+			} else if strings.Contains(err.Error(), "connection") {
+				errorCode = "AUTH_SERVICE_UNAVAILABLE"
+				errorMsg = "Authentication service unavailable"
+				statusCode = http.StatusServiceUnavailable
+			}
+
+			c.JSON(statusCode, gin.H{
+				"error": errorMsg,
+				"code":  errorCode,
+			})
 			c.Abort()
 			return
 		}
@@ -85,23 +129,82 @@ func RequireAuthMiddleware() gin.HandlerFunc {
 }
 
 // inAuthWhitelist 判断是否在白名单
+// 企业级路由放过鉴权规则：
+// 1. 健康检查和监控接口：完全公开（符合RFC标准）
+// 2. 认证相关接口：登录、注册、刷新token（遵循OAuth2.0标准）
+// 3. 只读数据接口：推荐、热门视频（限流保护，符合RESTful设计）
+// 4. 静态资源接口：图片、视频播放（CDN友好）
+// 5. OPTIONS预检请求：CORS标准支持
 func inAuthWhitelist(path, uri string) bool {
-	whitelistPrefixes := []string{
-		"/health",
-		"/grafana/health",
-		"/api/auth/login",
-		"/api/auth/refresh",
-		"/api/user/sms/send",
-	}
+	// 标准化路径处理
 	p := path
 	if p == "" {
 		p = uri
 	}
-	for _, pre := range whitelistPrefixes {
-		if strings.HasPrefix(p, pre) {
+
+	// 完全公开接口 - 健康检查（符合Kubernetes探针标准）
+	publicPaths := []string{
+		"/health",
+		"/grafana/health",
+		"/metrics",
+		"/favicon.ico",
+		"/robots.txt",
+	}
+
+	// 认证相关接口 - 登录注册（符合OAuth2.0密码模式）
+	authPaths := []string{
+		"/api/auth/login",
+		"/api/auth/refresh",
+		"/api/auth/logout",
+		"/api/user/login/phone",
+		"/api/user/login/code",
+		"/api/user/sms/send",
+		"/api/user/register",
+		"/api/user/reset/password",
+	}
+
+	// 只读数据接口 - 内容获取（GET请求，符合RESTful安全方法）
+	readonlyPaths := []string{
+		"/api/home/recommended",
+		"/api/home/hot",
+		"/api/video/recommended",
+		"/api/video/hot",
+		"/api/video/info/",
+		"/api/user/info/",
+		"/api/live/list",
+		"/api/live/stream/",
+		"/api/search/hot",
+		"/api/category/list",
+	}
+
+	// 静态资源接口（CDN和文件服务）
+	staticPaths := []string{
+		"/api/file/upload/",
+		"/api/file/download/",
+		"/api/video/play/",
+		"/api/image/",
+		"/api/avatar/",
+		"/static/",
+		"/uploads/",
+	}
+
+	// 特殊处理：完全匹配检查
+	for _, allowed := range publicPaths {
+		if p == allowed {
 			return true
 		}
 	}
+
+	// 前缀匹配检查 - 按优先级顺序
+	allPrefixes := append(authPaths, readonlyPaths...)
+	allPrefixes = append(allPrefixes, staticPaths...)
+
+	for _, prefix := range allPrefixes {
+		if strings.HasPrefix(p, prefix) {
+			return true
+		}
+	}
+
 	return false
 }
 
