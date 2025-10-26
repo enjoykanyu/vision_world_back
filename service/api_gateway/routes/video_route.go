@@ -474,15 +474,12 @@ func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
 	// 获取用户ID（必须已登录）
 	userIDValue, exists := c.Get("user_id")
 	if !exists {
+		log.Printf("User not authenticated")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	userID, ok := userIDValue.(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
-		return
-	}
+	userID := fmt.Sprintf("%v", userIDValue)
 
 	// 获取表单数据
 	title := c.PostForm("title")
@@ -492,6 +489,7 @@ func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
 
 	// 验证必填字段
 	if title == "" {
+		log.Printf("Title is required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Title is required"})
 		return
 	}
@@ -499,6 +497,7 @@ func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
 	// 获取上传的文件
 	file, header, err := c.Request.FormFile("video")
 	if err != nil {
+		log.Printf("Video file is required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Video file is required"})
 		return
 	}
@@ -508,6 +507,7 @@ func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
 	const maxFileSize = 500 * 1024 * 1024 // 500MB
 	if header.Size > maxFileSize {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File size exceeds 500MB limit"})
+		log.Printf("File size exceeds 500MB limit")
 		return
 	}
 
@@ -523,6 +523,7 @@ func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
 	}
 	if !isValid {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video file format. Allowed formats: mp4, avi, mov, wmv, flv, mkv, webm"})
+		log.Printf("Invalid video file format. Allowed formats: mp4, avi, mov, wmv, flv, mkv, webm")
 		return
 	}
 
