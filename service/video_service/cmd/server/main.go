@@ -10,6 +10,7 @@ import (
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/internal/handler"
 	"github.com/vision_world/video_service/pkg/logger"
+	"github.com/vision_world/video_service/pkg/minio"
 	pb "github.com/vision_world/video_service/proto/proto_gen/video"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -31,6 +32,16 @@ func main() {
 	// 初始化日志
 	logger.InitLogger(cfg.Log.Level, cfg.Log.File)
 
+	//创建minio服务器
+	// 初始化MinIO客户端
+	minioClient, err := minio.NewClient(minio.Config{
+		Endpoint:        cfg.MinIO.Endpoint,
+		AccessKeyID:     cfg.MinIO.AccessKeyID,
+		SecretAccessKey: cfg.MinIO.SecretAccessKey,
+		UseSSL:          cfg.MinIO.UseSSL,
+		BucketName:      cfg.MinIO.BucketName,
+		Location:        cfg.MinIO.Location,
+	})
 	// 创建gRPC服务器
 	grpcServer := grpc.NewServer()
 

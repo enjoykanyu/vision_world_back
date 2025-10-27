@@ -15,6 +15,7 @@ type Config struct {
 	Discovery DiscoveryConfig `mapstructure:"discovery"`
 	Log       LogConfig       `mapstructure:"log"`
 	Services  ServicesConfig  `mapstructure:"services"`
+	MinIO     MinIOConfig     `mapstructure:"minio"`
 }
 
 type ServerConfig struct {
@@ -22,6 +23,16 @@ type ServerConfig struct {
 	Name        string `mapstructure:"name"`
 	Version     string `mapstructure:"version"`
 	Environment string `mapstructure:"environment"`
+}
+
+// MinIOConfig MinIO配置
+type MinIOConfig struct {
+	Endpoint        string `mapstructure:"endpoint"`
+	AccessKeyID     string `mapstructure:"access_key_id"`
+	SecretAccessKey string `mapstructure:"secret_access_key"`
+	UseSSL          bool   `mapstructure:"use_ssl"`
+	BucketName      string `mapstructure:"bucket_name"`
+	Location        string `mapstructure:"location"`
 }
 
 type DatabaseConfig struct {
@@ -89,6 +100,14 @@ func LoadConfig() (*Config, error) {
 	v.AutomaticEnv()
 	v.SetEnvPrefix("USER_SERVICE")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	//设置默认变量
+	v.SetDefault("minio.endpoint", "localhost:9000")
+	v.SetDefault("minio.access_key_id", "minioadmin")
+	v.SetDefault("minio.secret_access_key", "minioadmin")
+	v.SetDefault("minio.use_ssl", false)
+	v.SetDefault("minio.bucket_name", "videos")
+	v.SetDefault("minio.location", "us-east-1")
 
 	var config Config
 	if err := v.Unmarshal(&config); err != nil {
