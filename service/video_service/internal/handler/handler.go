@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strconv"
@@ -8,14 +9,15 @@ import (
 
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/internal/model"
+	"github.com/vision_world/video_service/internal/queue"
 	"github.com/vision_world/video_service/internal/service"
 	"github.com/vision_world/video_service/pkg/logger"
+	"github.com/vision_world/video_service/pkg/minio"
 	pb "github.com/vision_world/video_service/proto/proto_gen/video"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	auditpb "audit_service/proto_gen/audit/v1"
+	//auditpb "github.com/vision_world/video_service/proto/proto_gen/audit"
 )
 
 // VideoHandler 视频服务处理器
@@ -23,8 +25,10 @@ type VideoHandler struct {
 	pb.UnimplementedVideoServiceServer
 	config       *config.Config
 	videoService *service.VideoService
-	auditClient  auditpb.AuditServiceClient
-	auditConn    *grpc.ClientConn
+	//auditClient  auditpb.AuditServiceClient
+	auditConn   *grpc.ClientConn
+	queueClient *queue.RabbitMQClient
+	minioClient *minio.Client
 }
 
 // NewVideoHandler 创建视频处理器
@@ -32,6 +36,25 @@ func NewVideoHandler(cfg *config.Config) (*VideoHandler, error) {
 	videoService, err := service.NewVideoService(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create video service: %w", err)
+	}
+
+	// 创建MinIO客户端
+	minioClient, err := minio.NewClient(minio.Config{
+		Endpoint:        cfg.MinIO.Endpoint,
+		AccessKeyID:     cfg.MinIO.AccessKeyID,
+		SecretAccessKey: cfg.MinIO.SecretAccessKey,
+		UseSSL:          cfg.MinIO.UseSSL,
+		BucketName:      cfg.MinIO.BucketName,
+		Location:        cfg.MinIO.Location,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create minio client: %w", err)
+	}
+
+	// 创建RabbitMQ客户端
+	//queueClient, err := queue.NewRabbitMQClient(cfg, logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create RabbitMQ client: %w", err)
 	}
 
 	// 创建audit_service客户端连接
@@ -43,10 +66,11 @@ func NewVideoHandler(cfg *config.Config) (*VideoHandler, error) {
 		grpc.WithBlock(),
 	)
 	if err != nil {
+		//queueClient.Close() // 清理RabbitMQ连接
 		return nil, fmt.Errorf("failed to connect to audit service: %w", err)
 	}
 
-	auditClient := auditpb.NewAuditServiceClient(conn)
+	// auditClient := auditpb.NewAuditServiceClient(conn)
 
 	logger.Info("Connected to audit service",
 		zap.String("address", cfg.Services.AuditService.Address))
@@ -54,8 +78,10 @@ func NewVideoHandler(cfg *config.Config) (*VideoHandler, error) {
 	return &VideoHandler{
 		config:       cfg,
 		videoService: videoService,
-		auditClient:  auditClient,
-		auditConn:    conn,
+		// auditClient:  auditClient,
+		auditConn: conn,
+		//queueClient:  queueClient,
+		minioClient: minioClient,
 	}, nil
 }
 
