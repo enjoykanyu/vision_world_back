@@ -6,6 +6,9 @@ option go_package = "video_service/proto/proto_gen/video";
 
 // 视频服务定义
 service VideoService {
+  // 上传视频
+  rpc UploadVideo(UploadVideoRequest) returns (UploadVideoResponse);
+  
   // 获取视频详情
   rpc GetVideo(GetVideoRequest) returns (GetVideoResponse);
   
@@ -44,6 +47,26 @@ message Video {
   double score = 12;          // 推荐分数
   int64 created_at = 13;      // 创建时间戳
   int64 updated_at = 14;      // 更新时间戳
+}
+
+// 上传视频请求
+message UploadVideoRequest {
+  string token = 1;            // 用户token
+  bytes video_data = 2;        // 视频文件二进制数据
+  string file_name = 3;        // 原始文件名
+  string title = 4;            // 视频标题
+  string description = 5;      // 视频描述
+  string category = 6;         // 视频分类
+  repeated string tags = 7;    // 视频标签
+}
+
+// 上传视频响应
+message UploadVideoResponse {
+  int32 status_code = 1;       // 状态码，0表示成功
+  string status_msg = 2;       // 状态消息
+  uint32 video_id = 3;         // 视频ID
+  string video_url = 4;        // 视频URL
+  string cover_url = 5;        // 封面图URL
 }
 
 // 获取视频详情请求
