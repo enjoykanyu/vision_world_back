@@ -111,6 +111,74 @@ func (h *VideoHandler) Close() error {
 
 // ==================== 视频发布相关接口 ====================
 
+// UploadVideo 上传视频
+func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoRequest) (*pb.UploadVideoResponse, error) {
+	logger.Info("UploadVideo called", zap.String("token", req.Token), zap.String("file_name", req.FileName))
+
+	// TODO: 验证用户token
+	// TODO: 从token中解析用户ID
+	userID := "user_123" // 临时用户ID
+
+	// 生成视频ID (这里简化处理，实际应该从数据库获取)
+	videoID := uint32(time.Now().Unix())
+
+	// 创建对象名称
+	objectName := fmt.Sprintf("videos/%d/%s", videoID, req.FileName)
+
+	// 将视频数据上传到MinIO
+	videoURL, err := h.minioClient.UploadFileFromReader(ctx, objectName,
+		bytes.NewReader(req.VideoData),
+		int64(len(req.VideoData)),
+		"video/mp4")
+	if err != nil {
+		logger.Error("Failed to upload video to MinIO", zap.Error(err))
+		return &pb.UploadVideoResponse{
+			StatusCode: 500,
+			StatusMsg:  "视频上传失败",
+			VideoId:    0,
+		}, nil
+	}
+
+	logger.Info("Video uploaded to MinIO successfully",
+		zap.String("video_url", videoURL),
+		zap.String("object_name", objectName))
+
+	// 保存视频信息到数据库 (简化处理)
+	// TODO: 实际应该调用videoService保存视频信息
+
+	// 发送审核消息到RabbitMQ队列
+	auditMessage := &queue.AuditMessage{
+		ContentID:    fmt.Sprintf("video_%d", videoID),
+		ContentType:  "video",
+		Title:        req.Title,
+		URL:          videoURL,
+		Metadata:     req.Description,
+		UploaderID:   userID,
+		UploaderName: userID, // TODO: 从用户信息获取用户名
+	}
+
+	if err := h.queueClient.PublishAuditMessage(ctx, auditMessage); err != nil {
+		logger.Error("Failed to publish audit message", zap.Error(err))
+		// 审核消息发送失败，但视频已上传成功，可以继续返回成功状态
+		logger.Warn("Audit message failed, but video uploaded successfully")
+	} else {
+		logger.Info("Audit message published successfully",
+			zap.String("content_id", auditMessage.ContentID),
+			zap.String("content_type", auditMessage.ContentType))
+	}
+
+	// 视频进入审核中状态
+	statusCode := int32(202)
+	statusMsg := "视频上传成功，正在审核中"
+
+	return &pb.UploadVideoResponse{
+		StatusCode: statusCode,
+		StatusMsg:  statusMsg,
+		VideoId:    videoID,
+		VideoUrl:   videoURL,
+	}, nil
+}
+
 // PublishVideo 发布视频
 func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoRequest) (*pb.PublishVideoResponse, error) {
 	logger.Info("PublishVideo called", zap.String("title", req.Title), zap.String("user_id", req.UserId))
