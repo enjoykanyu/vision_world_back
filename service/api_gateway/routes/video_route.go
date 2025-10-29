@@ -14,7 +14,6 @@ import (
 	"api_gateway/client"
 	"api_gateway/discovery"
 	"api_gateway/middleware"
-	"api_gateway/pkg/minio"
 	pb "api_gateway/proto/proto_gen/proto"
 
 	"github.com/gin-gonic/gin"
@@ -470,22 +469,20 @@ func (h *VideoHandler) Close() {
 }
 
 // HandleVideoUpload 处理视频上传请求
-func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
+func (h *VideoHandler) HandleVideoUpload(c *gin.Context) {
 	// 获取用户ID（必须已登录）
-	userIDValue, exists := c.Get("user_id")
+	_, exists := c.Get("user_id")
 	if !exists {
 		log.Printf("User not authenticated")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	userID := fmt.Sprintf("%v", userIDValue)
-
 	// 获取表单数据
 	title := c.PostForm("title")
 	description := c.PostForm("description")
 	category := c.PostForm("category")
-	tags := c.PostForm("tags")
+	tagsStr := c.PostForm("tags")
 
 	// 验证必填字段
 	if title == "" {
@@ -527,46 +524,77 @@ func HandleVideoUpload(c *gin.Context, minioClient *minio.Client) {
 		return
 	}
 
-	// 生成唯一的文件名
-	fileName := fmt.Sprintf("videos/%s/%s%s", userID, time.Now().Format("20060102150405"), ext)
-
-	// 上传文件到MinIO
-	_, err = minioClient.UploadFileFromReader(context.Background(), fileName, file, header.Size, "video/"+ext[1:])
+	// 读取文件内容到字节数组
+	fileBytes := make([]byte, header.Size)
+	_, err = file.Read(fileBytes)
 	if err != nil {
-		log.Printf("Failed to upload video to MinIO: %v", err)
+		log.Printf("Failed to read video file: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read video file"})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	// 获取用户的token
+	tokenValue, exists := c.Get("token")
+	if !exists {
+		log.Printf("User token not found")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User token not found"})
+		return
+	}
+	token := fmt.Sprintf("%v", tokenValue)
+
+	// 准备标签
+	var tags []string
+	if tagsStr != "" {
+		tags = strings.Split(tagsStr, ",")
+		for i, tag := range tags {
+			tags[i] = strings.TrimSpace(tag)
+		}
+	}
+
+	// 调用视频服务的UploadVideo接口
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // 上传可能需要更长时间
+	defer cancel()
+
+	req := &pb.UploadVideoRequest{
+		Token:       token,
+		VideoData:   fileBytes,
+		FileName:    header.Filename,
+		Title:       title,
+		Description: description,
+		Category:    category,
+		Tags:        tags,
+	}
+
+	resp, err := videoClient.UploadVideo(ctx, req)
+	if err != nil {
+		log.Printf("Failed to upload video: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video"})
 		return
 	}
 
-	// 获取视频文件的预签名URL
-	presignedURL, err := minioClient.GeneratePresignedURL(context.Background(), fileName, 7*24*time.Hour)
-	if err != nil {
-		log.Printf("Failed to generate presigned URL: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate video URL"})
+	if resp.StatusCode != 0 {
+		log.Printf("Video upload failed with status code %d: %s", resp.StatusCode, resp.StatusMsg)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": resp.StatusMsg,
+			"code":  resp.StatusCode,
+		})
 		return
 	}
 
-	// 准备响应数据
-	response := gin.H{
-		"message":      "Video uploaded successfully",
-		"video_id":     fileName, // 使用文件名作为视频ID
-		"title":        title,
-		"description":  description,
-		"category":     category,
-		"tags":         tags,
-		"file_name":    header.Filename,
-		"file_size":    header.Size,
-		"content_type": header.Header.Get("Content-Type"),
-		"url":          presignedURL,
-		"upload_time":  time.Now().Format(time.RFC3339),
-	}
-
-	// 如果有视频服务客户端，可以尝试保存视频信息到数据库
-	// 这里简化处理，实际应该调用视频服务的PublishVideo接口
-	log.Printf("Video uploaded successfully: user=%s, file=%s, size=%d, url=%s",
-		userID, fileName, header.Size, presignedURL)
-
-	c.JSON(http.StatusOK, response)
+	// 返回成功响应
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Video uploaded successfully",
+		"video_id":  resp.VideoId,
+		"video_url": resp.VideoUrl,
+	})
 }
 
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
