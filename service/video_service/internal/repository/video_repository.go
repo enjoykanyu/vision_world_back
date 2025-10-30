@@ -55,7 +55,7 @@ func (r *VideoRepository) GetDB() *model.DB {
 // GetVideoByID 根据ID获取视频
 func (r *VideoRepository) GetVideoByID(ctx context.Context, videoID string) (*model.RecommendationVideo, error) {
 	var video model.Video
-	err := r.db.GetDB().Where("id = ?", videoID).First(&video).Error
+	err := r.db.GetDB().Where("id = ? AND status = ?", videoID, "normal").First(&video).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -78,7 +78,7 @@ func (r *VideoRepository) GetVideosByIDs(ctx context.Context, videoIDs []string)
 	}
 
 	var videos []model.Video
-	err := r.db.GetDB().Where("id IN ?", videoIDs).Find(&videos).Error
+	err := r.db.GetDB().Where("id IN ? AND status = ?", videoIDs, "normal").Find(&videos).Error
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +252,7 @@ func (r *VideoRepository) GetVideosByAuthor(ctx context.Context, author string, 
 
 	// 简化处理，实际应该通过用户ID查询
 	var videos []model.Video
-	err := r.db.GetDB().Where("is_public = ? AND status = ?", true, "normal").
+	err := r.db.GetDB().Where("is_public = ? AND status = ? AND user_id = ?", true, "normal", author).
 		Order("created_at DESC").
 		Offset(offset).
 		Limit(pageSize + 1). // 多获取一条，用于判断是否有更多数据
