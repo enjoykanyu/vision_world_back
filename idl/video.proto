@@ -17,6 +17,24 @@ message VideoResponse {
 
 // ==================== 视频发布相关接口 ====================
 
+// 上传视频请求
+message UploadVideoRequest {
+  string token = 1; // 用户token
+  bytes video_data = 2; // 视频文件二进制数据
+  string file_name = 3; // 原始文件名
+  string title = 4; // 视频标题
+  string description = 5; // 视频描述
+  string category = 6; // 视频分类
+  repeated string tags = 7; // 视频标签
+}
+
+message UploadVideoResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  uint32 video_id = 3; // 上传的视频ID
+  string video_url = 4; // 视频URL
+}
+
 // 发布视频请求
 message PublishVideoRequest {
   string token = 1; // 用户token
@@ -250,6 +268,7 @@ message Comment {
 
 service VideoService {
   // 视频发布相关
+  rpc UploadVideo(UploadVideoRequest) returns(UploadVideoResponse);
   rpc PublishVideo(PublishVideoRequest) returns(PublishVideoResponse);
   rpc DeleteVideo(DeleteVideoRequest) returns(DeleteVideoResponse);
   
