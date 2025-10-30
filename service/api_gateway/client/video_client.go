@@ -88,6 +88,14 @@ func (c *VideoServiceClient) IsConnected() bool {
 	return state == connectivity.Ready || state == connectivity.Idle
 }
 
+// UploadVideo 上传视频
+func (c *VideoServiceClient) UploadVideo(ctx context.Context, req *pb.UploadVideoRequest) (*pb.UploadVideoResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.UploadVideo(ctx, req)
+}
+
 // GetVideoInfo 获取视频信息
 func (c *VideoServiceClient) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoRequest) (*pb.GetVideoInfoResponse, error) {
 	if !c.IsConnected() {
