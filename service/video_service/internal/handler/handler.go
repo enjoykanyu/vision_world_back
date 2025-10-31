@@ -96,6 +96,13 @@ func (h *VideoHandler) RegisterService() error {
 
 // Close 关闭处理器
 func (h *VideoHandler) Close() error {
+	// 关闭RabbitMQ连接
+	if h.queueClient != nil {
+		if err := h.queueClient.Close(); err != nil {
+			logger.Error("Failed to close RabbitMQ connection", zap.Error(err))
+		}
+	}
+
 	// 关闭audit_service连接
 	if h.auditConn != nil {
 		if err := h.auditConn.Close(); err != nil {
@@ -189,49 +196,33 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 	// 生成视频ID (这里简化处理，实际应该从数据库获取)
 	videoID := uint32(time.Now().Unix())
 
-	// 调用审核服务进行内容审核
-	auditReq := &auditpb.SubmitContentRequest{
-		ContentId:   fmt.Sprintf("video_%d", videoID),
-		ContentType: auditpb.ContentType_CONTENT_TYPE_VIDEO,
-		UploaderId:  req.UserId,
-		Title:       req.Title,
-		Content:     req.Description,
-		CreateTime:  time.Now().Format(time.RFC3339),
+	// 发送审核消息到RabbitMQ队列
+	auditMessage := &queue.AuditMessage{
+		ContentID:    fmt.Sprintf("video_%d", videoID),
+		ContentType:  "video",
+		Title:        req.Title,
+		URL:          "", // PublishVideo方法没有视频URL，可以留空或从其他来源获取
+		Metadata:     req.Description,
+		UploaderID:   req.UserId,
+		UploaderName: req.UserId, // TODO: 从用户信息获取用户名
 	}
 
-	auditResp, err := h.auditClient.SubmitContent(ctx, auditReq)
-	if err != nil {
-		logger.Error("Failed to submit content for audit", zap.Error(err))
+	if err := h.queueClient.PublishAuditMessage(ctx, auditMessage); err != nil {
+		logger.Error("Failed to publish audit message", zap.Error(err))
 		return &pb.PublishVideoResponse{
 			StatusCode: 500,
-			StatusMsg:  "审核服务调用失败",
+			StatusMsg:  "审核消息发送失败",
 			VideoId:    0,
 		}, nil
 	}
 
-	logger.Info("Content submitted for audit",
-		zap.String("content_id", auditReq.ContentId),
-		zap.String("audit_id", auditResp.AuditId),
-		zap.String("status", auditResp.Status.String()))
+	logger.Info("Audit message published successfully",
+		zap.String("content_id", auditMessage.ContentID),
+		zap.String("content_type", auditMessage.ContentType))
 
-	// 根据审核结果决定视频状态
-	var statusMsg string
-	var statusCode int32
-
-	switch auditResp.Status {
-	case auditpb.AuditStatus_AUDIT_STATUS_PASSED:
-		statusCode = 0
-		statusMsg = "视频发布成功"
-	case auditpb.AuditStatus_AUDIT_STATUS_PENDING, auditpb.AuditStatus_AUDIT_STATUS_UNDER_REVIEW:
-		statusCode = 202
-		statusMsg = "视频发布成功，正在审核中"
-	case auditpb.AuditStatus_AUDIT_STATUS_REJECTED:
-		statusCode = 403
-		statusMsg = "视频内容违规，发布失败"
-	default:
-		statusCode = 202
-		statusMsg = "视频发布成功，等待审核"
-	}
+	// 视频进入审核中状态
+	statusCode := int32(202)
+	statusMsg := "视频发布成功，正在审核中"
 
 	return &pb.PublishVideoResponse{
 		StatusCode: statusCode,
