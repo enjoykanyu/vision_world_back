@@ -12,6 +12,7 @@ type Config struct {
 	Database  DatabaseConfig  `mapstructure:"database"`
 	Redis     RedisConfig     `mapstructure:"redis"`
 	Kafka     KafkaConfig     `mapstructure:"kafka"`
+	RabbitMQ  RabbitMQConfig  `mapstructure:"rabbitmq"`
 	Discovery DiscoveryConfig `mapstructure:"discovery"`
 	Log       LogConfig       `mapstructure:"log"`
 	Services  ServicesConfig  `mapstructure:"services"`
@@ -71,6 +72,15 @@ type LogConfig struct {
 
 type ServicesConfig struct {
 	AuditService ServiceConfig `mapstructure:"audit_service"`
+}
+
+type RabbitMQConfig struct {
+	Host      string `mapstructure:"host"`
+	Port      int    `mapstructure:"port"`
+	Username  string `mapstructure:"username"`
+	Password  string `mapstructure:"password"`
+	VHost     string `mapstructure:"vhost"`
+	QueueName string `mapstructure:"queue_name"`
 }
 
 type ServiceConfig struct {
