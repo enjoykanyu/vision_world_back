@@ -1,15 +1,15 @@
 package handler
 
 import (
-	"audit_service/internal/config"
-	"audit_service/internal/service"
-	"audit_service/pkg/logger"
 	"context"
 	"fmt"
+	"github.com/vision_world/audit_service/internal/config"
+	"github.com/vision_world/audit_service/internal/service"
+	"github.com/vision_world/audit_service/pkg/logger"
 	"strconv"
 	"time"
 
-	auditv1 "audit_service/proto_gen/audit/v1"
+	auditv1 "github.com/vision_world/audit_service/proto_gen/audit/v1"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

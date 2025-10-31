@@ -1,8 +1,8 @@
 package database
 
 import (
-	"audit_service/internal/config"
 	"fmt"
+	"github.com/vision_world/audit_service/internal/config"
 	"time"
 
 	"github.com/go-redis/redis/v8"

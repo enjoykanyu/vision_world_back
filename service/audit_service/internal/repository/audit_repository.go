@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"audit_service/internal/model"
 	"context"
 	"fmt"
+	"github.com/vision_world/audit_service/internal/model"
 
 	"gorm.io/gorm"
 )

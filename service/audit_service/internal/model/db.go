@@ -1,8 +1,8 @@
 package model
 
 import (
-	"audit_service/internal/config"
 	"fmt"
+	"github.com/vision_world/audit_service/internal/config"
 	"time"
 
 	"gorm.io/driver/mysql"

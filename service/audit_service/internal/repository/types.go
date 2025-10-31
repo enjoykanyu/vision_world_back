@@ -1,6 +1,6 @@
 package repository
 
-import "audit_service/internal/model"
+import "github.com/vision_world/audit_service/internal/model"
 
 // ListAuditRecordsRequest 获取审核记录列表请求
 type ListAuditRecordsRequest struct {

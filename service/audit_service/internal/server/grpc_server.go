@@ -1,9 +1,9 @@
 package server
 
 import (
-	"audit_service/internal/handler"
-	pb "audit_service/proto/audit/v1"
 	"context"
+	"github.com/vision_world/audit_service/internal/handler"
+	pb "github.com/vision_world/audit_service/proto/audit/v1"
 )
 
 // auditServiceServer 审核服务gRPC服务器实现

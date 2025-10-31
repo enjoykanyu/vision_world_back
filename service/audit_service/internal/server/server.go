@@ -1,17 +1,17 @@
 package server
 
 import (
-	"audit_service/internal/config"
-	"audit_service/internal/discovery"
-	"audit_service/internal/handler"
-	"audit_service/internal/model"
-	"audit_service/internal/repository"
-	"audit_service/internal/service"
-	"audit_service/pkg/database"
-	"audit_service/pkg/logger"
-	pb "audit_service/proto/audit/v1"
 	"context"
 	"fmt"
+	"github.com/vision_world/audit_service/internal/config"
+	"github.com/vision_world/audit_service/internal/discovery"
+	"github.com/vision_world/audit_service/internal/handler"
+	"github.com/vision_world/audit_service/internal/model"
+	"github.com/vision_world/audit_service/internal/repository"
+	"github.com/vision_world/audit_service/internal/service"
+	"github.com/vision_world/audit_service/pkg/database"
+	"github.com/vision_world/audit_service/pkg/logger"
+	pb "github.com/vision_world/audit_service/proto/audit/v1"
 	"net"
 	"net/http"
 

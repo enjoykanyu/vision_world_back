@@ -19,6 +19,7 @@ type Config struct {
 	Consul   ConsulConfig   `mapstructure:"consul"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	Audit    AuditConfig    `mapstructure:"audit"`
+	RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`
 }
 
 // ServerConfig 服务器配置
@@ -137,6 +138,16 @@ type NotificationConfig struct {
 	EmailRecipients []string `mapstructure:"email_recipients"`
 }
 
+// RabbitMQConfig RabbitMQ配置
+type RabbitMQConfig struct {
+	Host      string `mapstructure:"host"`
+	Port      int    `mapstructure:"port"`
+	Username  string `mapstructure:"username"`
+	Password  string `mapstructure:"password"`
+	VHost     string `mapstructure:"vhost"`
+	QueueName string `mapstructure:"queue_name"`
+}
+
 // LoadConfig 加载配置
 func LoadConfig(configPath string) (*Config, error) {
 	v := viper.New()
@@ -197,6 +208,18 @@ func (c *Config) Validate() error {
 
 	if c.Redis.Host == "" {
 		return fmt.Errorf("redis host is required")
+	}
+
+	if c.RabbitMQ.Host == "" {
+		return fmt.Errorf("rabbitmq host is required")
+	}
+
+	if c.RabbitMQ.Port <= 0 || c.RabbitMQ.Port > 65535 {
+		return fmt.Errorf("invalid rabbitmq port: %d", c.RabbitMQ.Port)
+	}
+
+	if c.RabbitMQ.QueueName == "" {
+		return fmt.Errorf("rabbitmq queue name is required")
 	}
 
 	if c.Redis.Port <= 0 || c.Redis.Port > 65535 {

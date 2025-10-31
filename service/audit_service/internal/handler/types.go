@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"audit_service/internal/repository"
+	"github.com/vision_world/audit_service/internal/repository"
 	"time"
 )
 

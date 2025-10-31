@@ -1,14 +1,6 @@
 package main
 
 import (
-	"audit_service/internal/config"
-	"audit_service/internal/discovery"
-	"audit_service/internal/handler"
-	"audit_service/internal/model"
-	"audit_service/internal/repository"
-	"audit_service/internal/service"
-	"audit_service/pkg/database"
-	"audit_service/pkg/logger"
 	"context"
 	"fmt"
 	"log"
@@ -18,7 +10,16 @@ import (
 	"syscall"
 	"time"
 
-	auditv1 "audit_service/proto_gen/audit/v1"
+	"github.com/vision_world/audit_service/internal/config"
+	"github.com/vision_world/audit_service/internal/discovery"
+	"github.com/vision_world/audit_service/internal/handler"
+	"github.com/vision_world/audit_service/internal/model"
+	"github.com/vision_world/audit_service/internal/queue"
+	"github.com/vision_world/audit_service/internal/repository"
+	"github.com/vision_world/audit_service/internal/service"
+	"github.com/vision_world/audit_service/pkg/database"
+	"github.com/vision_world/audit_service/pkg/logger"
+	auditv1 "github.com/vision_world/audit_service/proto_gen/audit/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -104,10 +105,23 @@ func main() {
 	auditv1.RegisterAuditServiceServer(grpcServer, auditHandler)
 	logger.Info("Audit service registered")
 
-	// 9. 注册反射服务（用于调试）
+	// 9. 创建RabbitMQ消费者并启动消息消费
+	auditConsumer, err := queue.NewRabbitMQConsumer(cfg, logger, auditService)
+	if err != nil {
+		logger.Fatal("Failed to create RabbitMQ consumer", "error", err)
+	}
+	defer auditConsumer.Close()
+
+	// 启动消息消费
+	if err := auditConsumer.StartConsuming(ctx); err != nil {
+		logger.Fatal("Failed to start message consumer", "error", err)
+	}
+	logger.Info("RabbitMQ consumer started")
+
+	// 10. 注册反射服务（用于调试）
 	reflection.Register(grpcServer)
 
-	// 10. 启动gRPC服务器
+	// 11. 启动gRPC服务器
 	go func() {
 		addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 		lis, err := net.Listen("tcp", addr)
@@ -121,24 +135,24 @@ func main() {
 		}
 	}()
 
-	// 11. 注册服务到etcd
+	// 12. 注册服务到etcd
 	serviceAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	if err := etcdDiscovery.Register(serviceAddr, 10); err != nil {
 		logger.Fatal("Failed to register service to etcd", "error", err)
 	}
 	logger.Info("Service registered to etcd", "address", serviceAddr)
 
-	// 12. 等待中断信号
+	// 13. 等待中断信号
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	<-sigChan
 
 	logger.Info("Shutting down server...")
 
-	// 13. 设置健康检查为不健康状态
+	// 14. 设置健康检查为不健康状态
 	healthServer.SetServingStatus("audit_service", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 
-	// 14. 停止gRPC服务器
+	// 15. 停止gRPC服务器
 	grpcServer.GracefulStop()
 	logger.Info("Server stopped gracefully")
 }

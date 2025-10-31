@@ -1,12 +1,12 @@
 package service
 
 import (
-	"audit_service/internal/config"
-	"audit_service/internal/model"
-	"audit_service/internal/repository"
-	"audit_service/pkg/logger"
 	"context"
 	"fmt"
+	"github.com/vision_world/audit_service/internal/config"
+	"github.com/vision_world/audit_service/internal/model"
+	"github.com/vision_world/audit_service/internal/repository"
+	"github.com/vision_world/audit_service/pkg/logger"
 	"time"
 )
 

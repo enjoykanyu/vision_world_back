@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	pb "audit_service/proto_gen/audit/v1"
+	pb "github.com/vision_world/audit_service/proto_gen/audit/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
