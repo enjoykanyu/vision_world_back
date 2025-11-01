@@ -14,10 +14,10 @@ import (
 	"api_gateway/client"
 	"api_gateway/discovery"
 	"api_gateway/middleware"
+	recpb "api_gateway/proto_gen/recommendation"
 	pb "api_gateway/proto_gen/video"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 )
 
 // VideoHandler 视频处理器
@@ -251,8 +251,10 @@ func (h *VideoHandler) GetRecommendedVideos(c *gin.Context) {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
-			req := &pb.GetPersonalizedRecommendationsRequest{
-				UserId: uint32(cast.ToUint64(userID)),
+			req := &recpb.GetPersonalizedRecommendationsRequest{
+				UserId:   userID,
+				Page:     uint32(page),
+				PageSize: uint32(pageSize),
 			}
 
 			resp, err := recommendClient.GetPersonalizedRecommendations(ctx, req)
@@ -277,8 +279,10 @@ func (h *VideoHandler) GetRecommendedVideos(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	req := &pb.GetRecommendedVideosRequest{
-		Limit: int32(pageSize),
+	req := &pb.GetRecommendVideosRequest{
+		Token:    userID,
+		Page:     uint32(page),
+		PageSize: uint32(pageSize),
 	}
 
 	resp, err := videoClient.GetRecommendedVideos(ctx, req)
@@ -332,8 +336,10 @@ func (h *VideoHandler) GetPersonalizedVideos(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	req := &pb.GetPersonalizedRecommendationsRequest{
-		UserId: uint32(cast.ToUint64(userID)),
+	req := &recpb.GetPersonalizedRecommendationsRequest{
+		UserId:   userID,
+		Page:     uint32(page),
+		PageSize: uint32(pageSize),
 	}
 
 	resp, err := recommendClient.GetPersonalizedRecommendations(ctx, req)
@@ -388,7 +394,9 @@ func (h *VideoHandler) GetFollowVideos(c *gin.Context) {
 	defer cancel()
 
 	req := &pb.GetFollowVideosRequest{
-		UserId: uint32(cast.ToUint64(userID)),
+		Token:    userID,
+		Page:     uint32(page),
+		PageSize: uint32(pageSize),
 	}
 
 	resp, err := videoClient.GetFollowVideos(ctx, req)
