@@ -14,7 +14,8 @@ import (
 	"github.com/vision_world/video_service/internal/service"
 	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
-	pb "github.com/vision_world/video_service/proto/proto_gen/proto"
+	userpb "github.com/vision_world/video_service/proto/proto_gen/user"
+	pb "github.com/vision_world/video_service/proto/proto_gen/video"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -680,7 +681,7 @@ func (h *VideoHandler) convertToProtoVideo(video *model.RecommendationVideo) *pb
 	}
 
 	// 创建作者信息
-	author := &pb.User{
+	author := &userpb.User{
 		Id:   0, // TODO: 从其他地方获取作者ID
 		Name: video.Author,
 	}
