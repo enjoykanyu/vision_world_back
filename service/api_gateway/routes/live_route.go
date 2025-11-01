@@ -11,7 +11,7 @@ import (
 
 	"api_gateway/client"
 	"api_gateway/discovery"
-	pb "api_gateway/proto/proto_gen/proto"
+	pb "api_gateway/proto_gen/live"
 
 	"github.com/gin-gonic/gin"
 )

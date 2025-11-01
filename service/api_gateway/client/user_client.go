@@ -6,7 +6,8 @@ import (
 	"log"
 	"time"
 
-	pb "api_gateway/proto/proto_gen/proto"
+	userpb "api_gateway/proto_gen/user"
+	// videopb "api_gateway/proto_gen/video"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
@@ -16,7 +17,7 @@ import (
 // UserServiceClient 用户服务客户端封装
 type UserServiceClient struct {
 	conn   *grpc.ClientConn
-	client pb.UserServiceClient
+	client userpb.UserServiceClient
 }
 
 // NewUserServiceClient 创建用户服务客户端
@@ -62,7 +63,7 @@ func NewUserServiceClient(serviceAddr string) (*UserServiceClient, error) {
 
 	return &UserServiceClient{
 		conn:   conn,
-		client: pb.NewUserServiceClient(conn),
+		client: userpb.NewUserServiceClient(conn),
 	}, nil
 }
 
@@ -89,7 +90,7 @@ func (c *UserServiceClient) IsConnected() bool {
 }
 
 // PhoneLogin 手机号登录
-func (c *UserServiceClient) PhoneLogin(ctx context.Context, req *pb.PhoneLoginRequest) (*pb.LoginResponse, error) {
+func (c *UserServiceClient) PhoneLogin(ctx context.Context, req *userpb.PhoneLoginRequest) (*userpb.LoginResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -97,7 +98,7 @@ func (c *UserServiceClient) PhoneLogin(ctx context.Context, req *pb.PhoneLoginRe
 }
 
 // CodeLogin 验证码登录
-func (c *UserServiceClient) CodeLogin(ctx context.Context, req *pb.CodeLoginRequest) (*pb.LoginResponse, error) {
+func (c *UserServiceClient) CodeLogin(ctx context.Context, req *userpb.CodeLoginRequest) (*userpb.LoginResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -105,7 +106,7 @@ func (c *UserServiceClient) CodeLogin(ctx context.Context, req *pb.CodeLoginRequ
 }
 
 // SendSmsCode 发送短信验证码
-func (c *UserServiceClient) SendSmsCode(ctx context.Context, req *pb.SendSmsRequest) (*pb.SendSmsResponse, error) {
+func (c *UserServiceClient) SendSmsCode(ctx context.Context, req *userpb.SendSmsRequest) (*userpb.SendSmsResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -113,7 +114,7 @@ func (c *UserServiceClient) SendSmsCode(ctx context.Context, req *pb.SendSmsRequ
 }
 
 // GetUserInfo 获取用户信息
-func (c *UserServiceClient) GetUserInfo(ctx context.Context, req *pb.GetUserInfoRequest) (*pb.UserResponse, error) {
+func (c *UserServiceClient) GetUserInfo(ctx context.Context, req *userpb.GetUserInfoRequest) (*userpb.UserResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -121,7 +122,7 @@ func (c *UserServiceClient) GetUserInfo(ctx context.Context, req *pb.GetUserInfo
 }
 
 // VerifyToken 验证Token
-func (c *UserServiceClient) VerifyToken(ctx context.Context, req *pb.VerifyTokenRequest) (*pb.VerifyTokenResponse, error) {
+func (c *UserServiceClient) VerifyToken(ctx context.Context, req *userpb.VerifyTokenRequest) (*userpb.VerifyTokenResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -129,7 +130,7 @@ func (c *UserServiceClient) VerifyToken(ctx context.Context, req *pb.VerifyToken
 }
 
 // RefreshToken 刷新Token
-func (c *UserServiceClient) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
+func (c *UserServiceClient) RefreshToken(ctx context.Context, req *userpb.RefreshTokenRequest) (*userpb.RefreshTokenResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -137,7 +138,7 @@ func (c *UserServiceClient) RefreshToken(ctx context.Context, req *pb.RefreshTok
 }
 
 // 退出登录
-func (c *UserServiceClient) LogOut(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
+func (c *UserServiceClient) LogOut(ctx context.Context, req *userpb.LogoutRequest) (*userpb.LogoutResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}

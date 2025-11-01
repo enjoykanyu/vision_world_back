@@ -14,7 +14,7 @@ import (
 	"api_gateway/client"
 	"api_gateway/discovery"
 	"api_gateway/middleware"
-	pb "api_gateway/proto/proto_gen/proto"
+	pb "api_gateway/proto_gen/video"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"

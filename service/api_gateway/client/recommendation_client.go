@@ -6,17 +6,18 @@ import (
 	"log"
 	"time"
 
-	pb "api_gateway/proto/proto_gen/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+
+	recommendationpb "api_gateway/proto_gen/recommendation"
 )
 
 // RecommendationServiceClient 推荐服务客户端封装
 type RecommendationServiceClient struct {
 	conn   *grpc.ClientConn
-	client pb.RecommendationServiceClient
+	client recommendationpb.RecommendationServiceClient
 }
 
 // NewRecommendationServiceClient 创建推荐服务客户端
@@ -62,7 +63,7 @@ func NewRecommendationServiceClient(serviceAddr string) (*RecommendationServiceC
 
 	return &RecommendationServiceClient{
 		conn:   conn,
-		client: pb.NewRecommendationServiceClient(conn),
+		client: recommendationpb.NewRecommendationServiceClient(conn),
 	}, nil
 }
 
@@ -89,7 +90,7 @@ func (c *RecommendationServiceClient) IsConnected() bool {
 }
 
 // GetPersonalizedRecommendations 获取个性化推荐
-func (c *RecommendationServiceClient) GetPersonalizedRecommendations(ctx context.Context, req *pb.GetPersonalizedRecommendationsRequest) (*pb.GetPersonalizedRecommendationsResponse, error) {
+func (c *RecommendationServiceClient) GetPersonalizedRecommendations(ctx context.Context, req *recommendationpb.GetPersonalizedRecommendationsRequest) (*recommendationpb.GetPersonalizedRecommendationsResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -97,7 +98,7 @@ func (c *RecommendationServiceClient) GetPersonalizedRecommendations(ctx context
 }
 
 // GetGeneralRecommendations 获取通用推荐
-func (c *RecommendationServiceClient) GetGeneralRecommendations(ctx context.Context, req *pb.GetGeneralRecommendationsRequest) (*pb.GetGeneralRecommendationsResponse, error) {
+func (c *RecommendationServiceClient) GetGeneralRecommendations(ctx context.Context, req *recommendationpb.GetGeneralRecommendationsRequest) (*recommendationpb.GetGeneralRecommendationsResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -105,7 +106,7 @@ func (c *RecommendationServiceClient) GetGeneralRecommendations(ctx context.Cont
 }
 
 // UpdateUserPreferences 更新用户偏好
-func (c *RecommendationServiceClient) UpdateUserPreferences(ctx context.Context, req *pb.UpdateUserPreferencesRequest) (*pb.UpdateUserPreferencesResponse, error) {
+func (c *RecommendationServiceClient) UpdateUserPreferences(ctx context.Context, req *recommendationpb.UpdateUserPreferencesRequest) (*recommendationpb.UpdateUserPreferencesResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -113,7 +114,7 @@ func (c *RecommendationServiceClient) UpdateUserPreferences(ctx context.Context,
 }
 
 // RecordUserAction 记录用户行为
-func (c *RecommendationServiceClient) RecordUserAction(ctx context.Context, req *pb.RecordUserActionRequest) (*pb.RecordUserActionResponse, error) {
+func (c *RecommendationServiceClient) RecordUserAction(ctx context.Context, req *recommendationpb.RecordUserActionRequest) (*recommendationpb.RecordUserActionResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}

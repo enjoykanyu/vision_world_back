@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	pb "api_gateway/proto/proto_gen/proto"
+	videopb "api_gateway/proto_gen/video"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
@@ -16,7 +16,7 @@ import (
 // VideoServiceClient 视频服务客户端封装
 type VideoServiceClient struct {
 	conn   *grpc.ClientConn
-	client pb.VideoServiceClient
+	client videopb.VideoServiceClient
 }
 
 // NewVideoServiceClient 创建视频服务客户端
@@ -62,7 +62,7 @@ func NewVideoServiceClient(serviceAddr string) (*VideoServiceClient, error) {
 
 	return &VideoServiceClient{
 		conn:   conn,
-		client: pb.NewVideoServiceClient(conn),
+		client: videopb.NewVideoServiceClient(conn),
 	}, nil
 }
 
@@ -89,7 +89,7 @@ func (c *VideoServiceClient) IsConnected() bool {
 }
 
 // UploadVideo 上传视频
-func (c *VideoServiceClient) UploadVideo(ctx context.Context, req *pb.UploadVideoRequest) (*pb.UploadVideoResponse, error) {
+func (c *VideoServiceClient) UploadVideo(ctx context.Context, req *videopb.UploadVideoRequest) (*videopb.UploadVideoResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -97,7 +97,7 @@ func (c *VideoServiceClient) UploadVideo(ctx context.Context, req *pb.UploadVide
 }
 
 // GetVideoInfo 获取视频信息
-func (c *VideoServiceClient) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoRequest) (*pb.GetVideoInfoResponse, error) {
+func (c *VideoServiceClient) GetVideoInfo(ctx context.Context, req *videopb.GetVideoInfoRequest) (*videopb.VideoResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -105,7 +105,7 @@ func (c *VideoServiceClient) GetVideoInfo(ctx context.Context, req *pb.GetVideoI
 }
 
 // GetFollowVideos 获取关注用户的视频列表
-func (c *VideoServiceClient) GetFollowVideos(ctx context.Context, req *pb.GetFollowVideosRequest) (*pb.GetFollowVideosResponse, error) {
+func (c *VideoServiceClient) GetFollowVideos(ctx context.Context, req *videopb.GetFollowVideosRequest) (*videopb.GetFollowVideosResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -113,7 +113,7 @@ func (c *VideoServiceClient) GetFollowVideos(ctx context.Context, req *pb.GetFol
 }
 
 // GetHotVideos 获取热门视频列表
-func (c *VideoServiceClient) GetHotVideos(ctx context.Context, req *pb.GetHotVideosRequest) (*pb.GetHotVideosResponse, error) {
+func (c *VideoServiceClient) GetHotVideos(ctx context.Context, req *videopb.GetHotVideosRequest) (*videopb.GetHotVideosResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -121,7 +121,7 @@ func (c *VideoServiceClient) GetHotVideos(ctx context.Context, req *pb.GetHotVid
 }
 
 // DeleteVideo 删除视频
-func (c *VideoServiceClient) DeleteVideo(ctx context.Context, req *pb.DeleteVideoRequest) (*pb.DeleteVideoResponse, error) {
+func (c *VideoServiceClient) DeleteVideo(ctx context.Context, req *videopb.DeleteVideoRequest) (*videopb.DeleteVideoResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -129,9 +129,9 @@ func (c *VideoServiceClient) DeleteVideo(ctx context.Context, req *pb.DeleteVide
 }
 
 // GetRecommendedVideos 获取推荐视频列表
-func (c *VideoServiceClient) GetRecommendedVideos(ctx context.Context, req *pb.GetRecommendedVideosRequest) (*pb.GetRecommendedVideosResponse, error) {
+func (c *VideoServiceClient) GetRecommendedVideos(ctx context.Context, req *videopb.GetRecommendVideosRequest) (*videopb.GetRecommendVideosResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
-	return c.client.GetRecommendedVideos(ctx, req)
+	return c.client.GetRecommendVideos(ctx, req)
 }

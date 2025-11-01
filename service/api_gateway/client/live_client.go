@@ -6,17 +6,18 @@ import (
 	"log"
 	"time"
 
-	pb "api_gateway/proto/proto_gen/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+
+	livepb "api_gateway/proto_gen/live"
 )
 
 // LiveServiceClient 直播服务客户端封装
 type LiveServiceClient struct {
 	conn   *grpc.ClientConn
-	client pb.LiveServiceClient
+	client livepb.LiveServiceClient
 }
 
 // NewLiveServiceClient 创建直播服务客户端
@@ -62,7 +63,7 @@ func NewLiveServiceClient(serviceAddr string) (*LiveServiceClient, error) {
 
 	return &LiveServiceClient{
 		conn:   conn,
-		client: pb.NewLiveServiceClient(conn),
+		client: livepb.NewLiveServiceClient(conn),
 	}, nil
 }
 
@@ -89,7 +90,7 @@ func (c *LiveServiceClient) IsConnected() bool {
 }
 
 // StartLive 开始直播
-func (c *LiveServiceClient) StartLive(ctx context.Context, req *pb.StartLiveRequest) (*pb.StartLiveResponse, error) {
+func (c *LiveServiceClient) StartLive(ctx context.Context, req *livepb.StartLiveRequest) (*livepb.StartLiveResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -97,7 +98,7 @@ func (c *LiveServiceClient) StartLive(ctx context.Context, req *pb.StartLiveRequ
 }
 
 // StopLive 结束直播
-func (c *LiveServiceClient) StopLive(ctx context.Context, req *pb.StopLiveRequest) (*pb.StopLiveResponse, error) {
+func (c *LiveServiceClient) StopLive(ctx context.Context, req *livepb.StopLiveRequest) (*livepb.StopLiveResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -105,7 +106,7 @@ func (c *LiveServiceClient) StopLive(ctx context.Context, req *pb.StopLiveReques
 }
 
 // GetLiveStream 获取直播流信息
-func (c *LiveServiceClient) GetLiveStream(ctx context.Context, req *pb.GetLiveStreamRequest) (*pb.GetLiveStreamResponse, error) {
+func (c *LiveServiceClient) GetLiveStream(ctx context.Context, req *livepb.GetLiveStreamRequest) (*livepb.GetLiveStreamResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -113,7 +114,7 @@ func (c *LiveServiceClient) GetLiveStream(ctx context.Context, req *pb.GetLiveSt
 }
 
 // GetLiveList 获取直播列表
-func (c *LiveServiceClient) GetLiveList(ctx context.Context, req *pb.GetLiveListRequest) (*pb.GetLiveListResponse, error) {
+func (c *LiveServiceClient) GetLiveList(ctx context.Context, req *livepb.GetLiveListRequest) (*livepb.GetLiveListResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -121,7 +122,7 @@ func (c *LiveServiceClient) GetLiveList(ctx context.Context, req *pb.GetLiveList
 }
 
 // GetHotLiveList 获取热门直播列表
-func (c *LiveServiceClient) GetHotLiveList(ctx context.Context, req *pb.GetHotLiveListRequest) (*pb.GetHotLiveListResponse, error) {
+func (c *LiveServiceClient) GetHotLiveList(ctx context.Context, req *livepb.GetHotLiveListRequest) (*livepb.GetHotLiveListResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -129,7 +130,7 @@ func (c *LiveServiceClient) GetHotLiveList(ctx context.Context, req *pb.GetHotLi
 }
 
 // JoinLiveRoom 加入直播间
-func (c *LiveServiceClient) JoinLiveRoom(ctx context.Context, req *pb.JoinLiveRoomRequest) (*pb.JoinLiveRoomResponse, error) {
+func (c *LiveServiceClient) JoinLiveRoom(ctx context.Context, req *livepb.JoinLiveRoomRequest) (*livepb.JoinLiveRoomResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -137,7 +138,7 @@ func (c *LiveServiceClient) JoinLiveRoom(ctx context.Context, req *pb.JoinLiveRo
 }
 
 // LeaveLiveRoom 离开直播间
-func (c *LiveServiceClient) LeaveLiveRoom(ctx context.Context, req *pb.LeaveLiveRoomRequest) (*pb.LeaveLiveRoomResponse, error) {
+func (c *LiveServiceClient) LeaveLiveRoom(ctx context.Context, req *livepb.LeaveLiveRoomRequest) (*livepb.LeaveLiveRoomResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -145,7 +146,7 @@ func (c *LiveServiceClient) LeaveLiveRoom(ctx context.Context, req *pb.LeaveLive
 }
 
 // SendLiveChat 发送直播聊天消息
-func (c *LiveServiceClient) SendLiveChat(ctx context.Context, req *pb.SendLiveChatRequest) (*pb.SendLiveChatResponse, error) {
+func (c *LiveServiceClient) SendLiveChat(ctx context.Context, req *livepb.SendLiveChatRequest) (*livepb.SendLiveChatResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
@@ -153,7 +154,7 @@ func (c *LiveServiceClient) SendLiveChat(ctx context.Context, req *pb.SendLiveCh
 }
 
 // GetLiveChatList 获取直播聊天列表
-func (c *LiveServiceClient) GetLiveChatList(ctx context.Context, req *pb.GetLiveChatListRequest) (*pb.GetLiveChatListResponse, error) {
+func (c *LiveServiceClient) GetLiveChatList(ctx context.Context, req *livepb.GetLiveChatListRequest) (*livepb.GetLiveChatListResponse, error) {
 	if !c.IsConnected() {
 		return nil, fmt.Errorf("connection not ready")
 	}
