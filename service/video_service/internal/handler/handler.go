@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vision_world/video_service/internal/config"
@@ -13,7 +14,7 @@ import (
 	"github.com/vision_world/video_service/internal/service"
 	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
-	pb "github.com/vision_world/video_service/proto/proto_gen/video"
+	pb "github.com/vision_world/video_service/proto/proto_gen/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -188,7 +189,7 @@ func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoReque
 
 // PublishVideo 发布视频
 func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoRequest) (*pb.PublishVideoResponse, error) {
-	logger.Info("PublishVideo called", zap.String("title", req.Title), zap.String("user_id", req.UserId))
+	logger.Info("PublishVideo called", zap.String("title", req.Title), zap.String("token", req.Token))
 
 	// TODO: 验证用户token
 	// TODO: 实现视频发布逻辑
@@ -203,8 +204,8 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 		Title:        req.Title,
 		URL:          "", // PublishVideo方法没有视频URL，可以留空或从其他来源获取
 		Metadata:     req.Description,
-		UploaderID:   req.UserId,
-		UploaderName: req.UserId, // TODO: 从用户信息获取用户名
+		UploaderID:   req.Token,
+		UploaderName: req.Token, // TODO: 从用户信息获取用户名
 	}
 
 	if err := h.queueClient.PublishAuditMessage(ctx, auditMessage); err != nil {
@@ -663,10 +664,25 @@ func (h *VideoHandler) convertToProtoVideo(video *model.RecommendationVideo) *pb
 	}
 
 	// 解析视频ID
-	videoID, err := strconv.ParseUint(video.ID, 10, 32)
+	videoID, err := strconv.ParseUint(video.VideoID, 10, 32)
 	if err != nil {
-		logger.Error("Failed to parse video ID", zap.String("video_id", video.ID), zap.Error(err))
+		logger.Error("Failed to parse video ID", zap.String("video_id", video.VideoID), zap.Error(err))
 		videoID = 0
+	}
+
+	// 解析标签
+	tags := make([]string, 0)
+	if video.Tags != "" {
+		tags = strings.Split(video.Tags, ",")
+		for i := range tags {
+			tags[i] = strings.TrimSpace(tags[i])
+		}
+	}
+
+	// 创建作者信息
+	author := &pb.User{
+		Id:   0, // TODO: 从其他地方获取作者ID
+		Name: video.Author,
 	}
 
 	return &pb.Video{
@@ -674,18 +690,19 @@ func (h *VideoHandler) convertToProtoVideo(video *model.RecommendationVideo) *pb
 		Title:        video.Title,
 		Description:  video.Description,
 		CoverUrl:     video.CoverURL,
-		VideoUrl:     video.VideoURL,
-		PlayCount:    uint32(video.PlayCount),
+		VideoUrl:     video.PlayURL,
+		PlayCount:    uint32(video.ViewCount),
 		LikeCount:    uint32(video.LikeCount),
-		CommentCount: uint32(video.CommentCount),
-		ShareCount:   uint32(video.ShareCount),
+		CommentCount: 0, // RecommendationVideo 中没有这个字段
+		ShareCount:   0, // RecommendationVideo 中没有这个字段
 		CreateTime:   video.CreatedAt.Unix(),
+		UpdateTime:   video.UpdatedAt.Unix(),
 		Duration:     uint32(video.Duration),
-		Resolution:   video.Resolution,
-		Status:       video.Status,
-		IsPublic:     video.IsPublic,
+		Resolution:   "",       // RecommendationVideo 中没有这个字段
+		Status:       "normal", // 默认状态
+		IsPublic:     true,     // 默认公开
 		Category:     video.Category,
-		Author:       video.Author,
-		Tags:         video.Tags,
+		Author:       author,
+		Tags:         tags,
 	}
 }
