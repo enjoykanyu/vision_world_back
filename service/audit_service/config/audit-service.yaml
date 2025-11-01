@@ -82,3 +82,12 @@ audit:
     webhook_url: ""
     email_enabled: true
     email_recipients: []
+
+# RabbitMQ配置
+rabbitmq:
+  host: localhost
+  port: 5672
+  username: guest
+  password: guest
+  vhost: /
+  queue_name: audit_queue
