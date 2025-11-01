@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v3.20.1
-// source: proto_defs/recommendation.proto
+// source: proto/recommendation.proto
 
 package recommendation
 
@@ -224,5 +224,5 @@ var RecommendationService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto_defs/recommendation.proto",
+	Metadata: "proto/recommendation.proto",
 }

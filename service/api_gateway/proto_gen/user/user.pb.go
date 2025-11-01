@@ -1550,7 +1550,7 @@ const file_proto_user_proto_rawDesc = "" +
 	"\vGetUserInfo\x12\x1c.rpc.user.GetUserInfoRequest\x1a\x16.rpc.user.UserResponse\x12M\n" +
 	"\fGetUserInfos\x12\x1d.rpc.user.GetUserInfosRequest\x1a\x1e.rpc.user.GetUserInfosResponse\x12K\n" +
 	"\x0eUpdateUserInfo\x12\x1b.rpc.user.UpdateUserRequest\x1a\x1c.rpc.user.UpdateUserResponse\x12R\n" +
-	"\x17GetUserExistInformation\x12\x1a.rpc.user.UserExistRequest\x1a\x1b.rpc.user.UserExistResponseB<Z:github.com/vision_world/video_service/proto/proto_gen/userb\x06proto3"
+	"\x17GetUserExistInformation\x12\x1a.rpc.user.UserExistRequest\x1a\x1b.rpc.user.UserExistResponseB\x1cZ\x1aapi_gateway/proto_gen/userb\x06proto3"
 
 var (
 	file_proto_user_proto_rawDescOnce sync.Once

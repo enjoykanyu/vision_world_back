@@ -2997,7 +2997,7 @@ const file_proto_video_proto_rawDesc = "" +
 	"ShareVideo\x12\x1c.rpc.video.ShareVideoRequest\x1a\x1d.rpc.video.ShareVideoResponse\x12E\n" +
 	"\fCommentVideo\x12\x19.rpc.video.CommentRequest\x1a\x1a.rpc.video.CommentResponse\x12R\n" +
 	"\rDeleteComment\x12\x1f.rpc.video.DeleteCommentRequest\x1a .rpc.video.DeleteCommentResponse\x12[\n" +
-	"\x10GetVideoComments\x12\".rpc.video.GetVideoCommentsRequest\x1a#.rpc.video.GetVideoCommentsResponseB=Z;github.com/vision_world/video_service/proto/proto_gen/videob\x06proto3"
+	"\x10GetVideoComments\x12\".rpc.video.GetVideoCommentsRequest\x1a#.rpc.video.GetVideoCommentsResponseB\x1dZ\x1bapi_gateway/proto_gen/videob\x06proto3"
 
 var (
 	file_proto_video_proto_rawDescOnce sync.Once

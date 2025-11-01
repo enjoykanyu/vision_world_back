@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v3.20.1
-// source: proto_defs/recommendation.proto
+// source: proto/recommendation.proto
 
 package recommendation
 
@@ -36,7 +36,7 @@ type GetPersonalizedRecommendationsRequest struct {
 
 func (x *GetPersonalizedRecommendationsRequest) Reset() {
 	*x = GetPersonalizedRecommendationsRequest{}
-	mi := &file_proto_defs_recommendation_proto_msgTypes[0]
+	mi := &file_proto_recommendation_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +48,7 @@ func (x *GetPersonalizedRecommendationsRequest) String() string {
 func (*GetPersonalizedRecommendationsRequest) ProtoMessage() {}
 
 func (x *GetPersonalizedRecommendationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_recommendation_proto_msgTypes[0]
+	mi := &file_proto_recommendation_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +61,7 @@ func (x *GetPersonalizedRecommendationsRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetPersonalizedRecommendationsRequest.ProtoReflect.Descriptor instead.
 func (*GetPersonalizedRecommendationsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_recommendation_proto_rawDescGZIP(), []int{0}
+	return file_proto_recommendation_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetPersonalizedRecommendationsRequest) GetUserId() string {
@@ -119,7 +119,7 @@ type GetPersonalizedRecommendationsResponse struct {
 
 func (x *GetPersonalizedRecommendationsResponse) Reset() {
 	*x = GetPersonalizedRecommendationsResponse{}
-	mi := &file_proto_defs_recommendation_proto_msgTypes[1]
+	mi := &file_proto_recommendation_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -131,7 +131,7 @@ func (x *GetPersonalizedRecommendationsResponse) String() string {
 func (*GetPersonalizedRecommendationsResponse) ProtoMessage() {}
 
 func (x *GetPersonalizedRecommendationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_recommendation_proto_msgTypes[1]
+	mi := &file_proto_recommendation_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -144,7 +144,7 @@ func (x *GetPersonalizedRecommendationsResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use GetPersonalizedRecommendationsResponse.ProtoReflect.Descriptor instead.
 func (*GetPersonalizedRecommendationsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_recommendation_proto_rawDescGZIP(), []int{1}
+	return file_proto_recommendation_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetPersonalizedRecommendationsResponse) GetStatusCode() int32 {
@@ -188,7 +188,7 @@ type GetGeneralRecommendationsRequest struct {
 
 func (x *GetGeneralRecommendationsRequest) Reset() {
 	*x = GetGeneralRecommendationsRequest{}
-	mi := &file_proto_defs_recommendation_proto_msgTypes[2]
+	mi := &file_proto_recommendation_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -200,7 +200,7 @@ func (x *GetGeneralRecommendationsRequest) String() string {
 func (*GetGeneralRecommendationsRequest) ProtoMessage() {}
 
 func (x *GetGeneralRecommendationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_recommendation_proto_msgTypes[2]
+	mi := &file_proto_recommendation_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -213,7 +213,7 @@ func (x *GetGeneralRecommendationsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGeneralRecommendationsRequest.ProtoReflect.Descriptor instead.
 func (*GetGeneralRecommendationsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_recommendation_proto_rawDescGZIP(), []int{2}
+	return file_proto_recommendation_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetGeneralRecommendationsRequest) GetPage() uint32 {
@@ -257,7 +257,7 @@ type GetGeneralRecommendationsResponse struct {
 
 func (x *GetGeneralRecommendationsResponse) Reset() {
 	*x = GetGeneralRecommendationsResponse{}
-	mi := &file_proto_defs_recommendation_proto_msgTypes[3]
+	mi := &file_proto_recommendation_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -269,7 +269,7 @@ func (x *GetGeneralRecommendationsResponse) String() string {
 func (*GetGeneralRecommendationsResponse) ProtoMessage() {}
 
 func (x *GetGeneralRecommendationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_recommendation_proto_msgTypes[3]
+	mi := &file_proto_recommendation_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -282,7 +282,7 @@ func (x *GetGeneralRecommendationsResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetGeneralRecommendationsResponse.ProtoReflect.Descriptor instead.
 func (*GetGeneralRecommendationsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_recommendation_proto_rawDescGZIP(), []int{3}
+	return file_proto_recommendation_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetGeneralRecommendationsResponse) GetStatusCode() int32 {
@@ -327,7 +327,7 @@ type UpdateUserPreferencesRequest struct {
 
 func (x *UpdateUserPreferencesRequest) Reset() {
 	*x = UpdateUserPreferencesRequest{}
-	mi := &file_proto_defs_recommendation_proto_msgTypes[4]
+	mi := &file_proto_recommendation_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -339,7 +339,7 @@ func (x *UpdateUserPreferencesRequest) String() string {
 func (*UpdateUserPreferencesRequest) ProtoMessage() {}
 
 func (x *UpdateUserPreferencesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_recommendation_proto_msgTypes[4]
+	mi := &file_proto_recommendation_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -352,7 +352,7 @@ func (x *UpdateUserPreferencesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateUserPreferencesRequest.ProtoReflect.Descriptor instead.
 func (*UpdateUserPreferencesRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_recommendation_proto_rawDescGZIP(), []int{4}
+	return file_proto_recommendation_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *UpdateUserPreferencesRequest) GetUserId() string {
@@ -401,7 +401,7 @@ type UpdateUserPreferencesResponse struct {
 
 func (x *UpdateUserPreferencesResponse) Reset() {
 	*x = UpdateUserPreferencesResponse{}
-	mi := &file_proto_defs_recommendation_proto_msgTypes[5]
+	mi := &file_proto_recommendation_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -413,7 +413,7 @@ func (x *UpdateUserPreferencesResponse) String() string {
 func (*UpdateUserPreferencesResponse) ProtoMessage() {}
 
 func (x *UpdateUserPreferencesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_recommendation_proto_msgTypes[5]
+	mi := &file_proto_recommendation_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -426,7 +426,7 @@ func (x *UpdateUserPreferencesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateUserPreferencesResponse.ProtoReflect.Descriptor instead.
 func (*UpdateUserPreferencesResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_recommendation_proto_rawDescGZIP(), []int{5}
+	return file_proto_recommendation_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *UpdateUserPreferencesResponse) GetStatusCode() int32 {
@@ -458,7 +458,7 @@ type RecordUserActionRequest struct {
 
 func (x *RecordUserActionRequest) Reset() {
 	*x = RecordUserActionRequest{}
-	mi := &file_proto_defs_recommendation_proto_msgTypes[6]
+	mi := &file_proto_recommendation_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -470,7 +470,7 @@ func (x *RecordUserActionRequest) String() string {
 func (*RecordUserActionRequest) ProtoMessage() {}
 
 func (x *RecordUserActionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_recommendation_proto_msgTypes[6]
+	mi := &file_proto_recommendation_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -483,7 +483,7 @@ func (x *RecordUserActionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordUserActionRequest.ProtoReflect.Descriptor instead.
 func (*RecordUserActionRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_recommendation_proto_rawDescGZIP(), []int{6}
+	return file_proto_recommendation_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RecordUserActionRequest) GetUserId() string {
@@ -539,7 +539,7 @@ type RecordUserActionResponse struct {
 
 func (x *RecordUserActionResponse) Reset() {
 	*x = RecordUserActionResponse{}
-	mi := &file_proto_defs_recommendation_proto_msgTypes[7]
+	mi := &file_proto_recommendation_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -551,7 +551,7 @@ func (x *RecordUserActionResponse) String() string {
 func (*RecordUserActionResponse) ProtoMessage() {}
 
 func (x *RecordUserActionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_recommendation_proto_msgTypes[7]
+	mi := &file_proto_recommendation_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -564,7 +564,7 @@ func (x *RecordUserActionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordUserActionResponse.ProtoReflect.Descriptor instead.
 func (*RecordUserActionResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_recommendation_proto_rawDescGZIP(), []int{7}
+	return file_proto_recommendation_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RecordUserActionResponse) GetStatusCode() int32 {
@@ -607,7 +607,7 @@ type Video struct {
 
 func (x *Video) Reset() {
 	*x = Video{}
-	mi := &file_proto_defs_recommendation_proto_msgTypes[8]
+	mi := &file_proto_recommendation_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -619,7 +619,7 @@ func (x *Video) String() string {
 func (*Video) ProtoMessage() {}
 
 func (x *Video) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_recommendation_proto_msgTypes[8]
+	mi := &file_proto_recommendation_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -632,7 +632,7 @@ func (x *Video) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Video.ProtoReflect.Descriptor instead.
 func (*Video) Descriptor() ([]byte, []int) {
-	return file_proto_defs_recommendation_proto_rawDescGZIP(), []int{8}
+	return file_proto_recommendation_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Video) GetVideoId() string {
@@ -754,11 +754,11 @@ func (x *Video) GetScore() float32 {
 	return 0
 }
 
-var File_proto_defs_recommendation_proto protoreflect.FileDescriptor
+var File_proto_recommendation_proto protoreflect.FileDescriptor
 
-const file_proto_defs_recommendation_proto_rawDesc = "" +
+const file_proto_recommendation_proto_rawDesc = "" +
 	"\n" +
-	"\x1fproto_defs/recommendation.proto\x12\x0erecommendation\"\xdb\x01\n" +
+	"\x1aproto/recommendation.proto\x12\x0erecommendation\"\xdb\x01\n" +
 	"%GetPersonalizedRecommendationsRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\rR\x04page\x12\x1b\n" +
@@ -853,19 +853,19 @@ const file_proto_defs_recommendation_proto_rawDesc = "" +
 	"\x10RecordUserAction\x12'.recommendation.RecordUserActionRequest\x1a(.recommendation.RecordUserActionResponseB>Z<github.com/vision_world/api_gateway/proto_gen/recommendationb\x06proto3"
 
 var (
-	file_proto_defs_recommendation_proto_rawDescOnce sync.Once
-	file_proto_defs_recommendation_proto_rawDescData []byte
+	file_proto_recommendation_proto_rawDescOnce sync.Once
+	file_proto_recommendation_proto_rawDescData []byte
 )
 
-func file_proto_defs_recommendation_proto_rawDescGZIP() []byte {
-	file_proto_defs_recommendation_proto_rawDescOnce.Do(func() {
-		file_proto_defs_recommendation_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_defs_recommendation_proto_rawDesc), len(file_proto_defs_recommendation_proto_rawDesc)))
+func file_proto_recommendation_proto_rawDescGZIP() []byte {
+	file_proto_recommendation_proto_rawDescOnce.Do(func() {
+		file_proto_recommendation_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_recommendation_proto_rawDesc), len(file_proto_recommendation_proto_rawDesc)))
 	})
-	return file_proto_defs_recommendation_proto_rawDescData
+	return file_proto_recommendation_proto_rawDescData
 }
 
-var file_proto_defs_recommendation_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
-var file_proto_defs_recommendation_proto_goTypes = []any{
+var file_proto_recommendation_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_proto_recommendation_proto_goTypes = []any{
 	(*GetPersonalizedRecommendationsRequest)(nil),  // 0: recommendation.GetPersonalizedRecommendationsRequest
 	(*GetPersonalizedRecommendationsResponse)(nil), // 1: recommendation.GetPersonalizedRecommendationsResponse
 	(*GetGeneralRecommendationsRequest)(nil),       // 2: recommendation.GetGeneralRecommendationsRequest
@@ -878,7 +878,7 @@ var file_proto_defs_recommendation_proto_goTypes = []any{
 	nil,                                            // 9: recommendation.UpdateUserPreferencesRequest.CategoryWeightsEntry
 	nil,                                            // 10: recommendation.UpdateUserPreferencesRequest.TagWeightsEntry
 }
-var file_proto_defs_recommendation_proto_depIdxs = []int32{
+var file_proto_recommendation_proto_depIdxs = []int32{
 	8,  // 0: recommendation.GetPersonalizedRecommendationsResponse.videos:type_name -> recommendation.Video
 	8,  // 1: recommendation.GetGeneralRecommendationsResponse.videos:type_name -> recommendation.Video
 	9,  // 2: recommendation.UpdateUserPreferencesRequest.category_weights:type_name -> recommendation.UpdateUserPreferencesRequest.CategoryWeightsEntry
@@ -898,28 +898,28 @@ var file_proto_defs_recommendation_proto_depIdxs = []int32{
 	0,  // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_proto_defs_recommendation_proto_init() }
-func file_proto_defs_recommendation_proto_init() {
-	if File_proto_defs_recommendation_proto != nil {
+func init() { file_proto_recommendation_proto_init() }
+func file_proto_recommendation_proto_init() {
+	if File_proto_recommendation_proto != nil {
 		return
 	}
-	file_proto_defs_recommendation_proto_msgTypes[0].OneofWrappers = []any{}
-	file_proto_defs_recommendation_proto_msgTypes[2].OneofWrappers = []any{}
+	file_proto_recommendation_proto_msgTypes[0].OneofWrappers = []any{}
+	file_proto_recommendation_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_defs_recommendation_proto_rawDesc), len(file_proto_defs_recommendation_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_recommendation_proto_rawDesc), len(file_proto_recommendation_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_defs_recommendation_proto_goTypes,
-		DependencyIndexes: file_proto_defs_recommendation_proto_depIdxs,
-		MessageInfos:      file_proto_defs_recommendation_proto_msgTypes,
+		GoTypes:           file_proto_recommendation_proto_goTypes,
+		DependencyIndexes: file_proto_recommendation_proto_depIdxs,
+		MessageInfos:      file_proto_recommendation_proto_msgTypes,
 	}.Build()
-	File_proto_defs_recommendation_proto = out.File
-	file_proto_defs_recommendation_proto_goTypes = nil
-	file_proto_defs_recommendation_proto_depIdxs = nil
+	File_proto_recommendation_proto = out.File
+	file_proto_recommendation_proto_goTypes = nil
+	file_proto_recommendation_proto_depIdxs = nil
 }

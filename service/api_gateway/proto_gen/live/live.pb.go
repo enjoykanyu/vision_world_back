@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v3.20.1
-// source: proto_defs/live.proto
+// source: proto/live.proto
 
 package live
 
@@ -32,7 +32,7 @@ type BaseRequest struct {
 
 func (x *BaseRequest) Reset() {
 	*x = BaseRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[0]
+	mi := &file_proto_live_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *BaseRequest) String() string {
 func (*BaseRequest) ProtoMessage() {}
 
 func (x *BaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[0]
+	mi := &file_proto_live_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *BaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BaseRequest.ProtoReflect.Descriptor instead.
 func (*BaseRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{0}
+	return file_proto_live_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *BaseRequest) GetUserId() uint64 {
@@ -85,7 +85,7 @@ type BaseResponse struct {
 
 func (x *BaseResponse) Reset() {
 	*x = BaseResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[1]
+	mi := &file_proto_live_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -97,7 +97,7 @@ func (x *BaseResponse) String() string {
 func (*BaseResponse) ProtoMessage() {}
 
 func (x *BaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[1]
+	mi := &file_proto_live_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -110,7 +110,7 @@ func (x *BaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BaseResponse.ProtoReflect.Descriptor instead.
 func (*BaseResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{1}
+	return file_proto_live_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *BaseResponse) GetCode() int32 {
@@ -148,7 +148,7 @@ type StartLiveRequest struct {
 
 func (x *StartLiveRequest) Reset() {
 	*x = StartLiveRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[2]
+	mi := &file_proto_live_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -160,7 +160,7 @@ func (x *StartLiveRequest) String() string {
 func (*StartLiveRequest) ProtoMessage() {}
 
 func (x *StartLiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[2]
+	mi := &file_proto_live_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -173,7 +173,7 @@ func (x *StartLiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartLiveRequest.ProtoReflect.Descriptor instead.
 func (*StartLiveRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{2}
+	return file_proto_live_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *StartLiveRequest) GetUserId() uint64 {
@@ -225,7 +225,7 @@ type StartLiveResponse struct {
 
 func (x *StartLiveResponse) Reset() {
 	*x = StartLiveResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[3]
+	mi := &file_proto_live_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -237,7 +237,7 @@ func (x *StartLiveResponse) String() string {
 func (*StartLiveResponse) ProtoMessage() {}
 
 func (x *StartLiveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[3]
+	mi := &file_proto_live_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -250,7 +250,7 @@ func (x *StartLiveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartLiveResponse.ProtoReflect.Descriptor instead.
 func (*StartLiveResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{3}
+	return file_proto_live_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *StartLiveResponse) GetCode() int32 {
@@ -306,7 +306,7 @@ type StopLiveRequest struct {
 
 func (x *StopLiveRequest) Reset() {
 	*x = StopLiveRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[4]
+	mi := &file_proto_live_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -318,7 +318,7 @@ func (x *StopLiveRequest) String() string {
 func (*StopLiveRequest) ProtoMessage() {}
 
 func (x *StopLiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[4]
+	mi := &file_proto_live_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -331,7 +331,7 @@ func (x *StopLiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopLiveRequest.ProtoReflect.Descriptor instead.
 func (*StopLiveRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{4}
+	return file_proto_live_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *StopLiveRequest) GetUserId() uint64 {
@@ -366,7 +366,7 @@ type StopLiveResponse struct {
 
 func (x *StopLiveResponse) Reset() {
 	*x = StopLiveResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[5]
+	mi := &file_proto_live_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -378,7 +378,7 @@ func (x *StopLiveResponse) String() string {
 func (*StopLiveResponse) ProtoMessage() {}
 
 func (x *StopLiveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[5]
+	mi := &file_proto_live_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -391,7 +391,7 @@ func (x *StopLiveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopLiveResponse.ProtoReflect.Descriptor instead.
 func (*StopLiveResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{5}
+	return file_proto_live_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *StopLiveResponse) GetCode() int32 {
@@ -426,7 +426,7 @@ type GetLiveStreamRequest struct {
 
 func (x *GetLiveStreamRequest) Reset() {
 	*x = GetLiveStreamRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[6]
+	mi := &file_proto_live_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -438,7 +438,7 @@ func (x *GetLiveStreamRequest) String() string {
 func (*GetLiveStreamRequest) ProtoMessage() {}
 
 func (x *GetLiveStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[6]
+	mi := &file_proto_live_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -451,7 +451,7 @@ func (x *GetLiveStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveStreamRequest.ProtoReflect.Descriptor instead.
 func (*GetLiveStreamRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{6}
+	return file_proto_live_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetLiveStreamRequest) GetUserId() uint64 {
@@ -487,7 +487,7 @@ type GetLiveStreamResponse struct {
 
 func (x *GetLiveStreamResponse) Reset() {
 	*x = GetLiveStreamResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[7]
+	mi := &file_proto_live_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -499,7 +499,7 @@ func (x *GetLiveStreamResponse) String() string {
 func (*GetLiveStreamResponse) ProtoMessage() {}
 
 func (x *GetLiveStreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[7]
+	mi := &file_proto_live_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -512,7 +512,7 @@ func (x *GetLiveStreamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveStreamResponse.ProtoReflect.Descriptor instead.
 func (*GetLiveStreamResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{7}
+	return file_proto_live_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetLiveStreamResponse) GetCode() int32 {
@@ -556,7 +556,7 @@ type GetLiveListRequest struct {
 
 func (x *GetLiveListRequest) Reset() {
 	*x = GetLiveListRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[8]
+	mi := &file_proto_live_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -568,7 +568,7 @@ func (x *GetLiveListRequest) String() string {
 func (*GetLiveListRequest) ProtoMessage() {}
 
 func (x *GetLiveListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[8]
+	mi := &file_proto_live_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -581,7 +581,7 @@ func (x *GetLiveListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveListRequest.ProtoReflect.Descriptor instead.
 func (*GetLiveListRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{8}
+	return file_proto_live_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetLiveListRequest) GetUserId() uint64 {
@@ -632,7 +632,7 @@ type GetLiveListResponse struct {
 
 func (x *GetLiveListResponse) Reset() {
 	*x = GetLiveListResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[9]
+	mi := &file_proto_live_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -644,7 +644,7 @@ func (x *GetLiveListResponse) String() string {
 func (*GetLiveListResponse) ProtoMessage() {}
 
 func (x *GetLiveListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[9]
+	mi := &file_proto_live_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -657,7 +657,7 @@ func (x *GetLiveListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveListResponse.ProtoReflect.Descriptor instead.
 func (*GetLiveListResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{9}
+	return file_proto_live_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetLiveListResponse) GetCode() int32 {
@@ -707,7 +707,7 @@ type GetHotLiveListRequest struct {
 
 func (x *GetHotLiveListRequest) Reset() {
 	*x = GetHotLiveListRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[10]
+	mi := &file_proto_live_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -719,7 +719,7 @@ func (x *GetHotLiveListRequest) String() string {
 func (*GetHotLiveListRequest) ProtoMessage() {}
 
 func (x *GetHotLiveListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[10]
+	mi := &file_proto_live_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -732,7 +732,7 @@ func (x *GetHotLiveListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHotLiveListRequest.ProtoReflect.Descriptor instead.
 func (*GetHotLiveListRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{10}
+	return file_proto_live_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetHotLiveListRequest) GetUserId() uint64 {
@@ -776,7 +776,7 @@ type GetHotLiveListResponse struct {
 
 func (x *GetHotLiveListResponse) Reset() {
 	*x = GetHotLiveListResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[11]
+	mi := &file_proto_live_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -788,7 +788,7 @@ func (x *GetHotLiveListResponse) String() string {
 func (*GetHotLiveListResponse) ProtoMessage() {}
 
 func (x *GetHotLiveListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[11]
+	mi := &file_proto_live_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -801,7 +801,7 @@ func (x *GetHotLiveListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHotLiveListResponse.ProtoReflect.Descriptor instead.
 func (*GetHotLiveListResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{11}
+	return file_proto_live_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetHotLiveListResponse) GetCode() int32 {
@@ -851,7 +851,7 @@ type JoinLiveRoomRequest struct {
 
 func (x *JoinLiveRoomRequest) Reset() {
 	*x = JoinLiveRoomRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[12]
+	mi := &file_proto_live_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -863,7 +863,7 @@ func (x *JoinLiveRoomRequest) String() string {
 func (*JoinLiveRoomRequest) ProtoMessage() {}
 
 func (x *JoinLiveRoomRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[12]
+	mi := &file_proto_live_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -876,7 +876,7 @@ func (x *JoinLiveRoomRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinLiveRoomRequest.ProtoReflect.Descriptor instead.
 func (*JoinLiveRoomRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{12}
+	return file_proto_live_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *JoinLiveRoomRequest) GetUserId() uint64 {
@@ -912,7 +912,7 @@ type JoinLiveRoomResponse struct {
 
 func (x *JoinLiveRoomResponse) Reset() {
 	*x = JoinLiveRoomResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[13]
+	mi := &file_proto_live_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -924,7 +924,7 @@ func (x *JoinLiveRoomResponse) String() string {
 func (*JoinLiveRoomResponse) ProtoMessage() {}
 
 func (x *JoinLiveRoomResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[13]
+	mi := &file_proto_live_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -937,7 +937,7 @@ func (x *JoinLiveRoomResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinLiveRoomResponse.ProtoReflect.Descriptor instead.
 func (*JoinLiveRoomResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{13}
+	return file_proto_live_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *JoinLiveRoomResponse) GetCode() int32 {
@@ -979,7 +979,7 @@ type LeaveLiveRoomRequest struct {
 
 func (x *LeaveLiveRoomRequest) Reset() {
 	*x = LeaveLiveRoomRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[14]
+	mi := &file_proto_live_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -991,7 +991,7 @@ func (x *LeaveLiveRoomRequest) String() string {
 func (*LeaveLiveRoomRequest) ProtoMessage() {}
 
 func (x *LeaveLiveRoomRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[14]
+	mi := &file_proto_live_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1004,7 +1004,7 @@ func (x *LeaveLiveRoomRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveLiveRoomRequest.ProtoReflect.Descriptor instead.
 func (*LeaveLiveRoomRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{14}
+	return file_proto_live_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *LeaveLiveRoomRequest) GetUserId() uint64 {
@@ -1039,7 +1039,7 @@ type LeaveLiveRoomResponse struct {
 
 func (x *LeaveLiveRoomResponse) Reset() {
 	*x = LeaveLiveRoomResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[15]
+	mi := &file_proto_live_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1051,7 +1051,7 @@ func (x *LeaveLiveRoomResponse) String() string {
 func (*LeaveLiveRoomResponse) ProtoMessage() {}
 
 func (x *LeaveLiveRoomResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[15]
+	mi := &file_proto_live_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1064,7 +1064,7 @@ func (x *LeaveLiveRoomResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveLiveRoomResponse.ProtoReflect.Descriptor instead.
 func (*LeaveLiveRoomResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{15}
+	return file_proto_live_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *LeaveLiveRoomResponse) GetCode() int32 {
@@ -1101,7 +1101,7 @@ type GetLiveViewerListRequest struct {
 
 func (x *GetLiveViewerListRequest) Reset() {
 	*x = GetLiveViewerListRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[16]
+	mi := &file_proto_live_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1113,7 +1113,7 @@ func (x *GetLiveViewerListRequest) String() string {
 func (*GetLiveViewerListRequest) ProtoMessage() {}
 
 func (x *GetLiveViewerListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[16]
+	mi := &file_proto_live_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1126,7 +1126,7 @@ func (x *GetLiveViewerListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveViewerListRequest.ProtoReflect.Descriptor instead.
 func (*GetLiveViewerListRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{16}
+	return file_proto_live_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetLiveViewerListRequest) GetUserId() uint64 {
@@ -1177,7 +1177,7 @@ type GetLiveViewerListResponse struct {
 
 func (x *GetLiveViewerListResponse) Reset() {
 	*x = GetLiveViewerListResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[17]
+	mi := &file_proto_live_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1189,7 +1189,7 @@ func (x *GetLiveViewerListResponse) String() string {
 func (*GetLiveViewerListResponse) ProtoMessage() {}
 
 func (x *GetLiveViewerListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[17]
+	mi := &file_proto_live_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1202,7 +1202,7 @@ func (x *GetLiveViewerListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveViewerListResponse.ProtoReflect.Descriptor instead.
 func (*GetLiveViewerListResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{17}
+	return file_proto_live_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetLiveViewerListResponse) GetCode() int32 {
@@ -1254,7 +1254,7 @@ type SendLiveChatRequest struct {
 
 func (x *SendLiveChatRequest) Reset() {
 	*x = SendLiveChatRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[18]
+	mi := &file_proto_live_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1266,7 +1266,7 @@ func (x *SendLiveChatRequest) String() string {
 func (*SendLiveChatRequest) ProtoMessage() {}
 
 func (x *SendLiveChatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[18]
+	mi := &file_proto_live_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1279,7 +1279,7 @@ func (x *SendLiveChatRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendLiveChatRequest.ProtoReflect.Descriptor instead.
 func (*SendLiveChatRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{18}
+	return file_proto_live_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *SendLiveChatRequest) GetUserId() uint64 {
@@ -1329,7 +1329,7 @@ type SendLiveChatResponse struct {
 
 func (x *SendLiveChatResponse) Reset() {
 	*x = SendLiveChatResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[19]
+	mi := &file_proto_live_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1341,7 +1341,7 @@ func (x *SendLiveChatResponse) String() string {
 func (*SendLiveChatResponse) ProtoMessage() {}
 
 func (x *SendLiveChatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[19]
+	mi := &file_proto_live_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1354,7 +1354,7 @@ func (x *SendLiveChatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendLiveChatResponse.ProtoReflect.Descriptor instead.
 func (*SendLiveChatResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{19}
+	return file_proto_live_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *SendLiveChatResponse) GetCode() int32 {
@@ -1398,7 +1398,7 @@ type GetLiveChatListRequest struct {
 
 func (x *GetLiveChatListRequest) Reset() {
 	*x = GetLiveChatListRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[20]
+	mi := &file_proto_live_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1410,7 +1410,7 @@ func (x *GetLiveChatListRequest) String() string {
 func (*GetLiveChatListRequest) ProtoMessage() {}
 
 func (x *GetLiveChatListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[20]
+	mi := &file_proto_live_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1423,7 +1423,7 @@ func (x *GetLiveChatListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveChatListRequest.ProtoReflect.Descriptor instead.
 func (*GetLiveChatListRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{20}
+	return file_proto_live_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetLiveChatListRequest) GetUserId() uint64 {
@@ -1474,7 +1474,7 @@ type GetLiveChatListResponse struct {
 
 func (x *GetLiveChatListResponse) Reset() {
 	*x = GetLiveChatListResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[21]
+	mi := &file_proto_live_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1486,7 +1486,7 @@ func (x *GetLiveChatListResponse) String() string {
 func (*GetLiveChatListResponse) ProtoMessage() {}
 
 func (x *GetLiveChatListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[21]
+	mi := &file_proto_live_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1499,7 +1499,7 @@ func (x *GetLiveChatListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveChatListResponse.ProtoReflect.Descriptor instead.
 func (*GetLiveChatListResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{21}
+	return file_proto_live_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetLiveChatListResponse) GetCode() int32 {
@@ -1552,7 +1552,7 @@ type SendLiveGiftRequest struct {
 
 func (x *SendLiveGiftRequest) Reset() {
 	*x = SendLiveGiftRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[22]
+	mi := &file_proto_live_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1564,7 +1564,7 @@ func (x *SendLiveGiftRequest) String() string {
 func (*SendLiveGiftRequest) ProtoMessage() {}
 
 func (x *SendLiveGiftRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[22]
+	mi := &file_proto_live_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1577,7 +1577,7 @@ func (x *SendLiveGiftRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendLiveGiftRequest.ProtoReflect.Descriptor instead.
 func (*SendLiveGiftRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{22}
+	return file_proto_live_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *SendLiveGiftRequest) GetUserId() uint64 {
@@ -1634,7 +1634,7 @@ type SendLiveGiftResponse struct {
 
 func (x *SendLiveGiftResponse) Reset() {
 	*x = SendLiveGiftResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[23]
+	mi := &file_proto_live_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1646,7 +1646,7 @@ func (x *SendLiveGiftResponse) String() string {
 func (*SendLiveGiftResponse) ProtoMessage() {}
 
 func (x *SendLiveGiftResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[23]
+	mi := &file_proto_live_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1659,7 +1659,7 @@ func (x *SendLiveGiftResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendLiveGiftResponse.ProtoReflect.Descriptor instead.
 func (*SendLiveGiftResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{23}
+	return file_proto_live_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *SendLiveGiftResponse) GetCode() int32 {
@@ -1703,7 +1703,7 @@ type GetLiveGiftListRequest struct {
 
 func (x *GetLiveGiftListRequest) Reset() {
 	*x = GetLiveGiftListRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[24]
+	mi := &file_proto_live_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1715,7 +1715,7 @@ func (x *GetLiveGiftListRequest) String() string {
 func (*GetLiveGiftListRequest) ProtoMessage() {}
 
 func (x *GetLiveGiftListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[24]
+	mi := &file_proto_live_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1728,7 +1728,7 @@ func (x *GetLiveGiftListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveGiftListRequest.ProtoReflect.Descriptor instead.
 func (*GetLiveGiftListRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{24}
+	return file_proto_live_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetLiveGiftListRequest) GetUserId() uint64 {
@@ -1779,7 +1779,7 @@ type GetLiveGiftListResponse struct {
 
 func (x *GetLiveGiftListResponse) Reset() {
 	*x = GetLiveGiftListResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[25]
+	mi := &file_proto_live_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1791,7 +1791,7 @@ func (x *GetLiveGiftListResponse) String() string {
 func (*GetLiveGiftListResponse) ProtoMessage() {}
 
 func (x *GetLiveGiftListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[25]
+	mi := &file_proto_live_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1804,7 +1804,7 @@ func (x *GetLiveGiftListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveGiftListResponse.ProtoReflect.Descriptor instead.
 func (*GetLiveGiftListResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{25}
+	return file_proto_live_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetLiveGiftListResponse) GetCode() int32 {
@@ -1854,7 +1854,7 @@ type LikeLiveRequest struct {
 
 func (x *LikeLiveRequest) Reset() {
 	*x = LikeLiveRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[26]
+	mi := &file_proto_live_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1866,7 +1866,7 @@ func (x *LikeLiveRequest) String() string {
 func (*LikeLiveRequest) ProtoMessage() {}
 
 func (x *LikeLiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[26]
+	mi := &file_proto_live_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1879,7 +1879,7 @@ func (x *LikeLiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LikeLiveRequest.ProtoReflect.Descriptor instead.
 func (*LikeLiveRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{26}
+	return file_proto_live_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *LikeLiveRequest) GetUserId() uint64 {
@@ -1915,7 +1915,7 @@ type LikeLiveResponse struct {
 
 func (x *LikeLiveResponse) Reset() {
 	*x = LikeLiveResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[27]
+	mi := &file_proto_live_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1927,7 +1927,7 @@ func (x *LikeLiveResponse) String() string {
 func (*LikeLiveResponse) ProtoMessage() {}
 
 func (x *LikeLiveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[27]
+	mi := &file_proto_live_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1940,7 +1940,7 @@ func (x *LikeLiveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LikeLiveResponse.ProtoReflect.Descriptor instead.
 func (*LikeLiveResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{27}
+	return file_proto_live_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *LikeLiveResponse) GetCode() int32 {
@@ -1985,7 +1985,7 @@ type SearchLiveRequest struct {
 
 func (x *SearchLiveRequest) Reset() {
 	*x = SearchLiveRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[28]
+	mi := &file_proto_live_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1997,7 +1997,7 @@ func (x *SearchLiveRequest) String() string {
 func (*SearchLiveRequest) ProtoMessage() {}
 
 func (x *SearchLiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[28]
+	mi := &file_proto_live_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2010,7 +2010,7 @@ func (x *SearchLiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchLiveRequest.ProtoReflect.Descriptor instead.
 func (*SearchLiveRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{28}
+	return file_proto_live_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *SearchLiveRequest) GetUserId() uint64 {
@@ -2061,7 +2061,7 @@ type SearchLiveResponse struct {
 
 func (x *SearchLiveResponse) Reset() {
 	*x = SearchLiveResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[29]
+	mi := &file_proto_live_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2073,7 +2073,7 @@ func (x *SearchLiveResponse) String() string {
 func (*SearchLiveResponse) ProtoMessage() {}
 
 func (x *SearchLiveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[29]
+	mi := &file_proto_live_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2086,7 +2086,7 @@ func (x *SearchLiveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchLiveResponse.ProtoReflect.Descriptor instead.
 func (*SearchLiveResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{29}
+	return file_proto_live_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *SearchLiveResponse) GetCode() int32 {
@@ -2134,7 +2134,7 @@ type GetLiveCategoriesRequest struct {
 
 func (x *GetLiveCategoriesRequest) Reset() {
 	*x = GetLiveCategoriesRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[30]
+	mi := &file_proto_live_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2146,7 +2146,7 @@ func (x *GetLiveCategoriesRequest) String() string {
 func (*GetLiveCategoriesRequest) ProtoMessage() {}
 
 func (x *GetLiveCategoriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[30]
+	mi := &file_proto_live_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2159,7 +2159,7 @@ func (x *GetLiveCategoriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveCategoriesRequest.ProtoReflect.Descriptor instead.
 func (*GetLiveCategoriesRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{30}
+	return file_proto_live_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *GetLiveCategoriesRequest) GetUserId() uint64 {
@@ -2188,7 +2188,7 @@ type GetLiveCategoriesResponse struct {
 
 func (x *GetLiveCategoriesResponse) Reset() {
 	*x = GetLiveCategoriesResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[31]
+	mi := &file_proto_live_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2200,7 +2200,7 @@ func (x *GetLiveCategoriesResponse) String() string {
 func (*GetLiveCategoriesResponse) ProtoMessage() {}
 
 func (x *GetLiveCategoriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[31]
+	mi := &file_proto_live_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2213,7 +2213,7 @@ func (x *GetLiveCategoriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveCategoriesResponse.ProtoReflect.Descriptor instead.
 func (*GetLiveCategoriesResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{31}
+	return file_proto_live_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *GetLiveCategoriesResponse) GetCode() int32 {
@@ -2256,7 +2256,7 @@ type GetLiveStatsRequest struct {
 
 func (x *GetLiveStatsRequest) Reset() {
 	*x = GetLiveStatsRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[32]
+	mi := &file_proto_live_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2268,7 +2268,7 @@ func (x *GetLiveStatsRequest) String() string {
 func (*GetLiveStatsRequest) ProtoMessage() {}
 
 func (x *GetLiveStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[32]
+	mi := &file_proto_live_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2281,7 +2281,7 @@ func (x *GetLiveStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveStatsRequest.ProtoReflect.Descriptor instead.
 func (*GetLiveStatsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{32}
+	return file_proto_live_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *GetLiveStatsRequest) GetUserId() uint64 {
@@ -2317,7 +2317,7 @@ type GetLiveStatsResponse struct {
 
 func (x *GetLiveStatsResponse) Reset() {
 	*x = GetLiveStatsResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[33]
+	mi := &file_proto_live_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2329,7 +2329,7 @@ func (x *GetLiveStatsResponse) String() string {
 func (*GetLiveStatsResponse) ProtoMessage() {}
 
 func (x *GetLiveStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[33]
+	mi := &file_proto_live_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2342,7 +2342,7 @@ func (x *GetLiveStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveStatsResponse.ProtoReflect.Descriptor instead.
 func (*GetLiveStatsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{33}
+	return file_proto_live_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GetLiveStatsResponse) GetCode() int32 {
@@ -2384,7 +2384,7 @@ type GetLivePlaybackRequest struct {
 
 func (x *GetLivePlaybackRequest) Reset() {
 	*x = GetLivePlaybackRequest{}
-	mi := &file_proto_defs_live_proto_msgTypes[34]
+	mi := &file_proto_live_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2396,7 +2396,7 @@ func (x *GetLivePlaybackRequest) String() string {
 func (*GetLivePlaybackRequest) ProtoMessage() {}
 
 func (x *GetLivePlaybackRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[34]
+	mi := &file_proto_live_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2409,7 +2409,7 @@ func (x *GetLivePlaybackRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLivePlaybackRequest.ProtoReflect.Descriptor instead.
 func (*GetLivePlaybackRequest) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{34}
+	return file_proto_live_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *GetLivePlaybackRequest) GetUserId() uint64 {
@@ -2445,7 +2445,7 @@ type GetLivePlaybackResponse struct {
 
 func (x *GetLivePlaybackResponse) Reset() {
 	*x = GetLivePlaybackResponse{}
-	mi := &file_proto_defs_live_proto_msgTypes[35]
+	mi := &file_proto_live_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2457,7 +2457,7 @@ func (x *GetLivePlaybackResponse) String() string {
 func (*GetLivePlaybackResponse) ProtoMessage() {}
 
 func (x *GetLivePlaybackResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[35]
+	mi := &file_proto_live_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2470,7 +2470,7 @@ func (x *GetLivePlaybackResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLivePlaybackResponse.ProtoReflect.Descriptor instead.
 func (*GetLivePlaybackResponse) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{35}
+	return file_proto_live_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *GetLivePlaybackResponse) GetCode() int32 {
@@ -2528,7 +2528,7 @@ type LiveStream struct {
 
 func (x *LiveStream) Reset() {
 	*x = LiveStream{}
-	mi := &file_proto_defs_live_proto_msgTypes[36]
+	mi := &file_proto_live_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2540,7 +2540,7 @@ func (x *LiveStream) String() string {
 func (*LiveStream) ProtoMessage() {}
 
 func (x *LiveStream) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[36]
+	mi := &file_proto_live_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2553,7 +2553,7 @@ func (x *LiveStream) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiveStream.ProtoReflect.Descriptor instead.
 func (*LiveStream) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{36}
+	return file_proto_live_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *LiveStream) GetId() uint64 {
@@ -2704,7 +2704,7 @@ type LiveRoom struct {
 
 func (x *LiveRoom) Reset() {
 	*x = LiveRoom{}
-	mi := &file_proto_defs_live_proto_msgTypes[37]
+	mi := &file_proto_live_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2716,7 +2716,7 @@ func (x *LiveRoom) String() string {
 func (*LiveRoom) ProtoMessage() {}
 
 func (x *LiveRoom) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[37]
+	mi := &file_proto_live_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2729,7 +2729,7 @@ func (x *LiveRoom) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiveRoom.ProtoReflect.Descriptor instead.
 func (*LiveRoom) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{37}
+	return file_proto_live_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *LiveRoom) GetId() uint64 {
@@ -2848,7 +2848,7 @@ type LiveViewer struct {
 
 func (x *LiveViewer) Reset() {
 	*x = LiveViewer{}
-	mi := &file_proto_defs_live_proto_msgTypes[38]
+	mi := &file_proto_live_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2860,7 +2860,7 @@ func (x *LiveViewer) String() string {
 func (*LiveViewer) ProtoMessage() {}
 
 func (x *LiveViewer) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[38]
+	mi := &file_proto_live_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2873,7 +2873,7 @@ func (x *LiveViewer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiveViewer.ProtoReflect.Descriptor instead.
 func (*LiveViewer) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{38}
+	return file_proto_live_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *LiveViewer) GetId() uint64 {
@@ -2964,7 +2964,7 @@ type LiveChat struct {
 
 func (x *LiveChat) Reset() {
 	*x = LiveChat{}
-	mi := &file_proto_defs_live_proto_msgTypes[39]
+	mi := &file_proto_live_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2976,7 +2976,7 @@ func (x *LiveChat) String() string {
 func (*LiveChat) ProtoMessage() {}
 
 func (x *LiveChat) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[39]
+	mi := &file_proto_live_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2989,7 +2989,7 @@ func (x *LiveChat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiveChat.ProtoReflect.Descriptor instead.
 func (*LiveChat) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{39}
+	return file_proto_live_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *LiveChat) GetId() uint64 {
@@ -3084,7 +3084,7 @@ type LiveGift struct {
 
 func (x *LiveGift) Reset() {
 	*x = LiveGift{}
-	mi := &file_proto_defs_live_proto_msgTypes[40]
+	mi := &file_proto_live_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3096,7 +3096,7 @@ func (x *LiveGift) String() string {
 func (*LiveGift) ProtoMessage() {}
 
 func (x *LiveGift) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[40]
+	mi := &file_proto_live_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3109,7 +3109,7 @@ func (x *LiveGift) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiveGift.ProtoReflect.Descriptor instead.
 func (*LiveGift) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{40}
+	return file_proto_live_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *LiveGift) GetId() uint64 {
@@ -3230,7 +3230,7 @@ type GiftConfig struct {
 
 func (x *GiftConfig) Reset() {
 	*x = GiftConfig{}
-	mi := &file_proto_defs_live_proto_msgTypes[41]
+	mi := &file_proto_live_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3242,7 +3242,7 @@ func (x *GiftConfig) String() string {
 func (*GiftConfig) ProtoMessage() {}
 
 func (x *GiftConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[41]
+	mi := &file_proto_live_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3255,7 +3255,7 @@ func (x *GiftConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GiftConfig.ProtoReflect.Descriptor instead.
 func (*GiftConfig) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{41}
+	return file_proto_live_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *GiftConfig) GetId() uint32 {
@@ -3355,7 +3355,7 @@ type LiveCategory struct {
 
 func (x *LiveCategory) Reset() {
 	*x = LiveCategory{}
-	mi := &file_proto_defs_live_proto_msgTypes[42]
+	mi := &file_proto_live_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3367,7 +3367,7 @@ func (x *LiveCategory) String() string {
 func (*LiveCategory) ProtoMessage() {}
 
 func (x *LiveCategory) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[42]
+	mi := &file_proto_live_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3380,7 +3380,7 @@ func (x *LiveCategory) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiveCategory.ProtoReflect.Descriptor instead.
 func (*LiveCategory) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{42}
+	return file_proto_live_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *LiveCategory) GetId() uint32 {
@@ -3436,7 +3436,7 @@ type LiveStats struct {
 
 func (x *LiveStats) Reset() {
 	*x = LiveStats{}
-	mi := &file_proto_defs_live_proto_msgTypes[43]
+	mi := &file_proto_live_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3448,7 +3448,7 @@ func (x *LiveStats) String() string {
 func (*LiveStats) ProtoMessage() {}
 
 func (x *LiveStats) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[43]
+	mi := &file_proto_live_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3461,7 +3461,7 @@ func (x *LiveStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiveStats.ProtoReflect.Descriptor instead.
 func (*LiveStats) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{43}
+	return file_proto_live_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *LiveStats) GetStreamId() uint64 {
@@ -3549,7 +3549,7 @@ type LivePlayback struct {
 
 func (x *LivePlayback) Reset() {
 	*x = LivePlayback{}
-	mi := &file_proto_defs_live_proto_msgTypes[44]
+	mi := &file_proto_live_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3561,7 +3561,7 @@ func (x *LivePlayback) String() string {
 func (*LivePlayback) ProtoMessage() {}
 
 func (x *LivePlayback) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[44]
+	mi := &file_proto_live_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3574,7 +3574,7 @@ func (x *LivePlayback) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LivePlayback.ProtoReflect.Descriptor instead.
 func (*LivePlayback) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{44}
+	return file_proto_live_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *LivePlayback) GetStreamId() uint64 {
@@ -3641,7 +3641,7 @@ type GiftRankingItem struct {
 
 func (x *GiftRankingItem) Reset() {
 	*x = GiftRankingItem{}
-	mi := &file_proto_defs_live_proto_msgTypes[45]
+	mi := &file_proto_live_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3653,7 +3653,7 @@ func (x *GiftRankingItem) String() string {
 func (*GiftRankingItem) ProtoMessage() {}
 
 func (x *GiftRankingItem) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_defs_live_proto_msgTypes[45]
+	mi := &file_proto_live_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3666,7 +3666,7 @@ func (x *GiftRankingItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GiftRankingItem.ProtoReflect.Descriptor instead.
 func (*GiftRankingItem) Descriptor() ([]byte, []int) {
-	return file_proto_defs_live_proto_rawDescGZIP(), []int{45}
+	return file_proto_live_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *GiftRankingItem) GetUserId() uint64 {
@@ -3718,11 +3718,11 @@ func (x *GiftRankingItem) GetLastGiftTime() int64 {
 	return 0
 }
 
-var File_proto_defs_live_proto protoreflect.FileDescriptor
+var File_proto_live_proto protoreflect.FileDescriptor
 
-const file_proto_defs_live_proto_rawDesc = "" +
+const file_proto_live_proto_rawDesc = "" +
 	"\n" +
-	"\x15proto_defs/live.proto\x12\x06livepb\"E\n" +
+	"\x10proto/live.proto\x12\x06livepb\"E\n" +
 	"\vBaseRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1d\n" +
 	"\n" +
@@ -4140,19 +4140,19 @@ const file_proto_defs_live_proto_rawDesc = "" +
 	"\x0fGetLivePlayback\x12\x1e.livepb.GetLivePlaybackRequest\x1a\x1f.livepb.GetLivePlaybackResponseB4Z2github.com/vision_world/api_gateway/proto_gen/liveb\x06proto3"
 
 var (
-	file_proto_defs_live_proto_rawDescOnce sync.Once
-	file_proto_defs_live_proto_rawDescData []byte
+	file_proto_live_proto_rawDescOnce sync.Once
+	file_proto_live_proto_rawDescData []byte
 )
 
-func file_proto_defs_live_proto_rawDescGZIP() []byte {
-	file_proto_defs_live_proto_rawDescOnce.Do(func() {
-		file_proto_defs_live_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_defs_live_proto_rawDesc), len(file_proto_defs_live_proto_rawDesc)))
+func file_proto_live_proto_rawDescGZIP() []byte {
+	file_proto_live_proto_rawDescOnce.Do(func() {
+		file_proto_live_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_live_proto_rawDesc), len(file_proto_live_proto_rawDesc)))
 	})
-	return file_proto_defs_live_proto_rawDescData
+	return file_proto_live_proto_rawDescData
 }
 
-var file_proto_defs_live_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
-var file_proto_defs_live_proto_goTypes = []any{
+var file_proto_live_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
+var file_proto_live_proto_goTypes = []any{
 	(*BaseRequest)(nil),               // 0: livepb.BaseRequest
 	(*BaseResponse)(nil),              // 1: livepb.BaseResponse
 	(*StartLiveRequest)(nil),          // 2: livepb.StartLiveRequest
@@ -4200,7 +4200,7 @@ var file_proto_defs_live_proto_goTypes = []any{
 	(*LivePlayback)(nil),              // 44: livepb.LivePlayback
 	(*GiftRankingItem)(nil),           // 45: livepb.GiftRankingItem
 }
-var file_proto_defs_live_proto_depIdxs = []int32{
+var file_proto_live_proto_depIdxs = []int32{
 	36, // 0: livepb.StartLiveResponse.stream:type_name -> livepb.LiveStream
 	36, // 1: livepb.GetLiveStreamResponse.stream:type_name -> livepb.LiveStream
 	36, // 2: livepb.GetLiveListResponse.streams:type_name -> livepb.LiveStream
@@ -4256,26 +4256,26 @@ var file_proto_defs_live_proto_depIdxs = []int32{
 	0,  // [0:14] is the sub-list for field type_name
 }
 
-func init() { file_proto_defs_live_proto_init() }
-func file_proto_defs_live_proto_init() {
-	if File_proto_defs_live_proto != nil {
+func init() { file_proto_live_proto_init() }
+func file_proto_live_proto_init() {
+	if File_proto_live_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_defs_live_proto_rawDesc), len(file_proto_defs_live_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_live_proto_rawDesc), len(file_proto_live_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   46,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_defs_live_proto_goTypes,
-		DependencyIndexes: file_proto_defs_live_proto_depIdxs,
-		MessageInfos:      file_proto_defs_live_proto_msgTypes,
+		GoTypes:           file_proto_live_proto_goTypes,
+		DependencyIndexes: file_proto_live_proto_depIdxs,
+		MessageInfos:      file_proto_live_proto_msgTypes,
 	}.Build()
-	File_proto_defs_live_proto = out.File
-	file_proto_defs_live_proto_goTypes = nil
-	file_proto_defs_live_proto_depIdxs = nil
+	File_proto_live_proto = out.File
+	file_proto_live_proto_goTypes = nil
+	file_proto_live_proto_depIdxs = nil
 }
