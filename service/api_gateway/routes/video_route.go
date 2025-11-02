@@ -549,14 +549,7 @@ func (h *VideoHandler) HandleVideoUpload(c *gin.Context) {
 		return
 	}
 
-	// 获取用户的token
-	tokenValue, exists := c.Get("token")
-	if !exists {
-		log.Printf("User token not found")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User token not found"})
-		return
-	}
-	token := fmt.Sprintf("%v", tokenValue)
+	//token := fmt.Sprintf("%v", tokenValue)
 
 	// 准备标签
 	var tags []string
@@ -572,7 +565,7 @@ func (h *VideoHandler) HandleVideoUpload(c *gin.Context) {
 	defer cancel()
 
 	req := &pb.UploadVideoRequest{
-		Token:       token,
+		//Token:       token,
 		VideoData:   fileBytes,
 		FileName:    header.Filename,
 		Title:       title,

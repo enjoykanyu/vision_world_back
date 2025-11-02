@@ -64,8 +64,9 @@ func main() {
 	}
 	defer minioClient.Close()
 
-	// 创建Gin引擎
+	// 创建Gin引擎，设置最大请求体大小为500MB以支持大文件上传
 	router := gin.New()
+	router.MaxMultipartMemory = 500 << 20 // 500 MB
 
 	// 初始化Prometheus监控
 	p := ginprometheus.NewPrometheus("vision_world_gateway")

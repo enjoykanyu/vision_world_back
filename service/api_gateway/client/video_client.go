@@ -30,8 +30,8 @@ func NewVideoServiceClient(serviceAddr string) (*VideoServiceClient, error) {
 			PermitWithoutStream: true,             // 允许在没有活跃stream时发送keepalive ping
 		}),
 		grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(4*1024*1024), // 4MB
-			grpc.MaxCallSendMsgSize(4*1024*1024), // 4MB
+			grpc.MaxCallRecvMsgSize(100*1024*1024), // 100MB
+			grpc.MaxCallSendMsgSize(100*1024*1024), // 100MB
 		),
 	}
 

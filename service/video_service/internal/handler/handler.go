@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
@@ -9,6 +8,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/vision_world/video_service/internal/config"
@@ -33,21 +33,15 @@ type VideoHandler struct {
 	videoService    *service.VideoService
 	auditClient     auditpb.AuditServiceClient
 	auditConn       *grpc.ClientConn
-	queueClient     *queue.RabbitMQClient
-	minioClient     *minio.Client
 	discoveryClient discovery.ServiceDiscovery
 	serviceID       string
 	logger          logger.Logger
+	// 添加互斥锁保护audit连接
+	auditMutex sync.RWMutex
 }
 
 // NewVideoHandler 创建视频处理器
 func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *redis.Client) (*VideoHandler, error) {
-
-	videoService, err := service.NewVideoService(cfg, db, redis)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create video service: %w", err)
-	}
-
 	// 创建MinIO客户端
 	minioClient, err := minio.NewClient(minio.Config{
 		Endpoint:        cfg.MinIO.Endpoint,
@@ -67,27 +61,33 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 		return nil, fmt.Errorf("failed to create RabbitMQ client: %w", err)
 	}
 
-	// 创建audit_service客户端连接
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(cfg.Services.AuditService.Timeout)*time.Second)
-	defer cancel()
-
-	conn, err := grpc.DialContext(ctx, cfg.Services.AuditService.Address,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-	)
+	videoService, err := service.NewVideoService(cfg, db, redis, minioClient, queueClient)
 	if err != nil {
-		queueClient.Close() // 清理RabbitMQ连接
-		return nil, fmt.Errorf("failed to connect to audit service: %w", err)
+		return nil, fmt.Errorf("failed to create video service: %w", err)
 	}
 
-	auditClient := auditpb.NewAuditServiceClient(conn)
-
-	log.Info("Connected to audit service",
-		"address", cfg.Services.AuditService.Address)
-
-	// 创建服务发现客户端
+	// 创建服务发现客户端 - 参考api_gateway的实现方式
 	var discoveryClient discovery.ServiceDiscovery
-	if cfg.Discovery.Type != "" {
+	if cfg.Discovery.Type != "" && cfg.Discovery.Type == "etcd" && cfg.Discovery.Address != "" {
+		// 解析etcd端点
+		etcdEndpoints := strings.Split(cfg.Discovery.Address, ",")
+		for i, endpoint := range etcdEndpoints {
+			etcdEndpoints[i] = strings.TrimSpace(endpoint)
+		}
+
+		// 使用与api_gateway相同的方式创建etcd服务发现
+		etcdDiscovery, err := discovery.NewEtcdServiceDiscovery(etcdEndpoints, "audit-service")
+		if err != nil {
+			log.Error("Failed to create etcd service discovery client", "error", err)
+			// 服务发现创建失败不影响服务启动，只记录错误
+		} else {
+			discoveryClient = etcdDiscovery
+			log.Info("Etcd service discovery client created",
+				"type", cfg.Discovery.Type,
+				"endpoints", etcdEndpoints)
+		}
+	} else if cfg.Discovery.Type != "" {
+		// 对于其他类型的服务发现，使用原有方式
 		discoveryClient, err = discovery.NewServiceDiscovery(&cfg.Discovery, cfg.Server.Name)
 		if err != nil {
 			log.Error("Failed to create service discovery client", "error", err)
@@ -96,6 +96,46 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 			log.Info("Service discovery client created",
 				"type", cfg.Discovery.Type)
 		}
+	}
+
+	// 创建audit_service客户端连接 - 使用服务发现机制
+	var auditClient auditpb.AuditServiceClient
+	var auditConn *grpc.ClientConn
+
+	// 如果配置了静态地址且没有服务发现，使用静态地址
+	if cfg.Services.AuditService.Address != "" && discoveryClient == nil {
+		// 使用较短的超时时间进行初始连接尝试
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+		conn, err := grpc.DialContext(ctx, cfg.Services.AuditService.Address,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithBlock(),
+		)
+		cancel()
+
+		if err != nil {
+			// 连接失败，记录警告但不阻止服务启动
+			log.Warn("Failed to connect to audit service on startup, will retry later",
+				"address", cfg.Services.AuditService.Address,
+				"error", err)
+
+			// 设置为nil，后续可以通过重连机制建立连接
+			auditClient = nil
+			auditConn = nil
+		} else {
+			// 连接成功
+			auditClient = auditpb.NewAuditServiceClient(conn)
+			auditConn = conn
+
+			log.Info("Connected to audit service",
+				"address", cfg.Services.AuditService.Address)
+		}
+	} else if discoveryClient != nil {
+		// 使用服务发现机制连接audit服务
+		log.Info("Audit service will be discovered via service discovery")
+		// auditClient和auditConn将在需要时通过服务发现获取
+	} else {
+		log.Info("Audit service not configured, audit features will be disabled")
 	}
 
 	// 生成服务ID
@@ -112,9 +152,7 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 		config:          cfg,
 		videoService:    videoService,
 		auditClient:     auditClient,
-		auditConn:       conn,
-		queueClient:     queueClient,
-		minioClient:     minioClient,
+		auditConn:       auditConn,
 		discoveryClient: discoveryClient,
 		serviceID:       serviceID,
 		logger:          log,
@@ -146,6 +184,65 @@ func getHostAndPort(address string) (string, int, error) {
 	}
 
 	return host, port, nil
+}
+
+// getAuditClient 获取audit服务客户端，如果未连接则通过服务发现建立连接
+func (h *VideoHandler) getAuditClient(ctx context.Context) (auditpb.AuditServiceClient, error) {
+	// 使用读锁检查是否已有连接
+	h.auditMutex.RLock()
+	if h.auditClient != nil {
+		client := h.auditClient
+		h.auditMutex.RUnlock()
+		return client, nil
+	}
+	h.auditMutex.RUnlock()
+
+	// 使用写锁建立新连接
+	h.auditMutex.Lock()
+	defer h.auditMutex.Unlock()
+
+	// 双重检查，防止在获取写锁期间其他goroutine已经建立了连接
+	if h.auditClient != nil {
+		return h.auditClient, nil
+	}
+
+	// 如果没有服务发现客户端，返回错误
+	if h.discoveryClient == nil {
+		return nil, fmt.Errorf("service discovery not available for audit service")
+	}
+
+	// 通过服务发现获取audit服务实例
+	instances, err := h.discoveryClient.Discover(ctx, "audit-service")
+	if err != nil {
+		return nil, fmt.Errorf("failed to discover audit service: %w", err)
+	}
+
+	if len(instances) == 0 {
+		return nil, fmt.Errorf("no audit service instances found")
+	}
+
+	// 选择第一个可用的实例
+	instance := instances[0]
+	address := fmt.Sprintf("%s:%d", instance.Host, instance.Port)
+
+	// 建立连接
+	conn, err := grpc.DialContext(ctx, address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to audit service at %s: %w", address, err)
+	}
+
+	// 创建客户端并保存连接
+	h.auditClient = auditpb.NewAuditServiceClient(conn)
+	h.auditConn = conn
+
+	h.logger.Info("Connected to audit service via service discovery",
+		"address", address,
+		"instance_id", instance.ID)
+
+	return h.auditClient, nil
 }
 
 // RegisterService 注册服务到服务发现
@@ -218,22 +315,19 @@ func (h *VideoHandler) Close() error {
 		}
 	}
 
-	// 关闭RabbitMQ连接
-	if h.queueClient != nil {
-		if err := h.queueClient.Close(); err != nil {
-			h.logger.Error("Failed to close RabbitMQ connection", "error", err)
-			errs = append(errs, err)
-		}
-	}
-
 	// 关闭audit_service连接
+	h.auditMutex.Lock()
 	if h.auditConn != nil {
 		if err := h.auditConn.Close(); err != nil {
 			h.logger.Error("Failed to close audit service connection", "error", err)
 			errs = append(errs, err)
 		}
+		h.auditConn = nil
+		h.auditClient = nil
 	}
+	h.auditMutex.Unlock()
 
+	// 关闭video_service连接
 	if h.videoService != nil {
 		if err := h.videoService.Close(); err != nil {
 			h.logger.Error("Failed to close video service", "error", err)
@@ -248,6 +342,97 @@ func (h *VideoHandler) Close() error {
 	return nil
 }
 
+// reconnectAuditService 重连audit服务
+func (h *VideoHandler) reconnectAuditService(ctx context.Context) error {
+	h.auditMutex.Lock()
+	defer h.auditMutex.Unlock()
+
+	// 如果已经存在连接，先关闭它
+	if h.auditConn != nil {
+		h.auditConn.Close()
+		h.auditConn = nil
+		h.auditClient = nil
+	}
+
+	// 优先使用服务发现
+	if h.discoveryClient != nil {
+		// 通过服务发现获取audit服务实例
+		instances, err := h.discoveryClient.Discover(ctx, "audit-service")
+		if err != nil {
+			return fmt.Errorf("failed to discover audit service: %w", err)
+		}
+
+		if len(instances) == 0 {
+			return fmt.Errorf("no audit service instances found")
+		}
+
+		// 选择第一个可用的实例
+		instance := instances[0]
+		address := fmt.Sprintf("%s:%d", instance.Host, instance.Port)
+
+		// 建立连接
+		conn, err := grpc.DialContext(ctx, address,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithBlock(),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to connect to audit service at %s: %w", address, err)
+		}
+
+		// 创建客户端并保存连接
+		h.auditClient = auditpb.NewAuditServiceClient(conn)
+		h.auditConn = conn
+
+		h.logger.Info("Successfully reconnected to audit service via service discovery",
+			"address", address,
+			"instance_id", instance.ID)
+
+		return nil
+	}
+
+	// 如果没有服务发现，使用静态配置
+	if h.config.Services.AuditService.Address == "" {
+		return fmt.Errorf("audit service address not configured and service discovery not available")
+	}
+
+	// 使用配置的超时时间进行连接
+	timeout := time.Duration(h.config.Services.AuditService.Timeout) * time.Second
+	if timeout == 0 {
+		timeout = 5 * time.Second // 默认5秒超时
+	}
+
+	connCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	conn, err := grpc.DialContext(connCtx, h.config.Services.AuditService.Address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	)
+
+	if err != nil {
+		h.logger.Warn("Failed to reconnect to audit service",
+			"address", h.config.Services.AuditService.Address,
+			"error", err)
+		return err
+	}
+
+	// 连接成功，更新连接和客户端
+	h.auditConn = conn
+	h.auditClient = auditpb.NewAuditServiceClient(conn)
+
+	h.logger.Info("Successfully reconnected to audit service",
+		"address", h.config.Services.AuditService.Address)
+
+	return nil
+}
+
+// isAuditServiceAvailable 检查audit服务是否可用
+func (h *VideoHandler) isAuditServiceAvailable() bool {
+	h.auditMutex.RLock()
+	defer h.auditMutex.RUnlock()
+	return h.auditClient != nil
+}
+
 // ==================== 视频发布相关接口 ====================
 
 // UploadVideo 上传视频
@@ -258,56 +443,23 @@ func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoReque
 	// TODO: 从token中解析用户ID
 	userID := "user_123" // 临时用户ID
 
-	// 生成视频ID (这里简化处理，实际应该从数据库获取)
-	videoID := uint32(time.Now().Unix())
-
-	// 创建对象名称
-	objectName := fmt.Sprintf("videos/%d/%s", videoID, req.FileName)
-
-	// 将视频数据上传到MinIO
-	videoURL, err := h.minioClient.UploadFileFromReader(ctx, objectName,
-		bytes.NewReader(req.VideoData),
-		int64(len(req.VideoData)),
-		"video/mp4")
+	// 调用service层的UploadVideo方法
+	videoID, videoURL, video, err := h.videoService.UploadVideo(ctx, userID, req.FileName, req.Title, req.Description, req.Category, req.Tags, req.VideoData)
 	if err != nil {
-		h.logger.Error("Failed to upload video to MinIO", "error", err)
+		h.logger.Error("Failed to upload video", "error", err)
 		return &pb.UploadVideoResponse{
 			StatusCode: 500,
 			StatusMsg:  "视频上传失败",
 			VideoId:    0,
 		}, nil
 	}
-
-	h.logger.Info("Video uploaded to MinIO successfully",
-		"video_url", videoURL,
-		"object_name", objectName)
-
-	// 保存视频信息到数据库 (简化处理)
-	// TODO: 实际应该调用videoService保存视频信息
-
-	// 发送审核消息到RabbitMQ队列
-	auditMessage := &queue.AuditMessage{
-		ContentID:    fmt.Sprintf("video_%d", videoID),
-		ContentType:  "video",
-		Title:        req.Title,
-		URL:          videoURL,
-		Metadata:     req.Description,
-		UploaderID:   userID,
-		UploaderName: userID, // TODO: 从用户信息获取用户名
-	}
-
-	if err := h.queueClient.PublishAuditMessage(ctx, auditMessage); err != nil {
-		h.logger.Error("Failed to publish audit message", "error", err)
-		// 审核消息发送失败，但视频已上传成功，可以继续返回成功状态
-		h.logger.Warn("Audit message failed, but video uploaded successfully")
-	} else {
-		h.logger.Info("Audit message published successfully",
-			"content_id", auditMessage.ContentID,
-			"content_type", auditMessage.ContentType)
-	}
+	h.logger.Info("video", video, "videoUrl", videoURL)
+	h.logger.Info("Video uploaded successfully",
+		"video_id", videoID,
+		"video_url", videoURL)
 
 	// 视频进入审核中状态
-	statusCode := int32(202)
+	statusCode := int32(0)
 	statusMsg := "视频上传成功，正在审核中"
 
 	return &pb.UploadVideoResponse{
@@ -327,30 +479,6 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 
 	// 生成视频ID (这里简化处理，实际应该从数据库获取)
 	videoID := uint32(time.Now().Unix())
-
-	// 发送审核消息到RabbitMQ队列
-	auditMessage := &queue.AuditMessage{
-		ContentID:    fmt.Sprintf("video_%d", videoID),
-		ContentType:  "video",
-		Title:        req.Title,
-		URL:          "", // PublishVideo方法没有视频URL，可以留空或从其他来源获取
-		Metadata:     req.Description,
-		UploaderID:   req.Token,
-		UploaderName: req.Token, // TODO: 从用户信息获取用户名
-	}
-
-	if err := h.queueClient.PublishAuditMessage(ctx, auditMessage); err != nil {
-		h.logger.Error("Failed to publish audit message", zap.Error(err))
-		return &pb.PublishVideoResponse{
-			StatusCode: 500,
-			StatusMsg:  "审核消息发送失败",
-			VideoId:    0,
-		}, nil
-	}
-
-	h.logger.Info("Audit message published successfully",
-		zap.String("content_id", auditMessage.ContentID),
-		zap.String("content_type", auditMessage.ContentType))
 
 	// 视频进入审核中状态
 	statusCode := int32(202)

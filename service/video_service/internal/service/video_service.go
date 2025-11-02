@@ -1,27 +1,37 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"time"
+
 	"github.com/go-redis/redis/v8"
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/internal/model"
+	"github.com/vision_world/video_service/internal/queue"
 	"github.com/vision_world/video_service/internal/repository"
+	"github.com/vision_world/video_service/pkg/minio"
 	"gorm.io/gorm"
 )
 
 // VideoService 视频服务业务逻辑层
 type VideoService struct {
-	config *config.Config
-	repo   repository.VideoRepository
+	config      *config.Config
+	repo        repository.VideoRepository
+	minioClient *minio.Client
+	queueClient *queue.RabbitMQClient
 }
 
 // NewVideoService 创建视频服务
-func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client) (*VideoService, error) {
+func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client, minioClient *minio.Client, queueClient *queue.RabbitMQClient) (*VideoService, error) {
 	repo := repository.NewVideoRepository(db, redis)
 
 	return &VideoService{
-		config: cfg,
-		repo:   repo,
+		config:      cfg,
+		repo:        repo,
+		minioClient: minioClient,
+		queueClient: queueClient,
 	}, nil
 }
 
@@ -108,4 +118,49 @@ func (s *VideoService) GetVideosByTags(ctx context.Context, tags []string, page,
 	// 这里需要先根据标签获取视频ID列表，然后再获取视频详情
 	// 由于没有直接的方法，我们暂时返回空列表
 	return []*model.RecommendationVideo{}, false, nil
+}
+
+// UploadVideo 上传视频
+func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title, description, category string, tags []string, videoData []byte) (uint32, string, string, error) {
+	// 生成视频ID (这里简化处理，实际应该从数据库获取)
+	videoID := uint32(time.Now().Unix())
+
+	// 创建对象名称
+	objectName := fmt.Sprintf("videos/%d/%s", videoID, fileName)
+
+	// 将视频数据上传到MinIO
+	videoURL, err := s.minioClient.UploadFileFromReader(ctx, objectName,
+		bytes.NewReader(videoData),
+		int64(len(videoData)),
+		"video/mp4")
+	if err != nil {
+		return 0, "", videoURL, fmt.Errorf("failed to upload video to MinIO: %w", err)
+	}
+
+	// 生成预签名URL，有效期24小时
+	presignedURL, err := s.minioClient.GeneratePresignedURL(ctx, objectName, 24*time.Hour)
+	if err != nil {
+		return 0, "", videoURL, fmt.Errorf("failed to generate presigned URL: %w", err)
+	}
+
+	// 保存视频信息到数据库 (简化处理)
+	// TODO: 实际应该调用repo保存视频信息
+
+	// 发送审核消息到RabbitMQ队列
+	//auditMessage := &queue.AuditMessage{
+	//	ContentID:    fmt.Sprintf("video_%d", videoID),
+	//	ContentType:  "video",
+	//	Title:        title,
+	//	URL:          videoURL,
+	//	Metadata:     description,
+	//	UploaderID:   userID,
+	//	UploaderName: userID, // TODO: 从用户信息获取用户名
+	//}
+
+	//if err := s.queueClient.PublishAuditMessage(ctx, auditMessage); err != nil {
+	//	// 审核消息发送失败，但视频已上传成功，可以继续返回成功状态
+	//	return videoID, presignedURL, nil
+	//}
+
+	return videoID, presignedURL, videoURL, nil
 }

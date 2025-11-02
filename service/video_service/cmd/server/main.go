@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"user_service/proto/proto_gen"
+	//"github.com/vision_world/video_service/proto/proto_gen"
 
 	//"github.com/vision_world/video_service/internal/health"
 	"github.com/vision_world/video_service/pkg/database"
@@ -56,8 +56,11 @@ func main() {
 	}
 	logger.Info("Redis connected successfully")
 	defer redisClient.Close()
-	// 创建gRPC服务器
-	grpcServer := grpc.NewServer()
+	// 创建gRPC服务器，增加最大消息大小限制以支持大文件上传
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(100*1024*1024), // 设置最大接收消息大小为100MB
+		grpc.MaxSendMsgSize(100*1024*1024), // 设置最大发送消息大小为100MB
+	)
 
 	// 注册健康检查服务
 	healthServer := health.NewServer()
