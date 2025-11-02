@@ -14,6 +14,7 @@ import (
 // VideoRepository 视频数据访问接口
 type VideoRepository interface {
 	// 基础CRUD操作
+	CreateVideo(ctx context.Context, video *model.Video) error
 	GetVideoByID(ctx context.Context, videoID string) (*model.RecommendationVideo, error)
 	GetVideosByIDs(ctx context.Context, videoIDs []string) ([]*model.RecommendationVideo, error)
 
@@ -44,6 +45,17 @@ func NewVideoRepository(db *gorm.DB, redis *redis.Client) VideoRepository {
 		db:    db,
 		redis: redis,
 	}
+}
+
+// CreateVideo 创建视频
+func (r *videoRepository) CreateVideo(ctx context.Context, video *model.Video) error {
+	// 保存到数据库
+	if err := r.db.WithContext(ctx).Create(video).Error; err != nil {
+		return fmt.Errorf("failed to create video: %w", err)
+	}
+
+	// 不需要缓存，因为新创建的视频会通过其他方法获取时再缓存
+	return nil
 }
 
 // GetVideoByID 根据ID获取视频详情

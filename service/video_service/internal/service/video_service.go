@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -134,17 +135,54 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 		int64(len(videoData)),
 		"video/mp4")
 	if err != nil {
-		return 0, "", videoURL, fmt.Errorf("failed to upload video to MinIO: %w", err)
+		return 0, "", "", fmt.Errorf("failed to upload video to MinIO: %w", err)
 	}
 
 	// 生成预签名URL，有效期24小时
 	presignedURL, err := s.minioClient.GeneratePresignedURL(ctx, objectName, 24*time.Hour)
 	if err != nil {
-		return 0, "", videoURL, fmt.Errorf("failed to generate presigned URL: %w", err)
+		return 0, "", "", fmt.Errorf("failed to generate presigned URL: %w", err)
 	}
 
-	// 保存视频信息到数据库 (简化处理)
-	// TODO: 实际应该调用repo保存视频信息
+	// 将用户ID转换为uint32类型
+	userIDUint32, err := strconv.ParseUint(userID, 10, 32)
+	if err != nil {
+		return 0, "", "", fmt.Errorf("invalid user ID: %w", err)
+	}
+
+	// 将标签数组转换为逗号分隔的字符串
+	tagsStr := ""
+	if len(tags) > 0 {
+		for i, tag := range tags {
+			if i > 0 {
+				tagsStr += ","
+			}
+			tagsStr += tag
+		}
+	}
+
+	// 创建视频记录
+	video := &model.Video{
+		ID:          videoID,
+		UserID:      uint32(userIDUint32),
+		Title:       title,
+		Description: description,
+		CoverURL:    "", // TODO: 可以从视频中提取封面或使用默认封面
+		VideoURL:    presignedURL,
+		Duration:    0, // TODO: 可以从视频文件中获取时长
+		Size:        uint64(len(videoData)),
+		Tags:        tagsStr,
+		Category:    category,
+		PlayCount:   0,
+		LikeCount:   0,
+		IsPublic:    true,
+		Status:      "reviewing", // 上传后进入审核状态
+	}
+
+	// 保存视频信息到数据库
+	if err := s.repo.CreateVideo(ctx, video); err != nil {
+		return 0, "", "", fmt.Errorf("failed to save video info: %w", err)
+	}
 
 	// 发送审核消息到RabbitMQ队列
 	//auditMessage := &queue.AuditMessage{
