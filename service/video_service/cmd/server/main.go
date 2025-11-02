@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"user_service/proto/proto_gen"
+
 	//"github.com/vision_world/video_service/internal/health"
 	"github.com/vision_world/video_service/pkg/database"
 	"github.com/vision_world/video_service/pkg/logger"
@@ -48,6 +50,12 @@ func main() {
 		}
 	}()
 
+	redisClient, err := database.NewRedisClient(cfg.Redis)
+	if err != nil {
+		logger.Fatal("Failed to connect to redis", "error", err)
+	}
+	logger.Info("Redis connected successfully")
+	defer redisClient.Close()
 	// 创建gRPC服务器
 	grpcServer := grpc.NewServer()
 
@@ -57,7 +65,8 @@ func main() {
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	// 创建视频处理器
-	videoHandler, err := handler.NewVideoHandler(cfg, logger)
+	videoHandler, err := handler.NewVideoHandler(cfg, logger, db, redisClient)
+	logger.Info("video handler registered")
 	if err != nil {
 		logger.Fatal("Failed to create video handler", zap.Error(err))
 	}

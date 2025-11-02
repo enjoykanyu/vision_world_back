@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/go-redis/redis/v8"
+	"gorm.io/gorm"
 	"net"
 	"strconv"
 	"strings"
@@ -39,8 +41,9 @@ type VideoHandler struct {
 }
 
 // NewVideoHandler 创建视频处理器
-func NewVideoHandler(cfg *config.Config, log logger.Logger) (*VideoHandler, error) {
-	videoService, err := service.NewVideoService(cfg)
+func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *redis.Client) (*VideoHandler, error) {
+
+	videoService, err := service.NewVideoService(cfg, db, redis)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create video service: %w", err)
 	}

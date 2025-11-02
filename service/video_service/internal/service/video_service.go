@@ -2,23 +2,22 @@ package service
 
 import (
 	"context"
+	"github.com/go-redis/redis/v8"
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/internal/model"
 	"github.com/vision_world/video_service/internal/repository"
+	"gorm.io/gorm"
 )
 
 // VideoService 视频服务业务逻辑层
 type VideoService struct {
 	config *config.Config
-	repo   *repository.VideoRepository
+	repo   repository.VideoRepository
 }
 
 // NewVideoService 创建视频服务
-func NewVideoService(cfg *config.Config) (*VideoService, error) {
-	repo, err := repository.NewVideoRepository(cfg)
-	if err != nil {
-		return nil, err
-	}
+func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client) (*VideoService, error) {
+	repo := repository.NewVideoRepository(db, redis)
 
 	return &VideoService{
 		config: cfg,
