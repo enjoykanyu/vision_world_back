@@ -35,10 +35,11 @@ type VideoHandler struct {
 	minioClient     *minio.Client
 	discoveryClient discovery.ServiceDiscovery
 	serviceID       string
+	logger          logger.Logger
 }
 
 // NewVideoHandler 创建视频处理器
-func NewVideoHandler(cfg *config.Config) (*VideoHandler, error) {
+func NewVideoHandler(cfg *config.Config, log logger.Logger) (*VideoHandler, error) {
 	videoService, err := service.NewVideoService(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create video service: %w", err)
@@ -58,7 +59,7 @@ func NewVideoHandler(cfg *config.Config) (*VideoHandler, error) {
 	}
 
 	// 创建RabbitMQ客户端
-	queueClient, err := queue.NewRabbitMQClient(cfg, logger)
+	queueClient, err := queue.NewRabbitMQClient(cfg, log)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create RabbitMQ client: %w", err)
 	}
@@ -78,26 +79,26 @@ func NewVideoHandler(cfg *config.Config) (*VideoHandler, error) {
 
 	auditClient := auditpb.NewAuditServiceClient(conn)
 
-	logger.Info("Connected to audit service",
-		zap.String("address", cfg.Services.AuditService.Address))
+	log.Info("Connected to audit service",
+		"address", cfg.Services.AuditService.Address)
 
 	// 创建服务发现客户端
 	var discoveryClient discovery.ServiceDiscovery
 	if cfg.Discovery.Type != "" {
 		discoveryClient, err = discovery.NewServiceDiscovery(&cfg.Discovery, cfg.Server.Name)
 		if err != nil {
-			logger.Error("Failed to create service discovery client", zap.Error(err))
+			log.Error("Failed to create service discovery client", "error", err)
 			// 服务发现创建失败不影响服务启动，只记录错误
 		} else {
-			logger.Info("Service discovery client created",
-				zap.String("type", cfg.Discovery.Type))
+			log.Info("Service discovery client created",
+				"type", cfg.Discovery.Type)
 		}
 	}
 
 	// 生成服务ID
 	host, port, err := getHostAndPort(cfg.Server.Address)
 	if err != nil {
-		logger.Error("Failed to parse server address", zap.Error(err))
+		log.Error("Failed to parse server address", "error", err)
 		host = "localhost"
 		port = 50052 // 默认端口
 	}
@@ -113,6 +114,7 @@ func NewVideoHandler(cfg *config.Config) (*VideoHandler, error) {
 		minioClient:     minioClient,
 		discoveryClient: discoveryClient,
 		serviceID:       serviceID,
+		logger:          log,
 	}, nil
 }
 
@@ -146,7 +148,7 @@ func getHostAndPort(address string) (string, int, error) {
 // RegisterService 注册服务到服务发现
 func (h *VideoHandler) RegisterService() error {
 	if h.discoveryClient == nil {
-		logger.Info("Service discovery not configured, skipping registration")
+		h.logger.Info("Service discovery not configured, skipping registration")
 		return nil
 	}
 
@@ -183,10 +185,10 @@ func (h *VideoHandler) RegisterService() error {
 		return fmt.Errorf("failed to register service: %w", err)
 	}
 
-	logger.Info("Service registered successfully",
-		zap.String("service_id", h.serviceID),
-		zap.String("service_name", h.config.Server.Name),
-		zap.String("address", fmt.Sprintf("%s:%d", host, port)))
+	h.logger.Info("Service registered successfully",
+		"service_id", h.serviceID,
+		"service_name", h.config.Server.Name,
+		"address", fmt.Sprintf("%s:%d", host, port))
 
 	return nil
 }
@@ -201,14 +203,14 @@ func (h *VideoHandler) Close() error {
 		defer cancel()
 
 		if err := h.discoveryClient.Deregister(ctx, h.serviceID); err != nil {
-			logger.Error("Failed to deregister service", zap.Error(err))
+			h.logger.Error("Failed to deregister service", "error", err)
 			errs = append(errs, err)
 		} else {
-			logger.Info("Service deregistered successfully", zap.String("service_id", h.serviceID))
+			h.logger.Info("Service deregistered successfully", "service_id", h.serviceID)
 		}
 
 		if err := h.discoveryClient.Close(); err != nil {
-			logger.Error("Failed to close discovery client", zap.Error(err))
+			h.logger.Error("Failed to close discovery client", "error", err)
 			errs = append(errs, err)
 		}
 	}
@@ -216,7 +218,7 @@ func (h *VideoHandler) Close() error {
 	// 关闭RabbitMQ连接
 	if h.queueClient != nil {
 		if err := h.queueClient.Close(); err != nil {
-			logger.Error("Failed to close RabbitMQ connection", zap.Error(err))
+			h.logger.Error("Failed to close RabbitMQ connection", "error", err)
 			errs = append(errs, err)
 		}
 	}
@@ -224,14 +226,14 @@ func (h *VideoHandler) Close() error {
 	// 关闭audit_service连接
 	if h.auditConn != nil {
 		if err := h.auditConn.Close(); err != nil {
-			logger.Error("Failed to close audit service connection", zap.Error(err))
+			h.logger.Error("Failed to close audit service connection", "error", err)
 			errs = append(errs, err)
 		}
 	}
 
 	if h.videoService != nil {
 		if err := h.videoService.Close(); err != nil {
-			logger.Error("Failed to close video service", zap.Error(err))
+			h.logger.Error("Failed to close video service", "error", err)
 			errs = append(errs, err)
 		}
 	}
@@ -247,7 +249,7 @@ func (h *VideoHandler) Close() error {
 
 // UploadVideo 上传视频
 func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoRequest) (*pb.UploadVideoResponse, error) {
-	logger.Info("UploadVideo called", zap.String("token", req.Token), zap.String("file_name", req.FileName))
+	h.logger.Info("UploadVideo called", "token", req.Token, "file_name", req.FileName)
 
 	// TODO: 验证用户token
 	// TODO: 从token中解析用户ID
@@ -265,7 +267,7 @@ func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoReque
 		int64(len(req.VideoData)),
 		"video/mp4")
 	if err != nil {
-		logger.Error("Failed to upload video to MinIO", zap.Error(err))
+		h.logger.Error("Failed to upload video to MinIO", "error", err)
 		return &pb.UploadVideoResponse{
 			StatusCode: 500,
 			StatusMsg:  "视频上传失败",
@@ -273,9 +275,9 @@ func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoReque
 		}, nil
 	}
 
-	logger.Info("Video uploaded to MinIO successfully",
-		zap.String("video_url", videoURL),
-		zap.String("object_name", objectName))
+	h.logger.Info("Video uploaded to MinIO successfully",
+		"video_url", videoURL,
+		"object_name", objectName)
 
 	// 保存视频信息到数据库 (简化处理)
 	// TODO: 实际应该调用videoService保存视频信息
@@ -292,13 +294,13 @@ func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoReque
 	}
 
 	if err := h.queueClient.PublishAuditMessage(ctx, auditMessage); err != nil {
-		logger.Error("Failed to publish audit message", zap.Error(err))
+		h.logger.Error("Failed to publish audit message", "error", err)
 		// 审核消息发送失败，但视频已上传成功，可以继续返回成功状态
-		logger.Warn("Audit message failed, but video uploaded successfully")
+		h.logger.Warn("Audit message failed, but video uploaded successfully")
 	} else {
-		logger.Info("Audit message published successfully",
-			zap.String("content_id", auditMessage.ContentID),
-			zap.String("content_type", auditMessage.ContentType))
+		h.logger.Info("Audit message published successfully",
+			"content_id", auditMessage.ContentID,
+			"content_type", auditMessage.ContentType)
 	}
 
 	// 视频进入审核中状态
@@ -315,7 +317,7 @@ func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoReque
 
 // PublishVideo 发布视频
 func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoRequest) (*pb.PublishVideoResponse, error) {
-	logger.Info("PublishVideo called", zap.String("title", req.Title), zap.String("token", req.Token))
+	h.logger.Info("PublishVideo called", zap.String("title", req.Title), zap.String("token", req.Token))
 
 	// TODO: 验证用户token
 	// TODO: 实现视频发布逻辑
@@ -335,7 +337,7 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 	}
 
 	if err := h.queueClient.PublishAuditMessage(ctx, auditMessage); err != nil {
-		logger.Error("Failed to publish audit message", zap.Error(err))
+		h.logger.Error("Failed to publish audit message", zap.Error(err))
 		return &pb.PublishVideoResponse{
 			StatusCode: 500,
 			StatusMsg:  "审核消息发送失败",
@@ -343,7 +345,7 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 		}, nil
 	}
 
-	logger.Info("Audit message published successfully",
+	h.logger.Info("Audit message published successfully",
 		zap.String("content_id", auditMessage.ContentID),
 		zap.String("content_type", auditMessage.ContentType))
 
@@ -360,7 +362,7 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 
 // DeleteVideo 删除视频
 func (h *VideoHandler) DeleteVideo(ctx context.Context, req *pb.DeleteVideoRequest) (*pb.DeleteVideoResponse, error) {
-	logger.Info("DeleteVideo called", zap.Uint32("video_id", req.VideoId))
+	h.logger.Info("DeleteVideo called", zap.Uint32("video_id", req.VideoId))
 
 	// TODO: 验证用户token和权限
 	// TODO: 实现视频删除逻辑
@@ -375,13 +377,13 @@ func (h *VideoHandler) DeleteVideo(ctx context.Context, req *pb.DeleteVideoReque
 
 // GetVideoInfo 获取单个视频信息
 func (h *VideoHandler) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoRequest) (*pb.VideoResponse, error) {
-	logger.Info("GetVideoInfo called", zap.Uint32("video_id", req.VideoId))
+	h.logger.Info("GetVideoInfo called", zap.Uint32("video_id", req.VideoId))
 
 	// 调用service层获取视频信息
 	videoID := strconv.FormatUint(uint64(req.VideoId), 10)
 	video, err := h.videoService.GetVideoByID(ctx, videoID)
 	if err != nil {
-		logger.Error("Failed to get video info", zap.Error(err))
+		h.logger.Error("Failed to get video info", zap.Error(err))
 		return &pb.VideoResponse{
 			StatusCode: 500,
 			StatusMsg:  "获取视频信息失败",
@@ -398,7 +400,7 @@ func (h *VideoHandler) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoReq
 	// 增加播放量
 	_, err = h.videoService.UpdateVideoViewCount(ctx, videoID, 1)
 	if err != nil {
-		logger.Error("Failed to update view count", zap.Error(err))
+		h.logger.Error("Failed to update view count", zap.Error(err))
 		// 不影响主流程，只记录错误
 	}
 
@@ -414,7 +416,7 @@ func (h *VideoHandler) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoReq
 
 // GetVideoInfos 批量获取视频信息
 func (h *VideoHandler) GetVideoInfos(ctx context.Context, req *pb.GetVideoInfosRequest) (*pb.GetVideoInfosResponse, error) {
-	logger.Info("GetVideoInfos called", zap.Int("video_count", len(req.VideoIds)))
+	h.logger.Info("GetVideoInfos called", zap.Int("video_count", len(req.VideoIds)))
 
 	// 转换视频ID列表
 	videoIDs := make([]string, 0, len(req.VideoIds))
@@ -425,7 +427,7 @@ func (h *VideoHandler) GetVideoInfos(ctx context.Context, req *pb.GetVideoInfosR
 	// 调用service层获取视频信息
 	videos, err := h.videoService.GetVideosByIDs(ctx, videoIDs)
 	if err != nil {
-		logger.Error("Failed to get videos info", zap.Error(err))
+		h.logger.Error("Failed to get videos info", zap.Error(err))
 		return &pb.GetVideoInfosResponse{
 			StatusCode: 500,
 			StatusMsg:  "获取视频信息失败",
@@ -449,7 +451,7 @@ func (h *VideoHandler) GetVideoInfos(ctx context.Context, req *pb.GetVideoInfosR
 
 // GetUserVideos 获取用户发布的视频列表
 func (h *VideoHandler) GetUserVideos(ctx context.Context, req *pb.GetUserVideosRequest) (*pb.GetUserVideosResponse, error) {
-	logger.Info("GetUserVideos called", zap.Uint32("user_id", req.UserId), zap.Uint32("page", req.Page))
+	h.logger.Info("GetUserVideos called", zap.Uint32("user_id", req.UserId), zap.Uint32("page", req.Page))
 
 	// TODO: 实现获取用户视频列表逻辑
 
@@ -481,7 +483,7 @@ func (h *VideoHandler) GetRecommendVideos(ctx context.Context, req *pb.GetRecomm
 	if req.Category != nil {
 		category = *req.Category
 	}
-	logger.Info("GetRecommendVideos called", zap.Uint32("page", req.Page), zap.String("category", category))
+	h.logger.Info("GetRecommendVideos called", zap.Uint32("page", req.Page), zap.String("category", category))
 
 	// 调用service层获取热门视频作为推荐视频
 	page := int(req.Page)
@@ -489,7 +491,7 @@ func (h *VideoHandler) GetRecommendVideos(ctx context.Context, req *pb.GetRecomm
 
 	videos, hasMore, err := h.videoService.GetHotVideos(ctx, page, pageSize, category)
 	if err != nil {
-		logger.Error("Failed to get recommend videos", zap.Error(err))
+		h.logger.Error("Failed to get recommend videos", zap.Error(err))
 		return &pb.GetRecommendVideosResponse{
 			StatusCode: 500,
 			StatusMsg:  "获取推荐视频失败",
@@ -512,7 +514,7 @@ func (h *VideoHandler) GetRecommendVideos(ctx context.Context, req *pb.GetRecomm
 
 // GetFollowVideos 获取关注用户的视频列表
 func (h *VideoHandler) GetFollowVideos(ctx context.Context, req *pb.GetFollowVideosRequest) (*pb.GetFollowVideosResponse, error) {
-	logger.Info("GetFollowVideos called", zap.Uint32("page", req.Page))
+	h.logger.Info("GetFollowVideos called", zap.Uint32("page", req.Page))
 
 	// TODO: 验证用户token
 	// TODO: 实现获取关注用户视频逻辑
@@ -544,7 +546,7 @@ func (h *VideoHandler) GetHotVideos(ctx context.Context, req *pb.GetHotVideosReq
 	if req.Category != nil {
 		category = *req.Category
 	}
-	logger.Info("GetHotVideos called", zap.Uint32("page", req.Page), zap.String("category", category))
+	h.logger.Info("GetHotVideos called", zap.Uint32("page", req.Page), zap.String("category", category))
 
 	// 调用service层获取热门视频
 	page := int(req.Page)
@@ -552,7 +554,7 @@ func (h *VideoHandler) GetHotVideos(ctx context.Context, req *pb.GetHotVideosReq
 
 	videos, hasMore, err := h.videoService.GetHotVideos(ctx, page, pageSize, category)
 	if err != nil {
-		logger.Error("Failed to get hot videos", zap.Error(err))
+		h.logger.Error("Failed to get hot videos", zap.Error(err))
 		return &pb.GetHotVideosResponse{
 			StatusCode: 500,
 			StatusMsg:  "获取热门视频失败",
@@ -575,7 +577,7 @@ func (h *VideoHandler) GetHotVideos(ctx context.Context, req *pb.GetHotVideosReq
 
 // GetCategoryVideos 获取分类视频列表
 func (h *VideoHandler) GetCategoryVideos(ctx context.Context, req *pb.GetCategoryVideosRequest) (*pb.GetCategoryVideosResponse, error) {
-	logger.Info("GetCategoryVideos called", zap.String("category", req.Category), zap.Uint32("page", req.Page))
+	h.logger.Info("GetCategoryVideos called", zap.String("category", req.Category), zap.Uint32("page", req.Page))
 
 	// 调用service层获取分类视频
 	page := int(req.Page)
@@ -583,7 +585,7 @@ func (h *VideoHandler) GetCategoryVideos(ctx context.Context, req *pb.GetCategor
 
 	videos, hasMore, err := h.videoService.GetCategoryVideos(ctx, req.Category, page, pageSize)
 	if err != nil {
-		logger.Error("Failed to get category videos", zap.Error(err))
+		h.logger.Error("Failed to get category videos", zap.Error(err))
 		return &pb.GetCategoryVideosResponse{
 			StatusCode: 500,
 			StatusMsg:  "获取分类视频失败",
@@ -610,7 +612,7 @@ func (h *VideoHandler) SearchVideos(ctx context.Context, req *pb.SearchVideosReq
 	if req.Category != nil {
 		category = *req.Category
 	}
-	logger.Info("SearchVideos called", zap.String("keyword", req.Keyword), zap.String("category", category), zap.Uint32("page", req.Page))
+	h.logger.Info("SearchVideos called", zap.String("keyword", req.Keyword), zap.String("category", category), zap.Uint32("page", req.Page))
 
 	// 调用service层搜索视频
 	page := int(req.Page)
@@ -618,7 +620,7 @@ func (h *VideoHandler) SearchVideos(ctx context.Context, req *pb.SearchVideosReq
 
 	videos, hasMore, err := h.videoService.SearchVideos(ctx, req.Keyword, page, pageSize, category)
 	if err != nil {
-		logger.Error("Failed to search videos", zap.Error(err))
+		h.logger.Error("Failed to search videos", zap.Error(err))
 		return &pb.SearchVideosResponse{
 			StatusCode: 500,
 			StatusMsg:  "搜索视频失败",
@@ -647,7 +649,7 @@ func (h *VideoHandler) LikeVideo(ctx context.Context, req *pb.LikeVideoRequest) 
 	if !req.ActionType {
 		actionType = "unlike"
 	}
-	logger.Info("LikeVideo called", zap.Uint32("video_id", req.VideoId), zap.String("action_type", actionType))
+	h.logger.Info("LikeVideo called", zap.Uint32("video_id", req.VideoId), zap.String("action_type", actionType))
 
 	// TODO: 验证用户token
 
@@ -662,7 +664,7 @@ func (h *VideoHandler) LikeVideo(ctx context.Context, req *pb.LikeVideoRequest) 
 
 	likeCount, err := h.videoService.UpdateVideoLikeCount(ctx, videoID, increment)
 	if err != nil {
-		logger.Error("Failed to update like count", zap.Error(err))
+		h.logger.Error("Failed to update like count", zap.Error(err))
 		return &pb.LikeVideoResponse{
 			StatusCode: 500,
 			StatusMsg:  "更新点赞数失败",
@@ -679,7 +681,7 @@ func (h *VideoHandler) LikeVideo(ctx context.Context, req *pb.LikeVideoRequest) 
 
 // GetUserLikedVideos 获取用户点赞的视频列表
 func (h *VideoHandler) GetUserLikedVideos(ctx context.Context, req *pb.GetUserLikedVideosRequest) (*pb.GetUserLikedVideosResponse, error) {
-	logger.Info("GetUserLikedVideos called", zap.Uint32("user_id", req.UserId), zap.Uint32("page", req.Page))
+	h.logger.Info("GetUserLikedVideos called", zap.Uint32("user_id", req.UserId), zap.Uint32("page", req.Page))
 
 	// TODO: 实现获取用户点赞视频逻辑
 
@@ -707,7 +709,7 @@ func (h *VideoHandler) GetUserLikedVideos(ctx context.Context, req *pb.GetUserLi
 
 // ShareVideo 分享视频
 func (h *VideoHandler) ShareVideo(ctx context.Context, req *pb.ShareVideoRequest) (*pb.ShareVideoResponse, error) {
-	logger.Info("ShareVideo called", zap.Uint32("video_id", req.VideoId), zap.String("share_type", req.ShareType))
+	h.logger.Info("ShareVideo called", zap.Uint32("video_id", req.VideoId), zap.String("share_type", req.ShareType))
 
 	// TODO: 验证用户token
 	// TODO: 实现分享逻辑
@@ -723,7 +725,7 @@ func (h *VideoHandler) ShareVideo(ctx context.Context, req *pb.ShareVideoRequest
 
 // CommentVideo 发表评论
 func (h *VideoHandler) CommentVideo(ctx context.Context, req *pb.CommentRequest) (*pb.CommentResponse, error) {
-	logger.Info("CommentVideo called", zap.Uint32("video_id", req.VideoId), zap.String("content", req.Content))
+	h.logger.Info("CommentVideo called", zap.Uint32("video_id", req.VideoId), zap.String("content", req.Content))
 
 	// TODO: 验证用户token
 	// TODO: 实现评论逻辑
@@ -744,7 +746,7 @@ func (h *VideoHandler) CommentVideo(ctx context.Context, req *pb.CommentRequest)
 
 // DeleteComment 删除评论
 func (h *VideoHandler) DeleteComment(ctx context.Context, req *pb.DeleteCommentRequest) (*pb.DeleteCommentResponse, error) {
-	logger.Info("DeleteComment called", zap.Uint32("comment_id", req.CommentId))
+	h.logger.Info("DeleteComment called", zap.Uint32("comment_id", req.CommentId))
 
 	// TODO: 验证用户token和权限
 	// TODO: 实现删除评论逻辑
@@ -757,7 +759,7 @@ func (h *VideoHandler) DeleteComment(ctx context.Context, req *pb.DeleteCommentR
 
 // GetVideoComments 获取视频评论列表
 func (h *VideoHandler) GetVideoComments(ctx context.Context, req *pb.GetVideoCommentsRequest) (*pb.GetVideoCommentsResponse, error) {
-	logger.Info("GetVideoComments called", zap.Uint32("video_id", req.VideoId), zap.Uint32("page", req.Page), zap.String("sort_order", req.SortOrder))
+	h.logger.Info("GetVideoComments called", zap.Uint32("video_id", req.VideoId), zap.Uint32("page", req.Page), zap.String("sort_order", req.SortOrder))
 
 	// TODO: 实现获取评论列表逻辑
 
@@ -792,7 +794,7 @@ func (h *VideoHandler) convertToProtoVideo(video *model.RecommendationVideo) *pb
 	// 解析视频ID
 	videoID, err := strconv.ParseUint(video.VideoID, 10, 32)
 	if err != nil {
-		logger.Error("Failed to parse video ID", zap.String("video_id", video.VideoID), zap.Error(err))
+		h.logger.Error("Failed to parse video ID", zap.String("video_id", video.VideoID), zap.Error(err))
 		videoID = 0
 	}
 

@@ -14,7 +14,7 @@ type Config struct {
 	Kafka     KafkaConfig     `mapstructure:"kafka"`
 	RabbitMQ  RabbitMQConfig  `mapstructure:"rabbitmq"`
 	Discovery DiscoveryConfig `mapstructure:"discovery"`
-	Log       LogConfig       `mapstructure:"log"`
+	Logger    LoggerConfig    `mapstructure:"logger"`
 	Services  ServicesConfig  `mapstructure:"services"`
 	MinIO     MinIOConfig     `mapstructure:"minio"`
 }
@@ -36,22 +36,31 @@ type MinIOConfig struct {
 	Location        string `mapstructure:"location"`
 }
 
+// DatabaseConfig 数据库配置
 type DatabaseConfig struct {
-	Host         string `mapstructure:"host"`
-	Port         int    `mapstructure:"port"`
-	Username     string `mapstructure:"username"`
-	Password     string `mapstructure:"password"`
-	Database     string `mapstructure:"database"`
-	MaxOpenConns int    `mapstructure:"max_open_conns"`
-	MaxIdleConns int    `mapstructure:"max_idle_conns"`
+	Host            string `mapstructure:"host"`
+	Port            int    `mapstructure:"port"`
+	Username        string `mapstructure:"username"`
+	Password        string `mapstructure:"password"`
+	Database        string `mapstructure:"database"`
+	Charset         string `mapstructure:"charset"`
+	TablePrefix     string `mapstructure:"table_prefix"`
+	LogLevel        string `mapstructure:"log_level"`
+	MaxIdleConns    int    `mapstructure:"max_idle_conns"`
+	MaxOpenConns    int    `mapstructure:"max_open_conns"`
+	ConnMaxLifetime int    `mapstructure:"conn_max_lifetime"`
 }
 
+// RedisConfig Redis配置
 type RedisConfig struct {
-	Host     string `mapstructure:"host"`
-	Port     int    `mapstructure:"port"`
-	Password string `mapstructure:"password"`
-	DB       int    `mapstructure:"db"`
-	PoolSize int    `mapstructure:"pool_size"`
+	Host         string `mapstructure:"host"`
+	Port         int    `mapstructure:"port"`
+	Password     string `mapstructure:"password"`
+	DB           int    `mapstructure:"db"`
+	MaxRetries   int    `mapstructure:"max_retries"`
+	DialTimeout  int    `mapstructure:"dial_timeout"`
+	ReadTimeout  int    `mapstructure:"read_timeout"`
+	WriteTimeout int    `mapstructure:"write_timeout"`
 }
 
 type KafkaConfig struct {
@@ -80,9 +89,11 @@ type EtcdConfig struct {
 	Password    string `mapstructure:"password"`     // 密码(如果需要)
 }
 
-type LogConfig struct {
-	Level string `mapstructure:"level"`
-	File  string `mapstructure:"file"`
+// LoggerConfig 日志配置
+type LoggerConfig struct {
+	Level      string `mapstructure:"level"`
+	Format     string `mapstructure:"format"`
+	OutputPath string `mapstructure:"output_path"`
 }
 
 type ServicesConfig struct {

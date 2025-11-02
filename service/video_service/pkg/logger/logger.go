@@ -2,121 +2,116 @@ package logger
 
 import (
 	"os"
-	"path/filepath"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-var logger *zap.Logger
+// Logger 日志接口
+type Logger interface {
+	Debug(msg string, fields ...interface{})
+	Info(msg string, fields ...interface{})
+	Warn(msg string, fields ...interface{})
+	Error(msg string, fields ...interface{})
+	Fatal(msg string, fields ...interface{})
+}
 
-func InitLogger(level string, logFile string) {
-	// 确保日志目录存在
-	if logFile != "" {
-		dir := filepath.Dir(logFile)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			panic("Failed to create log directory: " + err.Error())
-		}
-	}
+// Config 日志配置
+type Config struct {
+	Level      string `yaml:"level"`
+	Format     string `yaml:"format"`
+	OutputPath string `yaml:"output_path"`
+}
 
-	// 日志级别
-	var zapLevel zapcore.Level
-	switch level {
+// zapLogger zap日志实现
+type zapLogger struct {
+	logger *zap.Logger
+}
+
+// NewLogger 创建新的日志实例
+func NewLogger(cfg Config) (Logger, error) {
+	// 设置日志级别
+	var level zapcore.Level
+	switch cfg.Level {
 	case "debug":
-		zapLevel = zapcore.DebugLevel
+		level = zapcore.DebugLevel
 	case "info":
-		zapLevel = zapcore.InfoLevel
+		level = zapcore.InfoLevel
 	case "warn":
-		zapLevel = zapcore.WarnLevel
+		level = zapcore.WarnLevel
 	case "error":
-		zapLevel = zapcore.ErrorLevel
+		level = zapcore.ErrorLevel
 	default:
-		zapLevel = zapcore.InfoLevel
+		level = zapcore.InfoLevel
 	}
 
-	// 编码器配置
-	encoderConfig := zapcore.EncoderConfig{
-		TimeKey:        "time",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "msg",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-	}
+	// 设置编码器
+	var encoder zapcore.Encoder
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.TimeKey = "timestamp"
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	// 控制台输出
-	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
-	consoleWriter := zapcore.AddSync(os.Stdout)
-
-	// 文件输出
-	var fileWriter zapcore.WriteSyncer
-	if logFile != "" {
-		fileWriter = zapcore.AddSync(&lumberjack.Logger{
-			Filename:   logFile,
-			MaxSize:    100, // MB
-			MaxBackups: 3,
-			MaxAge:     7, // days
-			Compress:   true,
-		})
-	}
-
-	// 创建核心
-	var core zapcore.Core
-	if logFile != "" {
-		// 同时输出到控制台和文件
-		fileEncoder := zapcore.NewJSONEncoder(encoderConfig)
-		core = zapcore.NewTee(
-			zapcore.NewCore(consoleEncoder, consoleWriter, zapLevel),
-			zapcore.NewCore(fileEncoder, fileWriter, zapLevel),
-		)
+	if cfg.Format == "json" {
+		encoder = zapcore.NewJSONEncoder(encoderConfig)
 	} else {
-		// 只输出到控制台
-		core = zapcore.NewCore(consoleEncoder, consoleWriter, zapLevel)
+		encoder = zapcore.NewConsoleEncoder(encoderConfig)
 	}
+
+	// 设置输出
+	var writeSyncer zapcore.WriteSyncer
+	if cfg.OutputPath != "" && cfg.OutputPath != "stdout" {
+		file, err := os.OpenFile(cfg.OutputPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			return nil, err
+		}
+		writeSyncer = zapcore.AddSync(file)
+	} else {
+		writeSyncer = zapcore.AddSync(os.Stdout)
+	}
+
+	// 创建core
+	core := zapcore.NewCore(encoder, writeSyncer, level)
 
 	// 创建logger
-	logger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+
+	return &zapLogger{logger: logger}, nil
 }
 
-func Debug(msg string, fields ...zap.Field) {
-	if logger != nil {
-		logger.Debug(msg, fields...)
-	}
+// Debug 调试日志
+func (l *zapLogger) Debug(msg string, fields ...interface{}) {
+	l.logger.Debug(msg, l.convertFields(fields...)...)
 }
 
-func Info(msg string, fields ...zap.Field) {
-	if logger != nil {
-		logger.Info(msg, fields...)
-	}
+// Info 信息日志
+func (l *zapLogger) Info(msg string, fields ...interface{}) {
+	l.logger.Info(msg, l.convertFields(fields...)...)
 }
 
-func Warn(msg string, fields ...zap.Field) {
-	if logger != nil {
-		logger.Warn(msg, fields...)
-	}
+// Warn 警告日志
+func (l *zapLogger) Warn(msg string, fields ...interface{}) {
+	l.logger.Warn(msg, l.convertFields(fields...)...)
 }
 
-func Error(msg string, fields ...zap.Field) {
-	if logger != nil {
-		logger.Error(msg, fields...)
-	}
+// Error 错误日志
+func (l *zapLogger) Error(msg string, fields ...interface{}) {
+	l.logger.Error(msg, l.convertFields(fields...)...)
 }
 
-func Fatal(msg string, fields ...zap.Field) {
-	if logger != nil {
-		logger.Fatal(msg, fields...)
-	}
+// Fatal 致命错误日志
+func (l *zapLogger) Fatal(msg string, fields ...interface{}) {
+	l.logger.Fatal(msg, l.convertFields(fields...)...)
 }
 
-func Sync() error {
-	if logger != nil {
-		return logger.Sync()
+// convertFields 转换字段格式
+func (l *zapLogger) convertFields(fields ...interface{}) []zap.Field {
+	var zapFields []zap.Field
+	for i := 0; i < len(fields); i += 2 {
+		if i+1 < len(fields) {
+			key := fields[i].(string)
+			value := fields[i+1]
+			zapFields = append(zapFields, zap.Any(key, value))
+		}
 	}
-	return nil
+	return zapFields
 }

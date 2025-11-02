@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/vision_world/video_service/internal/config"
+	"github.com/vision_world/video_service/pkg/logger"
 	"go.uber.org/zap"
 )
 
@@ -28,14 +29,14 @@ type AuditMessage struct {
 // RabbitMQClient RabbitMQ客户端
 type RabbitMQClient struct {
 	config  *config.Config
-	logger  *zap.Logger
+	logger  logger.Logger
 	conn    *amqp091.Connection
 	channel *amqp091.Channel
 	queue   amqp091.Queue
 }
 
 // NewRabbitMQClient 创建RabbitMQ客户端
-func NewRabbitMQClient(cfg *config.Config, logger *zap.Logger) (*RabbitMQClient, error) {
+func NewRabbitMQClient(cfg *config.Config, logger logger.Logger) (*RabbitMQClient, error) {
 	client := &RabbitMQClient{
 		config: cfg,
 		logger: logger,
@@ -88,7 +89,6 @@ func (c *RabbitMQClient) connect() error {
 	c.conn = conn
 	c.channel = channel
 	c.queue = queue
-
 	c.logger.Info("Connected to RabbitMQ successfully",
 		zap.String("queue", queue.Name),
 		zap.Int("messages", queue.Messages),
