@@ -4,33 +4,37 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/vision_world/video_service/internal/config"
+	"github.com/vision_world/video_service/internal/discovery"
 	"github.com/vision_world/video_service/internal/model"
 	"github.com/vision_world/video_service/internal/queue"
 	"github.com/vision_world/video_service/internal/service"
 	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
+	auditpb "github.com/vision_world/video_service/proto/proto_gen/audit"
 	userpb "github.com/vision_world/video_service/proto/proto_gen/user"
 	pb "github.com/vision_world/video_service/proto/proto_gen/video"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	//auditpb "github.com/vision_world/video_service/proto/proto_gen/audit"
 )
 
 // VideoHandler 视频服务处理器
 type VideoHandler struct {
 	pb.UnimplementedVideoServiceServer
-	config       *config.Config
-	videoService *service.VideoService
-	//auditClient  auditpb.AuditServiceClient
-	auditConn   *grpc.ClientConn
-	queueClient *queue.RabbitMQClient
-	minioClient *minio.Client
+	config          *config.Config
+	videoService    *service.VideoService
+	auditClient     auditpb.AuditServiceClient
+	auditConn       *grpc.ClientConn
+	queueClient     *queue.RabbitMQClient
+	minioClient     *minio.Client
+	discoveryClient discovery.ServiceDiscovery
+	serviceID       string
 }
 
 // NewVideoHandler 创建视频处理器
@@ -54,7 +58,7 @@ func NewVideoHandler(cfg *config.Config) (*VideoHandler, error) {
 	}
 
 	// 创建RabbitMQ客户端
-	//queueClient, err := queue.NewRabbitMQClient(cfg, logger)
+	queueClient, err := queue.NewRabbitMQClient(cfg, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create RabbitMQ client: %w", err)
 	}
@@ -68,40 +72,152 @@ func NewVideoHandler(cfg *config.Config) (*VideoHandler, error) {
 		grpc.WithBlock(),
 	)
 	if err != nil {
-		//queueClient.Close() // 清理RabbitMQ连接
+		queueClient.Close() // 清理RabbitMQ连接
 		return nil, fmt.Errorf("failed to connect to audit service: %w", err)
 	}
 
-	// auditClient := auditpb.NewAuditServiceClient(conn)
+	auditClient := auditpb.NewAuditServiceClient(conn)
 
 	logger.Info("Connected to audit service",
 		zap.String("address", cfg.Services.AuditService.Address))
 
+	// 创建服务发现客户端
+	var discoveryClient discovery.ServiceDiscovery
+	if cfg.Discovery.Type != "" {
+		discoveryClient, err = discovery.NewServiceDiscovery(&cfg.Discovery, cfg.Server.Name)
+		if err != nil {
+			logger.Error("Failed to create service discovery client", zap.Error(err))
+			// 服务发现创建失败不影响服务启动，只记录错误
+		} else {
+			logger.Info("Service discovery client created",
+				zap.String("type", cfg.Discovery.Type))
+		}
+	}
+
+	// 生成服务ID
+	host, port, err := getHostAndPort(cfg.Server.Address)
+	if err != nil {
+		logger.Error("Failed to parse server address", zap.Error(err))
+		host = "localhost"
+		port = 50052 // 默认端口
+	}
+
+	serviceID := fmt.Sprintf("%s-%s-%d", cfg.Server.Name, host, port)
+
 	return &VideoHandler{
-		config:       cfg,
-		videoService: videoService,
-		// auditClient:  auditClient,
-		auditConn: conn,
-		//queueClient:  queueClient,
-		minioClient: minioClient,
+		config:          cfg,
+		videoService:    videoService,
+		auditClient:     auditClient,
+		auditConn:       conn,
+		queueClient:     queueClient,
+		minioClient:     minioClient,
+		discoveryClient: discoveryClient,
+		serviceID:       serviceID,
 	}, nil
+}
+
+// getHostAndPort 从地址中解析主机和端口
+func getHostAndPort(address string) (string, int, error) {
+	// 移除地址前缀
+	address = strings.TrimPrefix(address, ":")
+
+	// 如果地址只包含端口，使用localhost作为主机
+	if !strings.Contains(address, ":") {
+		port, err := strconv.Atoi(address)
+		if err != nil {
+			return "", 0, fmt.Errorf("invalid port: %s", address)
+		}
+		return "localhost", port, nil
+	}
+
+	host, portStr, err := net.SplitHostPort(address)
+	if err != nil {
+		return "", 0, fmt.Errorf("failed to split host and port: %w", err)
+	}
+
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return "", 0, fmt.Errorf("invalid port: %s", portStr)
+	}
+
+	return host, port, nil
 }
 
 // RegisterService 注册服务到服务发现
 func (h *VideoHandler) RegisterService() error {
-	// TODO: 实现服务发现注册逻辑
-	logger.Info("Registering video service to discovery",
-		zap.String("service", h.config.Server.Name),
-		zap.String("address", h.config.Server.Address))
+	if h.discoveryClient == nil {
+		logger.Info("Service discovery not configured, skipping registration")
+		return nil
+	}
+
+	// 解析服务器地址
+	host, port, err := getHostAndPort(h.config.Server.Address)
+	if err != nil {
+		return fmt.Errorf("failed to parse server address: %w", err)
+	}
+
+	// 构建服务信息
+	serviceInfo := &discovery.ServiceInfo{
+		ID:   h.serviceID,
+		Name: h.config.Server.Name,
+		Host: host,
+		Port: port,
+		Tags: []string{"video", "grpc", h.config.Server.Environment},
+		Meta: map[string]string{
+			"version":     h.config.Server.Version,
+			"environment": h.config.Server.Environment,
+		},
+		Check: &discovery.HealthCheck{
+			GRPC:                           fmt.Sprintf("%s:%d", host, port),
+			Interval:                       fmt.Sprintf("%ds", h.config.Discovery.Interval),
+			Timeout:                        "5s",
+			DeregisterCriticalServiceAfter: "30s",
+		},
+	}
+
+	// 注册服务
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := h.discoveryClient.Register(ctx, serviceInfo); err != nil {
+		return fmt.Errorf("failed to register service: %w", err)
+	}
+
+	logger.Info("Service registered successfully",
+		zap.String("service_id", h.serviceID),
+		zap.String("service_name", h.config.Server.Name),
+		zap.String("address", fmt.Sprintf("%s:%d", host, port)))
+
 	return nil
 }
 
 // Close 关闭处理器
 func (h *VideoHandler) Close() error {
+	var errs []error
+
+	// 注销服务
+	if h.discoveryClient != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := h.discoveryClient.Deregister(ctx, h.serviceID); err != nil {
+			logger.Error("Failed to deregister service", zap.Error(err))
+			errs = append(errs, err)
+		} else {
+			logger.Info("Service deregistered successfully", zap.String("service_id", h.serviceID))
+		}
+
+		if err := h.discoveryClient.Close(); err != nil {
+			logger.Error("Failed to close discovery client", zap.Error(err))
+			errs = append(errs, err)
+		}
+	}
+
 	// 关闭RabbitMQ连接
 	if h.queueClient != nil {
 		if err := h.queueClient.Close(); err != nil {
 			logger.Error("Failed to close RabbitMQ connection", zap.Error(err))
+			errs = append(errs, err)
 		}
 	}
 
@@ -109,12 +225,21 @@ func (h *VideoHandler) Close() error {
 	if h.auditConn != nil {
 		if err := h.auditConn.Close(); err != nil {
 			logger.Error("Failed to close audit service connection", zap.Error(err))
+			errs = append(errs, err)
 		}
 	}
 
 	if h.videoService != nil {
-		return h.videoService.Close()
+		if err := h.videoService.Close(); err != nil {
+			logger.Error("Failed to close video service", zap.Error(err))
+			errs = append(errs, err)
+		}
 	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("multiple errors occurred during close: %v", errs)
+	}
+
 	return nil
 }
 

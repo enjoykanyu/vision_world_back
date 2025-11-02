@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/internal/handler"
+	"github.com/vision_world/video_service/internal/health"
+	"github.com/vision_world/video_service/pkg/database"
 	"github.com/vision_world/video_service/pkg/logger"
-	//"github.com/vision_world/video_service/pkg/minio"
 	pb "github.com/vision_world/video_service/proto/proto_gen/video"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -32,19 +35,12 @@ func main() {
 	// 初始化日志
 	logger.InitLogger(cfg.Log.Level, cfg.Log.File)
 
-	// //创建minio服务器
-	// // 初始化MinIO客户端
-	// minioClient, err := minio.NewClient(minio.Config{
-	// 	Endpoint:        cfg.MinIO.Endpoint,
-	// 	AccessKeyID:     cfg.MinIO.AccessKeyID,
-	// 	SecretAccessKey: cfg.MinIO.SecretAccessKey,
-	// 	UseSSL:          cfg.MinIO.UseSSL,
-	// 	BucketName:      cfg.MinIO.BucketName,
-	// 	Location:        cfg.MinIO.Location,
-	// })
+	// 初始化数据库连接
+	db, err := database.InitDatabase(cfg.Database)
 	if err != nil {
-		logger.Fatal("Failed to create minio client", zap.Error(err))
+		logger.Fatal("Failed to initialize database", zap.Error(err))
 	}
+	defer db.Close()
 
 	// 创建gRPC服务器
 	grpcServer := grpc.NewServer()
@@ -53,6 +49,30 @@ func main() {
 	healthServer := health.NewServer()
 	grpc_health_v1.RegisterHealthServer(grpcServer, healthServer)
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
+
+	// 设置自定义健康检查
+	customHealthServer := health.SetupHealthCheck(cfg, db)
+
+	// 启动健康检查后台任务
+	go func() {
+		ticker := time.NewTicker(30 * time.Second) // 每30秒检查一次
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				healthy := customHealthServer.IsHealthy(ctx)
+				cancel()
+
+				if healthy {
+					healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
+				} else {
+					healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+				}
+			}
+		}
+	}()
 
 	// 创建视频处理器
 	videoHandler, err := handler.NewVideoHandler(cfg)

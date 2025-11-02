@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package audit.v1;
+
+option go_package = "github.com/vision_world/audit_service/proto/proto_gen/audit/v1";
+
+import "google/protobuf/timestamp.proto";
+
+// 审核内容类型
+enum ContentType {
+  CONTENT_TYPE_UNSPECIFIED = 0;
+  CONTENT_TYPE_VIDEO = 1;      // 视频
+  CONTENT_TYPE_IMAGE = 2;      // 图片
+  CONTENT_TYPE_TEXT = 3;       // 文本
+  CONTENT_TYPE_AUDIO = 4;      // 音频
+}
+
+// 审核状态
+enum AuditStatus {
+  AUDIT_STATUS_UNSPECIFIED = 0;
+  AUDIT_STATUS_PENDING = 1;        // 待审核
+  AUDIT_STATUS_UNDER_REVIEW = 2;   // 审核中
+  AUDIT_STATUS_PASSED = 3;         // 审核通过
+  AUDIT_STATUS_REJECTED = 4;       // 审核拒绝
+  AUDIT_STATUS_FAILED = 5;         // 审核失败
+}
+
+// 提交审核请求
+message SubmitContentRequest {
+  string content_id = 1;           // 内容ID
+  ContentType content_type = 2;      // 内容类型
+  string uploader_id = 3;           // 上传者ID
+  string title = 4;                 // 标题
+  string content = 5;               // 内容描述
+  string create_time = 6;           // 创建时间 (RFC3339格式)
+}
+
+// 提交审核响应
+message SubmitContentResponse {
+  string audit_id = 1;              // 审核ID
+  AuditStatus status = 2;           // 审核状态
+  string message = 3;               // 响应消息
+}
+
+// 获取审核信息请求
+message GetAuditInfoRequest {
+  string audit_id = 1;              // 审核ID
+}
+
+// 获取审核信息响应
+message GetAuditInfoResponse {
+  string audit_id = 1;              // 审核ID
+  string content_id = 2;            // 内容ID
+  ContentType content_type = 3;     // 内容类型
+  string uploader_id = 4;           // 上传者ID
+  AuditStatus status = 5;            // 审核状态
+  string reason = 6;                // 审核原因
+  google.protobuf.Timestamp create_time = 7;   // 创建时间
+  google.protobuf.Timestamp update_time = 8;   // 更新时间
+}
+
+// 更新审核状态请求
+message UpdateAuditStatusRequest {
+  string audit_id = 1;              // 审核ID
+  AuditStatus status = 2;           // 新的审核状态
+  string reason = 3;                // 审核原因（可选）
+}
+
+// 更新审核状态响应
+message UpdateAuditStatusResponse {
+  bool success = 1;                 // 是否成功
+  string message = 2;               // 响应消息
+}
+
+// 审核列表请求
+message GetAuditListRequest {
+  string uploader_id = 1;           // 上传者ID（可选）
+  ContentType content_type = 2;     // 内容类型（可选）
+  AuditStatus status = 3;           // 审核状态（可选）
+  int32 page = 4;                   // 页码
+  int32 page_size = 5;              // 每页数量
+}
+
+// 审核列表响应
+message GetAuditListResponse {
+  repeated GetAuditInfoResponse audits = 1;  // 审核列表
+  int32 total = 2;                           // 总数
+  int32 page = 3;                              // 当前页码
+  int32 page_size = 4;                         // 每页数量
+}
+
+// 审核服务
+service AuditService {
+  // 提交内容审核
+  rpc SubmitContent(SubmitContentRequest) returns (SubmitContentResponse);
+  
+  // 获取审核信息
+  rpc GetAuditInfo(GetAuditInfoRequest) returns (GetAuditInfoResponse);
+  
+  // 更新审核状态
+  rpc UpdateAuditStatus(UpdateAuditStatusRequest) returns (UpdateAuditStatusResponse);
+  
+  // 获取审核列表
+  rpc GetAuditList(GetAuditListRequest) returns (GetAuditListResponse);
+}

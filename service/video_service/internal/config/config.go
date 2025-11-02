@@ -60,9 +60,24 @@ type KafkaConfig struct {
 }
 
 type DiscoveryConfig struct {
-	Type     string `mapstructure:"type"` // etcd, consul
-	Address  string `mapstructure:"address"`
-	Interval int    `mapstructure:"interval"`
+	Type                           string       `mapstructure:"type"` // etcd, consul
+	Address                        string       `mapstructure:"address"`
+	Interval                       int          `mapstructure:"interval"`                          // 健康检查间隔(秒)
+	Timeout                        int          `mapstructure:"timeout"`                           // 健康检查超时(秒)
+	DeregisterCriticalServiceAfter string       `mapstructure:"deregister_critical_service_after"` // 服务不健康后多久注销
+	Consul                         ConsulConfig `mapstructure:"consul"`
+	Etcd                           EtcdConfig   `mapstructure:"etcd"`
+}
+
+type ConsulConfig struct {
+	Datacenter string `mapstructure:"datacenter"`
+	Token      string `mapstructure:"token"` // ACL令牌(如果需要)
+}
+
+type EtcdConfig struct {
+	DialTimeout int    `mapstructure:"dial_timeout"` // 连接超时(秒)
+	Username    string `mapstructure:"username"`     // 用户名(如果需要)
+	Password    string `mapstructure:"password"`     // 密码(如果需要)
 }
 
 type LogConfig struct {
@@ -108,16 +123,23 @@ func LoadConfig() (*Config, error) {
 
 	// 绑定环境变量
 	v.AutomaticEnv()
-	v.SetEnvPrefix("USER_SERVICE")
+	v.SetEnvPrefix("VIDEO_SERVICE")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	//设置默认变量
+	// 设置默认变量
 	v.SetDefault("minio.endpoint", "localhost:9000")
 	v.SetDefault("minio.access_key_id", "minioadmin")
 	v.SetDefault("minio.secret_access_key", "minioadmin")
 	v.SetDefault("minio.use_ssl", false)
 	v.SetDefault("minio.bucket_name", "videos")
 	v.SetDefault("minio.location", "us-east-1")
+
+	// 设置服务发现默认值
+	v.SetDefault("discovery.type", "etcd")
+	v.SetDefault("discovery.address", "localhost:2379")
+	v.SetDefault("discovery.interval", 10)
+	v.SetDefault("discovery.timeout", 5)
+	v.SetDefault("discovery.deregister_critical_service_after", "30s")
 
 	var config Config
 	if err := v.Unmarshal(&config); err != nil {

@@ -25,10 +25,24 @@ kafka:
     - "localhost:9092"
   topic: "video-events"
 
+# 服务发现配置
 discovery:
   type: "etcd"  # etcd, consul
-  address: "localhost:2379"
-  interval: 10
+  address: "localhost:2379"  # etcd地址: "localhost:2379", consul地址: "localhost:8500"
+  interval: 10  # 健康检查间隔(秒)
+  timeout: 5  # 健康检查超时(秒)
+  deregister_critical_service_after: "30s"  # 服务不健康后多久注销
+  
+  # Consul特有配置
+  consul:
+    datacenter: "dc1"
+    token: ""  # ACL令牌(如果需要)
+    
+  # Etcd特有配置
+  etcd:
+    dial_timeout: 5  # 连接超时(秒)
+    username: ""  # 用户名(如果需要)
+    password: ""  # 密码(如果需要)
 
 log:
   level: "info"  # debug, info, warn, error

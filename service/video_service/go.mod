@@ -4,9 +4,11 @@ go 1.23.0
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/hashicorp/consul/api v1.26.1
 	github.com/minio/minio-go/v7 v7.0.95
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/spf13/viper v1.17.0
+	go.etcd.io/etcd/client/v3 v3.5.10
 	go.uber.org/zap v1.26.0
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0
