@@ -42,9 +42,9 @@ func NewRabbitMQClient(cfg *config.Config, logger logger.Logger) (*RabbitMQClien
 		logger: logger,
 	}
 
-	//if err := client.connect(); err != nil {
-	//	return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
-	//}
+	if err := client.connect(); err != nil {
+		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
+	}
 
 	return client, nil
 }
