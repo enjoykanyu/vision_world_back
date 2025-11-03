@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: vision_world_rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"  # AMQP端口
+      - "15672:15672" # 管理界面端口
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - vision_world_network
+
+volumes:
+  rabbitmq_data:
+  mysql_data:
+  redis_data:
+
+networks:
+  vision_world_network:
+    driver: bridge
