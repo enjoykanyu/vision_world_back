@@ -185,20 +185,20 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 	}
 
 	// 发送审核消息到RabbitMQ队列
-	//auditMessage := &queue.AuditMessage{
-	//	ContentID:    fmt.Sprintf("video_%d", videoID),
-	//	ContentType:  "video",
-	//	Title:        title,
-	//	URL:          videoURL,
-	//	Metadata:     description,
-	//	UploaderID:   userID,
-	//	UploaderName: userID, // TODO: 从用户信息获取用户名
-	//}
+	auditMessage := &queue.AuditMessage{
+		ContentID:    fmt.Sprintf("video_%d", videoID),
+		ContentType:  "video",
+		Title:        title,
+		URL:          videoURL,
+		Metadata:     description,
+		UploaderID:   userID,
+		UploaderName: userID, // TODO: 从用户信息获取用户名
+	}
 
-	//if err := s.queueClient.PublishAuditMessage(ctx, auditMessage); err != nil {
-	//	// 审核消息发送失败，但视频已上传成功，可以继续返回成功状态
-	//	return videoID, presignedURL, nil
-	//}
+	if err := s.queueClient.PublishAuditMessage(ctx, auditMessage); err != nil {
+		// 审核消息发送失败，但视频已上传成功，可以继续返回成功状态
+		return videoID, presignedURL, videoURL, nil
+	}
 
 	return videoID, presignedURL, videoURL, nil
 }
