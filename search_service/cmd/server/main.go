@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"search_service/internal/config"
 	"search_service/internal/discovery"
-	"search_service/internal/handler"
 	"search_service/pkg/database"
 	"search_service/pkg/logger"
 	"syscall"
@@ -86,7 +85,7 @@ func main() {
 	healthServer.SetServingStatus("search_service", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	// 8. 注册搜索服务
-	searchHandler := handler.NewSearchServiceHandler(cfg, logger, db, redisClient)
+	//searchHandler := handler.NewSearchServiceHandler(cfg, logger, db, redisClient)
 	// TODO: 注册搜索服务的gRPC服务
 	// proto_gen.RegisterSearchServiceServer(grpcServer, searchHandler)
 	logger.Info("Search service registered")
