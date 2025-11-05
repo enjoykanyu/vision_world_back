@@ -1,0 +1,160 @@
+# search-service配置文件
+server:
+  host: 0.0.0.0
+  port: 50055
+  mode: debug
+
+database:
+  host: localhost
+  port: 3306
+  username: root
+  password: "901project"
+  database: videoworld
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+
+logger:
+  level: info
+  format: json
+  output_path: logs/search-service.log
+
+consul:
+  host: localhost
+  port: 8500
+  health_check:
+    interval: 10s
+    timeout: 5s
+
+etcd:
+  endpoints:
+    - localhost:2379
+  dial_timeout: 5
+  username: ""
+  password: ""
+
+# 搜索服务特定配置
+search:
+  # Elasticsearch配置
+  elasticsearch:
+    enabled: true
+    hosts:
+      - "http://localhost:9200"
+    username: ""
+    password: ""
+    index_prefix: "videoworld"
+    max_retries: 3
+    request_timeout: 30s
+  
+  # 搜索配置
+  search:
+    default_page_size: 20
+    max_page_size: 100
+    max_query_length: 100
+    min_query_length: 2
+    search_timeout: 10s
+    enable_fuzzy_search: true
+    fuzzy_threshold: 0.8
+  
+  # 索引配置
+  indexing:
+    batch_size: 1000
+    refresh_interval: 30s
+    max_bulk_size: 5MB
+    concurrent_workers: 4
+    retry_attempts: 3
+  
+  # 分词配置
+  analyzer:
+    default_analyzer: "ik_max_word"
+    search_analyzer: "ik_smart"
+    language: "chinese"
+    enable_synonym: true
+    synonym_dictionary_path: "config/synonyms.txt"
+  
+  # 搜索类型配置
+  search_types:
+    video:
+      enabled: true
+      index_name: "videos"
+      searchable_fields:
+        - "title"
+        - "description"
+        - "tags"
+        - "category"
+      boost_fields:
+        title: 3.0
+        description: 1.0
+        tags: 2.0
+        category: 1.5
+      filter_fields:
+        - "category"
+        - "duration"
+        - "resolution"
+        - "upload_date"
+        - "uploader_id"
+    
+    user:
+      enabled: true
+      index_name: "users"
+      searchable_fields:
+        - "username"
+        - "nickname"
+        - "bio"
+        - "tags"
+      boost_fields:
+        username: 3.0
+        nickname: 2.0
+        tags: 1.5
+        bio: 1.0
+      filter_fields:
+        - "follower_count"
+        - "following_count"
+        - "video_count"
+        - "join_date"
+    
+    content:
+      enabled: true
+      index_name: "contents"
+      searchable_fields:
+        - "title"
+        - "content"
+        - "tags"
+      boost_fields:
+        title: 2.0
+        content: 1.0
+        tags: 1.5
+      filter_fields:
+        - "content_type"
+        - "publish_date"
+        - "author_id"
+  
+  # 推荐搜索配置
+  suggestions:
+    enabled: true
+    max_suggestions: 10
+    min_prefix_length: 2
+    cache_duration: 1h
+    popular_searches_limit: 100
+  
+  # 搜索日志配置
+  logging:
+    enabled: true
+    log_slow_queries: true
+    slow_query_threshold: 5s
+    log_no_results: true
+    analytics_enabled: true
+  
+  # 缓存配置
+  cache:
+    enabled: true
+    ttl: 300  # 5分钟
+    max_entries: 10000
+    cleanup_interval: 60s
