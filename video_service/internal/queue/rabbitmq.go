@@ -10,7 +10,6 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/pkg/logger"
-	"go.uber.org/zap"
 )
 
 // AuditMessage 审核消息结构
@@ -90,9 +89,9 @@ func (c *RabbitMQClient) connect() error {
 	c.channel = channel
 	c.queue = queue
 	c.logger.Info("Connected to RabbitMQ successfully",
-		zap.String("queue", queue.Name),
-		zap.Int("messages", queue.Messages),
-		zap.Int("consumers", queue.Consumers))
+		"queue", queue.Name,
+		"messages", queue.Messages,
+		"consumers", queue.Consumers)
 
 	return nil
 }
@@ -129,9 +128,9 @@ func (c *RabbitMQClient) PublishAuditMessage(ctx context.Context, message *Audit
 	}
 
 	c.logger.Info("Published audit message",
-		zap.String("message_id", message.MessageID),
-		zap.String("content_id", message.ContentID),
-		zap.String("content_type", message.ContentType))
+		"message_id", message.MessageID,
+		"content_id", message.ContentID,
+		"content_type", message.ContentType)
 
 	return nil
 }
@@ -140,13 +139,13 @@ func (c *RabbitMQClient) PublishAuditMessage(ctx context.Context, message *Audit
 func (c *RabbitMQClient) Close() error {
 	if c.channel != nil {
 		if err := c.channel.Close(); err != nil {
-			c.logger.Error("Failed to close channel", zap.Error(err))
+			c.logger.Error("Failed to close channel", "error", err)
 		}
 	}
 
 	if c.conn != nil {
 		if err := c.conn.Close(); err != nil {
-			c.logger.Error("Failed to close connection", zap.Error(err))
+			c.logger.Error("Failed to close connection", "error", err)
 		}
 	}
 
