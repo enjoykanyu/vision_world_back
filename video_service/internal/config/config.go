@@ -120,10 +120,9 @@ func LoadConfig() (*Config, error) {
 
 	// 设置配置文件路径
 	// 默认在当前目录和config目录下查找配置文件
-	v.AddConfigPath(".")
-	v.AddConfigPath("./config")
-	v.AddConfigPath("../config")
-	v.AddConfigPath("../../config")
+	//v.AddConfigPath(".")
+	//v.AddConfigPath("./config")
+	v.AddConfigPath("../../internal/config")
 	v.SetConfigName("video-service")
 	v.SetConfigType("yaml")
 
