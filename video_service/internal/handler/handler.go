@@ -472,7 +472,21 @@ func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoReque
 
 // PublishVideo 发布视频
 func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoRequest) (*pb.PublishVideoResponse, error) {
-	h.logger.Info("PublishVideo called", zap.String("title", req.Title), zap.String("token", req.Token))
+	h.logger.Info("PublishVideo called",
+		zap.String("title", req.Title),
+		zap.String("token", req.Token),
+		zap.String("type", func() string {
+			if req.Type != nil {
+				return *req.Type
+			}
+			return "original" // 默认为原创
+		}()),
+		zap.String("source", func() string {
+			if req.Source != nil {
+				return *req.Source
+			}
+			return ""
+		}()))
 
 	// TODO: 验证用户token
 	// TODO: 实现视频发布逻辑
@@ -944,6 +958,13 @@ func (h *VideoHandler) convertToProtoVideo(video *model.RecommendationVideo) *pb
 		Name: video.Author,
 	}
 
+	// 设置默认视频类型为原创
+	videoType := "original"
+	// 如果有来源信息，则设置为转载
+	if video.Source != "" {
+		videoType = "repost"
+	}
+
 	return &pb.Video{
 		Id:           uint32(videoID),
 		Title:        video.Title,
@@ -963,5 +984,7 @@ func (h *VideoHandler) convertToProtoVideo(video *model.RecommendationVideo) *pb
 		Category:     video.Category,
 		Author:       author,
 		Tags:         tags,
+		Type:         &videoType,
+		Source:       &video.Source,
 	}
 }

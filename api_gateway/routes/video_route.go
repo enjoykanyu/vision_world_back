@@ -597,6 +597,125 @@ func (h *VideoHandler) HandleVideoUpload(c *gin.Context) {
 		"video_url": resp.VideoUrl,
 	})
 }
+func (h *VideoHandler) HandleVideoPublish(c *gin.Context) {
+	_, exists := c.Get("user_id")
+	if !exists {
+		log.Printf("User not authenticated")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// 获取表单数据
+	title := c.PostForm("title")
+	description := c.PostForm("description")
+	category := c.PostForm("category")
+	tagsStr := c.PostForm("tags")
+
+	// 验证必填字段
+	if title == "" {
+		log.Printf("Title is required")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Title is required"})
+		return
+	}
+
+	// 获取上传的文件
+	file, header, err := c.Request.FormFile("video")
+	if err != nil {
+		log.Printf("Video file is required")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Video file is required"})
+		return
+	}
+	defer file.Close()
+
+	// 验证文件大小（最大500MB）
+	const maxFileSize = 500 * 1024 * 1024 // 500MB
+	if header.Size > maxFileSize {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File size exceeds 500MB limit"})
+		log.Printf("File size exceeds 500MB limit")
+		return
+	}
+
+	// 验证文件类型
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	allowedExts := []string{".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"}
+	isValid := false
+	for _, allowed := range allowedExts {
+		if ext == allowed {
+			isValid = true
+			break
+		}
+	}
+	if !isValid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video file format. Allowed formats: mp4, avi, mov, wmv, flv, mkv, webm"})
+		log.Printf("Invalid video file format. Allowed formats: mp4, avi, mov, wmv, flv, mkv, webm")
+		return
+	}
+
+	// 读取文件内容到字节数组
+	fileBytes := make([]byte, header.Size)
+	_, err = file.Read(fileBytes)
+	if err != nil {
+		log.Printf("Failed to read video file: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read video file"})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	//token := fmt.Sprintf("%v", tokenValue)
+
+	// 准备标签
+	var tags []string
+	if tagsStr != "" {
+		tags = strings.Split(tagsStr, ",")
+		for i, tag := range tags {
+			tags[i] = strings.TrimSpace(tag)
+		}
+	}
+
+	// 调用视频服务的UploadVideo接口
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // 上传可能需要更长时间
+	defer cancel()
+
+	req := &pb.UploadVideoRequest{
+		//Token:       token,
+		VideoData:   fileBytes,
+		FileName:    header.Filename,
+		Title:       title,
+		Description: description,
+		Category:    category,
+		Tags:        tags,
+	}
+
+	resp, err := videoClient.UploadVideo(ctx, req)
+	if err != nil {
+		log.Printf("Failed to upload video: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video"})
+		return
+	}
+
+	if resp.StatusCode != 0 {
+		log.Printf("Video upload failed with status code %d: %s", resp.StatusCode, resp.StatusMsg)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": resp.StatusMsg,
+			"code":  resp.StatusCode,
+		})
+		return
+	}
+
+	// 返回成功响应
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Video uploaded successfully",
+		"video_id":  resp.VideoId,
+		"video_url": resp.VideoUrl,
+	})
+}
 
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
 func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandler) {

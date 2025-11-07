@@ -114,6 +114,7 @@ func main() {
 
 	// 注册视频上传路由（全局鉴权中间件已生效，无需重复添加）
 	router.POST("/api/video/upload", videoHandler.HandleVideoUpload)
+	router.POST("/api/video/publish", videoHandler.HandleVideoPublish)
 
 	// 注册用户相关路由
 	router.POST("/api/user/login/phone", userHandler.PhoneLogin)

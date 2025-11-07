@@ -48,6 +48,8 @@ message PublishVideoRequest {
   optional string location = 7; // 拍摄地点
   optional string music_id = 8; // 背景音乐ID
   optional bool is_public = 9; // 是否公开，默认true
+  optional string type = 10; // 视频类型: original(原创), repost(转载)
+  optional string source = 11; // 转载来源，仅当type为repost时有效
 }
 
 message PublishVideoResponse {
@@ -251,6 +253,8 @@ message Video {
   optional string extra_data = 24; // 扩展数据，JSON格式
   bool is_public = 25; // 是否公开
   string status = 26; // 状态: normal, deleted, banned, reviewing
+  optional string type = 27; // 视频类型: original(原创), repost(转载)
+  optional string source = 28; // 转载来源，仅当type为repost时有效
 }
 
 message Comment {

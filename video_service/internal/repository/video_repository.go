@@ -398,6 +398,8 @@ func (r *videoRepository) convertToRecommendationVideo(video *model.Video) *mode
 		ViewCount:   int64(video.PlayCount),
 		LikeCount:   int64(video.LikeCount),
 		Score:       0, // 需要根据推荐算法计算
+		Type:        video.Type,
+		Source:      video.Source,
 		CreatedAt:   video.CreatedAt,
 		UpdatedAt:   video.UpdatedAt,
 	}

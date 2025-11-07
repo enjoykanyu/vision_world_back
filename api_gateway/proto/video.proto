@@ -48,6 +48,9 @@ message PublishVideoRequest {
   optional string location = 7; // 拍摄地点
   optional string music_id = 8; // 背景音乐ID
   optional bool is_public = 9; // 是否公开，默认true
+  optional string privacy = 10; // 隐私设置：public、friends、private
+  optional bool allow_comments = 11; // 是否允许评论，默认true
+  optional bool allow_danmu = 12; // 是否允许弹幕，默认true
 }
 
 message PublishVideoResponse {
