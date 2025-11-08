@@ -112,6 +112,10 @@ func main() {
 	}
 	defer auditConsumer.Close()
 
+	// 创建上下文用于消息消费
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// 启动消息消费
 	if err := auditConsumer.StartConsuming(ctx); err != nil {
 		logger.Fatal("Failed to start message consumer", "error", err)
@@ -148,6 +152,9 @@ func main() {
 	<-sigChan
 
 	logger.Info("Shutting down server...")
+
+	// 取消上下文，停止消息消费
+	cancel()
 
 	// 14. 设置健康检查为不健康状态
 	healthServer.SetServingStatus("audit_service", grpc_health_v1.HealthCheckResponse_NOT_SERVING)

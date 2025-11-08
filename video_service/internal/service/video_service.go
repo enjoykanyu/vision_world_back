@@ -184,7 +184,7 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 		return 0, "", "", fmt.Errorf("failed to save video info: %w", err)
 	}
 
-	// 发送审核消息到RabbitMQ队列
+	// 发送审核消息到RabbitMQ队列，添加重试逻辑
 	auditMessage := &queue.AuditMessage{
 		ContentID:    fmt.Sprintf("video_%d", videoID),
 		ContentType:  "video",
@@ -195,8 +195,46 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 		UploaderName: userID, // TODO: 从用户信息获取用户名
 	}
 
-	if err := s.queueClient.PublishAuditMessage(ctx, auditMessage); err != nil {
-		// 审核消息发送失败，但视频已上传成功，可以继续返回成功状态
+	// 最多重试3次发送审核消息
+	maxRetries := 3
+	var publishErr error
+	for i := 0; i < maxRetries; i++ {
+		publishErr = s.queueClient.PublishAuditMessage(ctx, auditMessage)
+		if publishErr == nil {
+			// 获取发布统计信息
+			publishCount, errorCount := s.queueClient.GetPublishStats()
+			s.logger.Info("Audit message published successfully",
+				"video_id", videoID,
+				"message_id", auditMessage.MessageID,
+				"attempt", i+1,
+				"total_published", publishCount,
+				"total_errors", errorCount)
+			break // 发送成功，退出重试循环
+		}
+
+		s.logger.Warn("Failed to publish audit message, retrying",
+			"video_id", videoID,
+			"message_id", auditMessage.MessageID,
+			"attempt", i+1,
+			"max_retries", maxRetries,
+			"error", publishErr)
+
+		if i < maxRetries-1 {
+			// 等待一段时间后重试
+			time.Sleep(time.Duration(i+1) * time.Second)
+		}
+	}
+
+	if publishErr != nil {
+		// 审核消息发送失败，但视频已上传成功，记录错误日志但继续返回成功状态
+		// 可以考虑将失败的消息保存到数据库中，稍后重试
+		publishCount, errorCount := s.queueClient.GetPublishStats()
+		s.logger.Error("Failed to publish audit message after retries",
+			"video_id", videoID,
+			"message_id", auditMessage.MessageID,
+			"error", publishErr,
+			"total_published", publishCount,
+			"total_errors", errorCount)
 		return videoID, presignedURL, videoURL, nil
 	}
 
