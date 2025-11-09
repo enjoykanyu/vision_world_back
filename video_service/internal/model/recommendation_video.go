@@ -18,6 +18,8 @@ type RecommendationVideo struct {
 	ViewCount   int64     `json:"view_count"`
 	LikeCount   int64     `json:"like_count"`
 	Score       float64   `json:"score"`
+	Type        string    `json:"type"`   // 视频类型: original/repost
+	Source      string    `json:"source"` // 转载来源
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -41,6 +43,8 @@ func (r *RecommendationVideo) ToVideoModel() *Video {
 		Category:    r.Category,
 		PlayCount:   uint32(r.ViewCount),
 		LikeCount:   uint32(r.LikeCount),
+		Type:        r.Type,
+		Source:      r.Source,
 		IsPublic:    true,
 		Status:      "normal",
 	}
@@ -65,6 +69,8 @@ func FromVideoModel(video *Video, author string) *RecommendationVideo {
 		ViewCount:   int64(video.PlayCount),
 		LikeCount:   int64(video.LikeCount),
 		Score:       0, // 需要计算
+		Type:        video.Type,
+		Source:      video.Source,
 		CreatedAt:   video.CreatedAt,
 		UpdatedAt:   video.UpdatedAt,
 	}

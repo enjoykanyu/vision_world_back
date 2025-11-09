@@ -22,7 +22,9 @@ type Video struct {
 	AuthorAvatar string    `json:"author_avatar"`
 	Tags         string    `json:"tags"` // 逗号分隔的标签
 	Category     string    `json:"category"`
-	Score        float64   `json:"score"` // 推荐分数
+	Score        float64   `json:"score"`  // 推荐分数
+	Type         string    `json:"type"`   // 视频类型: original/repost
+	Source       string    `json:"source"` // 转载来源
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }

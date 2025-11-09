@@ -165,15 +165,17 @@ func (c *RecommendationConverter) ModelToProto(video *model.Video) *proto_gen.Vi
 		VideoId:     video.VideoID,
 		Title:       video.Title,
 		Description: video.Description,
-		Author:      video.Author,
+		Author:      video.AuthorID, // 使用AuthorID而不是Author
 		Category:    video.Category,
 		Tags:        video.Tags,
 		Duration:    video.Duration,
 		CoverUrl:    video.CoverURL,
-		PlayUrl:     video.PlayURL,
+		PlayUrl:     video.VideoURL,
 		ViewCount:   video.ViewCount,
 		LikeCount:   video.LikeCount,
 		Score:       video.Score,
+		Type:        video.Type,
+		Source:      video.Source,
 		CreatedAt:   video.CreatedAt.Unix(),
 		UpdatedAt:   video.UpdatedAt.Unix(),
 	}
@@ -189,15 +191,17 @@ func (c *RecommendationConverter) ProtoToModel(protoVideo *proto_gen.Video) *mod
 		VideoID:     protoVideo.VideoId,
 		Title:       protoVideo.Title,
 		Description: protoVideo.Description,
-		Author:      protoVideo.Author,
+		AuthorID:    protoVideo.Author, // 使用Author作为AuthorID
 		Category:    protoVideo.Category,
 		Tags:        protoVideo.Tags,
 		Duration:    protoVideo.Duration,
 		CoverURL:    protoVideo.CoverUrl,
-		PlayURL:     protoVideo.PlayUrl,
+		VideoURL:    protoVideo.PlayUrl,
 		ViewCount:   protoVideo.ViewCount,
 		LikeCount:   protoVideo.LikeCount,
 		Score:       protoVideo.Score,
+		Type:        protoVideo.Type,
+		Source:      protoVideo.Source,
 	}
 }
 
