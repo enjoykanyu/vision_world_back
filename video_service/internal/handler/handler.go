@@ -61,7 +61,7 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 		return nil, fmt.Errorf("failed to create RabbitMQ client: %w", err)
 	}
 
-	videoService, err := service.NewVideoService(cfg, db, redis, minioClient, queueClient)
+	videoService, err := service.NewVideoService(cfg, db, redis, minioClient, queueClient, log)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create video service: %w", err)
 	}
@@ -458,9 +458,9 @@ func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoReque
 		"video_id", videoID,
 		"video_url", videoURL)
 
-	// 视频进入审核中状态
+	// 视频上传成功，状态为uploading
 	statusCode := int32(0)
-	statusMsg := "视频上传成功，正在审核中"
+	statusMsg := "视频上传成功"
 
 	return &pb.UploadVideoResponse{
 		StatusCode: statusCode,
@@ -489,12 +489,26 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 		}()))
 
 	// TODO: 验证用户token
-	// TODO: 实现视频发布逻辑
 
-	// 生成视频ID (这里简化处理，实际应该从数据库获取)
+	// 使用service层处理发布逻辑
+	// 这里需要先从token中获取userID，简化处理使用固定值
+	userID := "1" // TODO: 从用户token中解析用户ID
+
+	// 生成视频ID (这里简化处理，实际应该从上传接口获取)
 	videoID := uint32(time.Now().Unix())
 
-	// 视频进入审核中状态
+	// 调用service层的发布方法
+	err := h.videoService.PublishVideo(ctx, userID, videoID, req.Title, req.Description)
+	if err != nil {
+		h.logger.Error("Failed to publish video", zap.Error(err))
+		return &pb.PublishVideoResponse{
+			StatusCode: 500,
+			StatusMsg:  fmt.Sprintf("发布失败: %s", err.Error()),
+			VideoId:    0,
+		}, nil
+	}
+
+	// 发布成功，视频进入审核中状态
 	statusCode := int32(202)
 	statusMsg := "视频发布成功，正在审核中"
 
