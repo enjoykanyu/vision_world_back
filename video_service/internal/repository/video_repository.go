@@ -17,6 +17,7 @@ type VideoRepository interface {
 	CreateVideo(ctx context.Context, video *model.Video) error
 	GetVideoByID(ctx context.Context, videoID string) (*model.RecommendationVideo, error)
 	GetVideosByIDs(ctx context.Context, videoIDs []string) ([]*model.RecommendationVideo, error)
+	UpdateVideoStatus(ctx context.Context, videoID uint32, status string) error
 
 	// 视频列表查询
 	GetHotVideos(ctx context.Context, page, pageSize int, category string) ([]*model.RecommendationVideo, bool, error)
@@ -79,7 +80,8 @@ func (r *videoRepository) GetVideoByID(ctx context.Context, videoID string) (*mo
 		return nil, fmt.Errorf("invalid video ID: %s", videoID)
 	}
 
-	if err := r.db.WithContext(ctx).Where("id = ? AND status = ?", id, "normal").First(&video).Error; err != nil {
+	// 修改查询条件，不限制状态，以便可以更新任意状态的视频
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&video).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("video not found: %s", videoID)
 		}
@@ -98,6 +100,22 @@ func (r *videoRepository) GetVideoByID(ctx context.Context, videoID string) (*mo
 	}
 
 	return recVideo, nil
+}
+
+// UpdateVideoStatus 更新视频状态
+func (r *videoRepository) UpdateVideoStatus(ctx context.Context, videoID uint32, status string) error {
+	// 更新数据库中的视频状态
+	if err := r.db.WithContext(ctx).Model(&model.Video{}).Where("id = ?", videoID).Update("status", status).Error; err != nil {
+		return fmt.Errorf("failed to update video status: %w", err)
+	}
+
+	// 清除相关缓存
+	if r.redis != nil {
+		cacheKey := fmt.Sprintf("%s%d", model.CacheKeyVideo, videoID)
+		r.redis.Del(ctx, cacheKey)
+	}
+
+	return nil
 }
 
 // GetVideosByIDs 根据ID列表获取视频详情
