@@ -12,6 +12,7 @@ import (
 	"github.com/vision_world/video_service/internal/model"
 	"github.com/vision_world/video_service/internal/queue"
 	"github.com/vision_world/video_service/internal/repository"
+	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
 	"gorm.io/gorm"
 )
@@ -22,10 +23,11 @@ type VideoService struct {
 	repo        repository.VideoRepository
 	minioClient *minio.Client
 	queueClient *queue.RabbitMQClient
+	logger      logger.Logger
 }
 
 // NewVideoService 创建视频服务
-func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client, minioClient *minio.Client, queueClient *queue.RabbitMQClient) (*VideoService, error) {
+func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client, minioClient *minio.Client, queueClient *queue.RabbitMQClient, log logger.Logger) (*VideoService, error) {
 	repo := repository.NewVideoRepository(db, redis)
 
 	return &VideoService{
@@ -33,6 +35,7 @@ func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client, minio
 		repo:        repo,
 		minioClient: minioClient,
 		queueClient: queueClient,
+		logger:      log,
 	}, nil
 }
 
@@ -176,7 +179,7 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 		PlayCount:   0,
 		LikeCount:   0,
 		IsPublic:    true,
-		Status:      "reviewing", // 上传后进入审核状态
+		Status:      "uploading", // 上传后状态为uploading，等待发布
 	}
 
 	// 保存视频信息到数据库
@@ -184,12 +187,29 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 		return 0, "", "", fmt.Errorf("failed to save video info: %w", err)
 	}
 
+	return videoID, presignedURL, videoURL, nil
+}
+
+// PublishVideo 发布视频
+func (s *VideoService) PublishVideo(ctx context.Context, userID string, videoID uint32, title, description string) error {
+	// 更新视频状态为发布中
+	err := s.repo.UpdateVideoStatus(ctx, videoID, "reviewing")
+	if err != nil {
+		return fmt.Errorf("failed to update video status: %w", err)
+	}
+
+	// 获取视频信息
+	video, err := s.repo.GetVideoByID(ctx, strconv.FormatUint(uint64(videoID), 10))
+	if err != nil {
+		return fmt.Errorf("failed to get video info: %w", err)
+	}
+
 	// 发送审核消息到RabbitMQ队列，添加重试逻辑
 	auditMessage := &queue.AuditMessage{
 		ContentID:    fmt.Sprintf("video_%d", videoID),
 		ContentType:  "video",
 		Title:        title,
-		URL:          videoURL,
+		URL:          video.VideoURL,
 		Metadata:     description,
 		UploaderID:   userID,
 		UploaderName: userID, // TODO: 从用户信息获取用户名
@@ -226,8 +246,10 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 	}
 
 	if publishErr != nil {
-		// 审核消息发送失败，但视频已上传成功，记录错误日志但继续返回成功状态
-		// 可以考虑将失败的消息保存到数据库中，稍后重试
+		// 审核消息发送失败，回滚视频状态为uploading
+		s.repo.UpdateVideoStatus(ctx, videoID, "uploading")
+
+		// 获取发布统计信息
 		publishCount, errorCount := s.queueClient.GetPublishStats()
 		s.logger.Error("Failed to publish audit message after retries",
 			"video_id", videoID,
@@ -235,8 +257,9 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 			"error", publishErr,
 			"total_published", publishCount,
 			"total_errors", errorCount)
-		return videoID, presignedURL, videoURL, nil
+
+		return fmt.Errorf("failed to publish audit message: %w", publishErr)
 	}
 
-	return videoID, presignedURL, videoURL, nil
+	return nil
 }
