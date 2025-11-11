@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -230,7 +232,13 @@ func (c *RabbitMQConsumer) processMessageWithRetry(ctx context.Context, msg *amq
 
 	// 重试处理消息
 	var lastErr error
-	for i := 0; i < c.maxRetries; i++ {
+	// 使用配置的重试次数
+	retryAttempts := c.config.Audit.Queue.MaxRetryCount
+	if retryAttempts <= 0 {
+		retryAttempts = 3 // 默认重试3次
+	}
+
+	for attempt := 1; attempt <= retryAttempts; attempt++ {
 		// 检查上下文是否已取消
 		select {
 		case <-ctx.Done():
@@ -245,7 +253,7 @@ func (c *RabbitMQConsumer) processMessageWithRetry(ctx context.Context, msg *amq
 			c.logger.Info("Message processed successfully",
 				"message_id", auditMsg.MessageID,
 				"content_id", auditMsg.ContentID,
-				"attempt", i+1,
+				"attempt", attempt,
 				"processing_time", duration)
 			return nil
 		}
@@ -254,14 +262,21 @@ func (c *RabbitMQConsumer) processMessageWithRetry(ctx context.Context, msg *amq
 		c.logger.Warn("Message processing attempt failed",
 			"message_id", auditMsg.MessageID,
 			"content_id", auditMsg.ContentID,
-			"attempt", i+1,
-			"max_retries", c.maxRetries,
+			"attempt", attempt,
+			"max_retries", retryAttempts,
 			"error", err)
 
 		// 如果不是最后一次尝试，等待一段时间后重试
-		if i < c.maxRetries-1 {
-			// 指数退避策略
-			backoffTime := time.Duration(i+1) * time.Second
+		if attempt < retryAttempts {
+			// 计算重试延迟，使用指数退避策略
+			backoffTime := time.Duration(math.Pow(2, float64(attempt-1))) * time.Second
+			// 添加随机抖动，避免重试风暴
+			backoffTime += time.Duration(rand.Int63n(int64(backoffTime / 4)))
+			c.logger.Info("Retrying message processing",
+				"message_id", auditMsg.MessageID,
+				"content_id", auditMsg.ContentID,
+				"attempt", attempt+1,
+				"delay", backoffTime)
 			select {
 			case <-time.After(backoffTime):
 				// 继续重试
@@ -275,20 +290,15 @@ func (c *RabbitMQConsumer) processMessageWithRetry(ctx context.Context, msg *amq
 	c.logger.Error("Message processing failed after all retries",
 		"message_id", auditMsg.MessageID,
 		"content_id", auditMsg.ContentID,
-		"total_attempts", c.maxRetries,
+		"total_attempts", retryAttempts,
 		"processing_time", duration,
 		"last_error", lastErr)
 
-	return fmt.Errorf("failed to process message after %d attempts: %w", c.maxRetries, lastErr)
+	return fmt.Errorf("failed to process message after %d attempts: %w", retryAttempts, lastErr)
 }
 
 // processMessage 处理单个消息
-func (c *RabbitMQConsumer) processMessage(ctx context.Context, msg *amqp091.Delivery) error {
-	var auditMsg AuditMessage
-	if err := json.Unmarshal(msg.Body, &auditMsg); err != nil {
-		return fmt.Errorf("failed to unmarshal message: %w", err)
-	}
-
+func (c *RabbitMQConsumer) processMessage(ctx context.Context, auditMsg AuditMessage) error {
 	c.logger.Info("Processing audit message",
 		"message_id", auditMsg.MessageID,
 		"content_id", auditMsg.ContentID,
