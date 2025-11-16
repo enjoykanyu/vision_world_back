@@ -104,10 +104,7 @@ func LoadConfig(configPath string) (*Config, error) {
 		v.SetConfigFile(configPath)
 	} else {
 		// 默认在当前目录和config目录下查找配置文件
-		v.AddConfigPath(".")
-		v.AddConfigPath("./config")
-		v.AddConfigPath("../config")
-		v.AddConfigPath("../../config")
+		v.AddConfigPath("../../internal/config")
 		v.SetConfigName("user-service")
 		v.SetConfigType("yaml")
 	}
