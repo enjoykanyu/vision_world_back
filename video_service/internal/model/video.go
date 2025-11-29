@@ -28,6 +28,8 @@ type Video struct {
 	CommentCount  uint32         `gorm:"default:0;comment:评论数" json:"comment_count"`
 	ShareCount    uint32         `gorm:"default:0;comment:分享数" json:"share_count"`
 	FavoriteCount uint32         `gorm:"default:0;comment:收藏数" json:"favorite_count"`
+	Type          string         `gorm:"size:20;default:original;comment:视频类型: original/repost" json:"type"`
+	Source        string         `gorm:"size:200;comment:转载来源" json:"source"`
 	IsPublic      bool           `gorm:"default:true;comment:是否公开" json:"is_public"`
 	Status        string         `gorm:"size:20;default:normal;comment:状态" json:"status"` // normal, deleted, banned, reviewing
 	ExtraData     string         `gorm:"type:text;comment:扩展数据" json:"extra_data"`

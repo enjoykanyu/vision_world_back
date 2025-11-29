@@ -3,13 +3,14 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/go-redis/redis/v8"
-	"gorm.io/gorm"
 	"net"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	"gorm.io/gorm"
 
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/internal/discovery"
@@ -474,19 +475,7 @@ func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoReque
 func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoRequest) (*pb.PublishVideoResponse, error) {
 	h.logger.Info("PublishVideo called",
 		zap.String("title", req.Title),
-		zap.String("token", req.Token),
-		zap.String("type", func() string {
-			if req.Type != nil {
-				return *req.Type
-			}
-			return "original" // 默认为原创
-		}()),
-		zap.String("source", func() string {
-			if req.Source != nil {
-				return *req.Source
-			}
-			return ""
-		}()))
+		zap.String("token", req.Token))
 
 	// TODO: 验证用户token
 
@@ -978,7 +967,7 @@ func (h *VideoHandler) convertToProtoVideo(video *model.RecommendationVideo) *pb
 	if video.Source != "" {
 		videoType = "repost"
 	}
-
+	fmt.Printf(videoType)
 	return &pb.Video{
 		Id:           uint32(videoID),
 		Title:        video.Title,
@@ -998,7 +987,5 @@ func (h *VideoHandler) convertToProtoVideo(video *model.RecommendationVideo) *pb
 		Category:     video.Category,
 		Author:       author,
 		Tags:         tags,
-		Type:         &videoType,
-		Source:       &video.Source,
 	}
 }

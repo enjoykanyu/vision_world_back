@@ -209,7 +209,7 @@ func (s *VideoService) PublishVideo(ctx context.Context, userID string, videoID 
 		ContentID:    fmt.Sprintf("video_%d", videoID),
 		ContentType:  "video",
 		Title:        title,
-		URL:          video.VideoURL,
+		URL:          video.PlayURL,
 		Metadata:     description,
 		UploaderID:   userID,
 		UploaderName: userID, // TODO: 从用户信息获取用户名
