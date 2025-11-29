@@ -478,14 +478,6 @@ func (h *VideoHandler) Close() {
 
 // HandleVideoUpload 处理视频上传请求
 func (h *VideoHandler) HandleVideoUpload(c *gin.Context) {
-	// 获取用户ID（必须已登录）
-	_, exists := c.Get("user_id")
-	if !exists {
-		log.Printf("User not authenticated")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-
 	// 获取表单数据
 	title := c.PostForm("title")
 	description := c.PostForm("description")
@@ -598,13 +590,6 @@ func (h *VideoHandler) HandleVideoUpload(c *gin.Context) {
 	})
 }
 func (h *VideoHandler) HandleVideoPublish(c *gin.Context) {
-	_, exists := c.Get("user_id")
-	if !exists {
-		log.Printf("User not authenticated")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
-		return
-	}
-
 	// 获取表单数据
 	title := c.PostForm("title")
 	description := c.PostForm("description")
