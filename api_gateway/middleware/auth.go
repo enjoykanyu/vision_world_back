@@ -170,6 +170,8 @@ func inAuthWhitelist(path, uri string) bool {
 		"/api/video/recommended",
 		"/api/video/hot",
 		"/api/video/info/",
+		"/api/video/upload",
+		"/api/video/publish",
 		"/api/user/info/",
 		"/api/live/list",
 		"/api/live/stream/",
