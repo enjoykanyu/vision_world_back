@@ -307,6 +307,8 @@ type PublishVideoRequest struct {
 	Location      *string                `protobuf:"bytes,7,opt,name=location,proto3,oneof" json:"location,omitempty"`                  // 拍摄地点
 	MusicId       *string                `protobuf:"bytes,8,opt,name=music_id,json=musicId,proto3,oneof" json:"music_id,omitempty"`     // 背景音乐ID
 	IsPublic      *bool                  `protobuf:"varint,9,opt,name=is_public,json=isPublic,proto3,oneof" json:"is_public,omitempty"` // 是否公开，默认true
+	Type          *string                `protobuf:"bytes,10,opt,name=type,proto3,oneof" json:"type,omitempty"`                         // 视频类型: original(原创), repost(转载)
+	Source        *string                `protobuf:"bytes,11,opt,name=source,proto3,oneof" json:"source,omitempty"`                     // 转载来源，仅当type为repost时有效
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -402,6 +404,20 @@ func (x *PublishVideoRequest) GetIsPublic() bool {
 		return *x.IsPublic
 	}
 	return false
+}
+
+func (x *PublishVideoRequest) GetType() string {
+	if x != nil && x.Type != nil {
+		return *x.Type
+	}
+	return ""
+}
+
+func (x *PublishVideoRequest) GetSource() string {
+	if x != nil && x.Source != nil {
+		return *x.Source
+	}
+	return ""
 }
 
 type PublishVideoResponse struct {
@@ -2728,7 +2744,7 @@ const file_proto_video_proto_rawDesc = "" +
 	"\n" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x12\x19\n" +
 	"\bvideo_id\x18\x03 \x01(\rR\avideoId\x12\x1b\n" +
-	"\tvideo_url\x18\x04 \x01(\tR\bvideoUrl\"\xbc\x02\n" +
+	"\tvideo_url\x18\x04 \x01(\tR\bvideoUrl\"\x86\x03\n" +
 	"\x13PublishVideoRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -2738,11 +2754,16 @@ const file_proto_video_proto_rawDesc = "" +
 	"\x04tags\x18\x06 \x03(\tR\x04tags\x12\x1f\n" +
 	"\blocation\x18\a \x01(\tH\x00R\blocation\x88\x01\x01\x12\x1e\n" +
 	"\bmusic_id\x18\b \x01(\tH\x01R\amusicId\x88\x01\x01\x12 \n" +
-	"\tis_public\x18\t \x01(\bH\x02R\bisPublic\x88\x01\x01B\v\n" +
+	"\tis_public\x18\t \x01(\bH\x02R\bisPublic\x88\x01\x01\x12\x17\n" +
+	"\x04type\x18\n" +
+	" \x01(\tH\x03R\x04type\x88\x01\x01\x12\x1b\n" +
+	"\x06source\x18\v \x01(\tH\x04R\x06source\x88\x01\x01B\v\n" +
 	"\t_locationB\v\n" +
 	"\t_music_idB\f\n" +
 	"\n" +
-	"_is_public\"q\n" +
+	"_is_publicB\a\n" +
+	"\x05_typeB\t\n" +
+	"\a_source\"q\n" +
 	"\x14PublishVideoResponse\x12\x1f\n" +
 	"\vstatus_code\x18\x01 \x01(\x05R\n" +
 	"statusCode\x12\x1d\n" +
