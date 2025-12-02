@@ -25,46 +25,6 @@ kafka:
     - "localhost:9092"
   topic: "video-events"
 
-# 服务发现配置
-discovery:
-  type: "etcd"  # etcd, consul
-  address: "localhost:2379"  # etcd地址: "localhost:2379", consul地址: "localhost:8500"
-  interval: 10  # 健康检查间隔(秒)
-  timeout: 5  # 健康检查超时(秒)
-  deregister_critical_service_after: "30s"  # 服务不健康后多久注销
-  
-  # Consul特有配置
-  consul:
-    datacenter: "dc1"
-    token: ""  # ACL令牌(如果需要)
-    
-  # Etcd特有配置
-  etcd:
-    dial_timeout: 5  # 连接超时(秒)
-    username: ""  # 用户名(如果需要)
-    password: ""  # 密码(如果需要)
-
-log:
-  level: "info"  # debug, info, warn, error
-  file: "logs/video-service.log"
-
-#文件服务器配置
-minio:
-  endpoint: "localhost:9000"
-  access_key_id: "minioadmin"
-  secret_access_key: "minioadmin"
-  use_ssl: false
-  bucket_name: "videos"
-  location: "us-east-1"
-
-# 服务间调用配置
-services:
-  audit_service:
-    name: "audit-service"
-    address: "localhost:50053"  # audit_service的gRPC地址
-    timeout: 5  # 调用超时时间（秒）
-
-# RabbitMQ配置
 rabbitmq:
   host: "localhost"
   port: 5672
@@ -72,3 +32,36 @@ rabbitmq:
   password: "guest"
   vhost: "/"
   queue_name: "audit_queue"
+
+discovery:
+  type: "etcd"
+  address: "localhost:2379"
+  interval: 10
+  timeout: 5
+  deregister_critical_service_after: "30s"
+  consul:
+    datacenter: "dc1"
+    token: ""
+  etcd:
+    dial_timeout: 5
+    username: ""
+    password: ""
+
+logger:
+  level: "info"
+  format: "json"
+  output_path: "logs/video-service.log"
+
+services:
+  audit_service:
+    name: "audit-service"
+    address: "localhost:50053"
+    timeout: 5
+
+minio:
+  endpoint: "localhost:9000"
+  access_key_id: "minioadmin"
+  secret_access_key: "minioadmin"
+  use_ssl: false
+  bucket_name: "videos"
+  location: "us-east-1"
