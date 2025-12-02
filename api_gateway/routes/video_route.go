@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -591,57 +592,24 @@ func (h *VideoHandler) HandleVideoUpload(c *gin.Context) {
 }
 func (h *VideoHandler) HandleVideoPublish(c *gin.Context) {
 	// 获取表单数据
+	videoId := c.PostForm("video_id")
 	title := c.PostForm("title")
 	description := c.PostForm("description")
-	category := c.PostForm("category")
 	tagsStr := c.PostForm("tags")
+	videoType := c.PostForm("type")
+	source := c.PostForm("source")
+	privacy := c.DefaultPostForm("privacy", "public")
 
 	// 验证必填字段
+	if videoId == "" {
+		log.Printf("Video ID is required")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Video ID is required"})
+		return
+	}
+
 	if title == "" {
 		log.Printf("Title is required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Title is required"})
-		return
-	}
-
-	// 获取上传的文件
-	file, header, err := c.Request.FormFile("video")
-	if err != nil {
-		log.Printf("Video file is required")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Video file is required"})
-		return
-	}
-	defer file.Close()
-
-	// 验证文件大小（最大500MB）
-	const maxFileSize = 500 * 1024 * 1024 // 500MB
-	if header.Size > maxFileSize {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File size exceeds 500MB limit"})
-		log.Printf("File size exceeds 500MB limit")
-		return
-	}
-
-	// 验证文件类型
-	ext := strings.ToLower(filepath.Ext(header.Filename))
-	allowedExts := []string{".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"}
-	isValid := false
-	for _, allowed := range allowedExts {
-		if ext == allowed {
-			isValid = true
-			break
-		}
-	}
-	if !isValid {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video file format. Allowed formats: mp4, avi, mov, wmv, flv, mkv, webm"})
-		log.Printf("Invalid video file format. Allowed formats: mp4, avi, mov, wmv, flv, mkv, webm")
-		return
-	}
-
-	// 读取文件内容到字节数组
-	fileBytes := make([]byte, header.Size)
-	_, err = file.Read(fileBytes)
-	if err != nil {
-		log.Printf("Failed to read video file: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read video file"})
 		return
 	}
 
@@ -653,40 +621,104 @@ func (h *VideoHandler) HandleVideoPublish(c *gin.Context) {
 		return
 	}
 
-	//token := fmt.Sprintf("%v", tokenValue)
+	// 获取用户ID（从认证中间件）
+	userIDValue, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+	userID, ok := userIDValue.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
 
-	// 准备标签
+	// 解析标签（JSON格式）
 	var tags []string
 	if tagsStr != "" {
-		tags = strings.Split(tagsStr, ",")
-		for i, tag := range tags {
-			tags[i] = strings.TrimSpace(tag)
+		// 尝试解析JSON格式的标签
+		if err := json.Unmarshal([]byte(tagsStr), &tags); err != nil {
+			// 如果JSON解析失败，尝试用逗号分隔
+			log.Printf("Failed to parse tags as JSON, trying comma split: %v", err)
+			tags = strings.Split(tagsStr, ",")
+			for i, tag := range tags {
+				tags[i] = strings.TrimSpace(tag)
+				// 移除可能的引号
+				tags[i] = strings.Trim(tag, `\"'`)
+			}
 		}
 	}
 
-	// 调用视频服务的UploadVideo接口
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // 上传可能需要更长时间
-	defer cancel()
+	// 处理封面上传
+	var coverURL string
+	if coverFile, coverHeader, err := c.Request.FormFile("cover"); err == nil {
+		defer coverFile.Close()
 
-	req := &pb.UploadVideoRequest{
-		//Token:       token,
-		VideoData:   fileBytes,
-		FileName:    header.Filename,
-		Title:       title,
-		Description: description,
-		Category:    category,
-		Tags:        tags,
+		// 验证封面大小（最大2MB）
+		const maxCoverSize = 2 * 1024 * 1024 // 2MB
+		if coverHeader.Size > maxCoverSize {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Cover size exceeds 2MB limit"})
+			log.Printf("Cover size exceeds 2MB limit")
+			return
+		}
+
+		// 验证封面类型
+		coverExt := strings.ToLower(filepath.Ext(coverHeader.Filename))
+		allowedCoverExts := []string{".jpg", ".jpeg", ".png", ".gif", ".webp"}
+		isValidCover := false
+		for _, allowed := range allowedCoverExts {
+			if coverExt == allowed {
+				isValidCover = true
+				break
+			}
+		}
+		if !isValidCover {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid cover file format. Allowed formats: jpg, jpeg, png, gif, webp"})
+			log.Printf("Invalid cover file format")
+			return
+		}
+
+		// 这里应该调用存储服务上传封面，获取coverURL
+		// 暂时使用模拟URL
+		coverURL = fmt.Sprintf("http://localhost:9000/covers/%s%s", videoId, coverExt)
+		log.Printf("Cover uploaded to %s", coverURL)
 	}
 
-	resp, err := videoClient.UploadVideo(ctx, req)
+	// 调用视频服务的PublishVideo接口
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// 设置可选字段
+	isPublic := privacy == "public"
+	var typePtr, sourcePtr *string
+	if videoType != "" {
+		typePtr = &videoType
+	}
+	if source != "" {
+		sourcePtr = &source
+	}
+
+	req := &pb.PublishVideoRequest{
+		Token:       userID,
+		Title:       title,
+		Description: description,
+		CoverUrl:    coverURL,
+		VideoUrl:    fmt.Sprintf("http://localhost:9000/videos/%s.mp4", videoId), // 这里应该从视频服务获取真实的视频URL
+		Tags:        tags,
+		IsPublic:    &isPublic,
+		Type:        typePtr,
+		Source:      sourcePtr,
+	}
+
+	resp, err := videoClient.PublishVideo(ctx, req)
 	if err != nil {
-		log.Printf("Failed to upload video: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video"})
+		log.Printf("Failed to publish video: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to publish video"})
 		return
 	}
 
 	if resp.StatusCode != 0 {
-		log.Printf("Video upload failed with status code %d: %s", resp.StatusCode, resp.StatusMsg)
+		log.Printf("Video publish failed with status code %d: %s", resp.StatusCode, resp.StatusMsg)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": resp.StatusMsg,
 			"code":  resp.StatusCode,
@@ -696,9 +728,8 @@ func (h *VideoHandler) HandleVideoPublish(c *gin.Context) {
 
 	// 返回成功响应
 	c.JSON(http.StatusOK, gin.H{
-		"message":   "Video uploaded successfully",
-		"video_id":  resp.VideoId,
-		"video_url": resp.VideoUrl,
+		"message":  "Video published successfully",
+		"video_id": resp.VideoId,
 	})
 }
 

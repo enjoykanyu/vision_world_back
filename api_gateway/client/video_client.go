@@ -135,3 +135,11 @@ func (c *VideoServiceClient) GetRecommendedVideos(ctx context.Context, req *vide
 	}
 	return c.client.GetRecommendVideos(ctx, req)
 }
+
+// PublishVideo 发布视频
+func (c *VideoServiceClient) PublishVideo(ctx context.Context, req *videopb.PublishVideoRequest) (*videopb.PublishVideoResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.PublishVideo(ctx, req)
+}
