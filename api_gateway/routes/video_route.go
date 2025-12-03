@@ -748,6 +748,7 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 		{
 			authGroup.GET("/personalized", videoHandler.GetPersonalizedVideos)
 			authGroup.GET("/follow", videoHandler.GetFollowVideos)
+			authGroup.POST("/publish", videoHandler.HandleVideoPublish)
 		}
 	}
 }
