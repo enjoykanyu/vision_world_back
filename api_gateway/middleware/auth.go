@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -121,7 +122,8 @@ func RequireAuthMiddleware() gin.HandlerFunc {
 		}
 
 		// 将用户信息注入上下文，供后续处理使用
-		c.Set("user_id", userID)
+		// 将userID转换为string类型，确保与后续处理兼容
+		c.Set("user_id", fmt.Sprintf("%d", userID))
 		c.Set("token_expire", expire)
 
 		c.Next()
@@ -170,8 +172,6 @@ func inAuthWhitelist(path, uri string) bool {
 		"/api/video/recommended",
 		"/api/video/hot",
 		"/api/video/info/",
-		"/api/video/upload",
-		"/api/video/publish",
 		"/api/user/info/",
 		"/api/live/list",
 		"/api/live/stream/",

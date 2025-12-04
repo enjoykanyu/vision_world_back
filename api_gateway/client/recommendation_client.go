@@ -26,7 +26,7 @@ func NewRecommendationServiceClient(serviceAddr string) (*RecommendationServiceC
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                10 * time.Second, // 每10秒发送一次keepalive ping
+			Time:                60 * time.Second, // 每60秒发送一次keepalive ping
 			Timeout:             time.Second,      // ping超时时间
 			PermitWithoutStream: true,             // 允许在没有活跃stream时发送keepalive ping
 		}),

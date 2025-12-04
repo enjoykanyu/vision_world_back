@@ -736,7 +736,7 @@ func (h *VideoHandler) HandleVideoPublish(c *gin.Context) {
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
 func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandler) {
 	// 视频相关路由组
-	videoGroup := router.Group("/api/videos")
+	videoGroup := router.Group("/api/video")
 	{
 		// 公开路由
 		videoGroup.GET("/recommended", videoHandler.GetRecommendedVideos)
@@ -749,6 +749,8 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 			authGroup.GET("/personalized", videoHandler.GetPersonalizedVideos)
 			authGroup.GET("/follow", videoHandler.GetFollowVideos)
 			authGroup.POST("/publish", videoHandler.HandleVideoPublish)
+			authGroup.POST("/upload", videoHandler.HandleVideoUpload)
+
 		}
 	}
 }
