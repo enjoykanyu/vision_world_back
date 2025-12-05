@@ -103,14 +103,27 @@ func (l *zapLogger) Fatal(msg string, fields ...interface{}) {
 	l.logger.Fatal(msg, l.convertFields(fields...)...)
 }
 
-// convertFields 转换字段格式
+// convertFields 转换字段格式，支持key-value对和zapcore.Field类型
 func (l *zapLogger) convertFields(fields ...interface{}) []zap.Field {
 	var zapFields []zap.Field
-	for i := 0; i < len(fields); i += 2 {
-		if i+1 < len(fields) {
-			key := fields[i].(string)
-			value := fields[i+1]
-			zapFields = append(zapFields, zap.Any(key, value))
+	for i := 0; i < len(fields); {
+		// 检查是否为zapcore.Field类型
+		if field, ok := fields[i].(zap.Field); ok {
+			// 如果是，直接添加到结果列表
+			zapFields = append(zapFields, field)
+			i++
+		} else {
+			// 否则按照key-value对处理
+			if i+1 < len(fields) {
+				if key, ok := fields[i].(string); ok {
+					value := fields[i+1]
+					zapFields = append(zapFields, zap.Any(key, value))
+				}
+				i += 2
+			} else {
+				// 奇数个字段，跳过最后一个
+				i++
+			}
 		}
 	}
 	return zapFields
