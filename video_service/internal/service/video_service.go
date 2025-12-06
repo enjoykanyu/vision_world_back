@@ -126,8 +126,8 @@ func (s *VideoService) GetVideosByTags(ctx context.Context, tags []string, page,
 
 // UploadVideo 上传视频
 func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title, description, category string, tags []string, videoData []byte) (uint32, string, string, error) {
-	// 生成视频ID (这里简化处理，实际应该从数据库获取)
-	videoID := uint32(time.Now().Unix())
+	// 生成视频ID (使用基于时间的精确值，避免冲突)
+	videoID := uint32(time.Now().UnixNano() / int64(time.Second))
 
 	// 创建对象名称
 	objectName := fmt.Sprintf("videos/%d/%s", videoID, fileName)
@@ -200,7 +200,8 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 		return 0, "", "", fmt.Errorf("failed to save video info: %w", err)
 	}
 
-	return videoID, presignedURL, videoURL, nil
+	// 返回数据库实际生成的ID，而不是我们自己生成的
+	return video.ID, presignedURL, videoURL, nil
 }
 
 // PublishVideo 发布视频

@@ -309,6 +309,7 @@ type PublishVideoRequest struct {
 	IsPublic      *bool                  `protobuf:"varint,9,opt,name=is_public,json=isPublic,proto3,oneof" json:"is_public,omitempty"` // 是否公开，默认true
 	Type          *string                `protobuf:"bytes,10,opt,name=type,proto3,oneof" json:"type,omitempty"`                         // 视频类型: original(原创), repost(转载)
 	Source        *string                `protobuf:"bytes,11,opt,name=source,proto3,oneof" json:"source,omitempty"`                     // 转载来源，仅当type为repost时有效
+	VideoId       string                 `protobuf:"bytes,12,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"`          // 视频ID，来自上传返回
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -416,6 +417,13 @@ func (x *PublishVideoRequest) GetType() string {
 func (x *PublishVideoRequest) GetSource() string {
 	if x != nil && x.Source != nil {
 		return *x.Source
+	}
+	return ""
+}
+
+func (x *PublishVideoRequest) GetVideoId() string {
+	if x != nil {
+		return x.VideoId
 	}
 	return ""
 }
@@ -2744,7 +2752,7 @@ const file_proto_video_proto_rawDesc = "" +
 	"\n" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x12\x19\n" +
 	"\bvideo_id\x18\x03 \x01(\rR\avideoId\x12\x1b\n" +
-	"\tvideo_url\x18\x04 \x01(\tR\bvideoUrl\"\x86\x03\n" +
+	"\tvideo_url\x18\x04 \x01(\tR\bvideoUrl\"\xa1\x03\n" +
 	"\x13PublishVideoRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -2757,7 +2765,8 @@ const file_proto_video_proto_rawDesc = "" +
 	"\tis_public\x18\t \x01(\bH\x02R\bisPublic\x88\x01\x01\x12\x17\n" +
 	"\x04type\x18\n" +
 	" \x01(\tH\x03R\x04type\x88\x01\x01\x12\x1b\n" +
-	"\x06source\x18\v \x01(\tH\x04R\x06source\x88\x01\x01B\v\n" +
+	"\x06source\x18\v \x01(\tH\x04R\x06source\x88\x01\x01\x12\x19\n" +
+	"\bvideo_id\x18\f \x01(\tR\avideoIdB\v\n" +
 	"\t_locationB\v\n" +
 	"\t_music_idB\f\n" +
 	"\n" +
