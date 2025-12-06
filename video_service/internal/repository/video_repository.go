@@ -77,15 +77,16 @@ func (r *videoRepository) GetVideoByID(ctx context.Context, videoID string) (*mo
 	var video model.Video
 	id, err := strconv.ParseUint(videoID, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("invalid video ID: %s", videoID)
+		return nil, fmt.Errorf("invalid video ID format: %s, error: %w", videoID, err)
 	}
 
-	// 修改查询条件，不限制状态，以便可以更新任意状态的视频
-	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&video).Error; err != nil {
+	// 从数据库获取视频，不限制状态，以便可以更新任意状态的视频
+	query := r.db.WithContext(ctx).Where("id = ?", id)
+	if err := query.First(&video).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("video not found: %s", videoID)
+			return nil, fmt.Errorf("video not found in database: %s, parsed_id: %d", videoID, id)
 		}
-		return nil, fmt.Errorf("failed to get video: %w", err)
+		return nil, fmt.Errorf("failed to query video from database: %s, error: %w", videoID, err)
 	}
 
 	// 转换为RecommendationVideo模型
@@ -416,9 +417,9 @@ func (r *videoRepository) convertToRecommendationVideo(video *model.Video) *mode
 		ViewCount:   int64(video.PlayCount),
 		LikeCount:   int64(video.LikeCount),
 		Score:       0, // 需要根据推荐算法计算
-		Type:        video.Type,
-		Source:      video.Source,
-		CreatedAt:   video.CreatedAt,
-		UpdatedAt:   video.UpdatedAt,
+		//Type:        video.Type,
+		Source:    video.Source,
+		CreatedAt: video.CreatedAt,
+		UpdatedAt: video.UpdatedAt,
 	}
 }
