@@ -708,6 +708,7 @@ func (h *VideoHandler) HandleVideoPublish(c *gin.Context) {
 		IsPublic:    &isPublic,
 		Type:        typePtr,
 		Source:      sourcePtr,
+		VideoId:     videoId, // 添加视频ID，来自表单中的video_id
 	}
 
 	resp, err := videoClient.PublishVideo(ctx, req)

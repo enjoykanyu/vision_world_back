@@ -50,6 +50,7 @@ message PublishVideoRequest {
   optional bool is_public = 9; // 是否公开，默认true
   optional string type = 10; // 视频类型: original(原创), repost(转载)
   optional string source = 11; // 转载来源，仅当type为repost时有效
+  string video_id = 12; // 视频ID，来自上传返回
 }
 
 message PublishVideoResponse {

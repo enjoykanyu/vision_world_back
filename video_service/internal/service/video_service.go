@@ -166,21 +166,34 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 
 	// 创建视频记录
 	video := &model.Video{
-		ID:          videoID,
-		UserID:      uint32(userIDUint32),
-		Title:       title,
-		Description: description,
-		CoverURL:    "", // TODO: 可以从视频中提取封面或使用默认封面
-		VideoURL:    presignedURL,
-		Duration:    0, // TODO: 可以从视频文件中获取时长
-		Size:        uint64(len(videoData)),
-		Tags:        tagsStr,
-		Category:    category,
-		PlayCount:   0,
-		LikeCount:   0,
-		IsPublic:    true,
-		Status:      "uploading", // 上传后状态为uploading，等待发布
+		ID:            videoID,
+		UserID:        uint32(userIDUint32),
+		Title:         title,
+		Description:   description,
+		CoverURL:      "https://default-cover-url.com/default.jpg", // 使用默认封面URL，确保not null字段有值
+		VideoURL:      presignedURL,
+		Duration:      0,       // TODO: 可以从视频文件中获取时长
+		Resolution:    "1080p", // 设置默认分辨率，确保字段有值
+		Size:          uint64(len(videoData)),
+		Tags:          tagsStr,
+		Category:      category,
+		PlayCount:     0,
+		LikeCount:     0,
+		CommentCount:  0,
+		ShareCount:    0,
+		FavoriteCount: 0,
+		IsPublic:      true,
+		Status:        "uploading", // 上传后状态为uploading，等待发布
 	}
+
+	// 添加日志记录，便于调试
+	s.logger.Info("Creating video record",
+		"video_id", videoID,
+		"title", title,
+		"cover_url", video.CoverURL,
+		"video_url", video.VideoURL,
+		"category", category,
+		"tags", tagsStr)
 
 	// 保存视频信息到数据库
 	if err := s.repo.CreateVideo(ctx, video); err != nil {
@@ -192,16 +205,29 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 
 // PublishVideo 发布视频
 func (s *VideoService) PublishVideo(ctx context.Context, userID string, videoID uint32, title, description string) error {
-	// 更新视频状态为发布中
-	err := s.repo.UpdateVideoStatus(ctx, videoID, "reviewing")
+	// 添加日志记录
+	s.logger.Info("Publishing video",
+		"video_id", videoID,
+		"title", title,
+		"user_id", userID)
+
+	// 先检查视频是否存在
+	videoStrID := strconv.FormatUint(uint64(videoID), 10)
+	video, err := s.repo.GetVideoByID(ctx, videoStrID)
 	if err != nil {
-		return fmt.Errorf("failed to update video status: %w", err)
+		s.logger.Error("Video not found when publishing",
+			"video_id", videoID,
+			"error", err)
+		return fmt.Errorf("failed to get video info: %w", err)
 	}
 
-	// 获取视频信息
-	video, err := s.repo.GetVideoByID(ctx, strconv.FormatUint(uint64(videoID), 10))
+	// 视频存在，更新状态为发布中
+	err = s.repo.UpdateVideoStatus(ctx, videoID, "reviewing")
 	if err != nil {
-		return fmt.Errorf("failed to get video info: %w", err)
+		s.logger.Error("Failed to update video status to reviewing",
+			"video_id", videoID,
+			"error", err)
+		return fmt.Errorf("failed to update video status: %w", err)
 	}
 
 	// 发送审核消息到RabbitMQ队列，添加重试逻辑
@@ -260,6 +286,10 @@ func (s *VideoService) PublishVideo(ctx context.Context, userID string, videoID 
 
 		return fmt.Errorf("failed to publish audit message: %w", publishErr)
 	}
+
+	s.logger.Info("Video published successfully",
+		"video_id", videoID,
+		"status", "reviewing")
 
 	return nil
 }

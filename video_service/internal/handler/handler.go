@@ -475,7 +475,8 @@ func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoReque
 func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoRequest) (*pb.PublishVideoResponse, error) {
 	h.logger.Info("PublishVideo called",
 		zap.String("title", req.Title),
-		zap.String("token", req.Token))
+		zap.String("token", req.Token),
+		zap.String("video_id", req.VideoId))
 
 	// TODO: 验证用户token
 
@@ -483,13 +484,25 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 	// 这里需要先从token中获取userID，简化处理使用固定值
 	userID := "1" // TODO: 从用户token中解析用户ID
 
-	// 生成视频ID (这里简化处理，实际应该从上传接口获取)
-	videoID := uint32(time.Now().Unix())
+	// 使用从请求中获取的视频ID，而不是重新生成
+	videoID, err := strconv.ParseUint(req.VideoId, 10, 32)
+	if err != nil {
+		h.logger.Error("Invalid video ID format",
+			zap.String("video_id", req.VideoId),
+			zap.Error(err))
+		return &pb.PublishVideoResponse{
+			StatusCode: 400,
+			StatusMsg:  fmt.Sprintf("无效的视频ID: %s", req.VideoId),
+			VideoId:    0,
+		}, nil
+	}
 
 	// 调用service层的发布方法
-	err := h.videoService.PublishVideo(ctx, userID, videoID, req.Title, req.Description)
+	err = h.videoService.PublishVideo(ctx, userID, uint32(videoID), req.Title, req.Description)
 	if err != nil {
-		h.logger.Error("Failed to publish video", zap.Error(err))
+		h.logger.Error("Failed to publish video",
+			zap.Uint32("video_id", uint32(videoID)),
+			zap.Error(err))
 		return &pb.PublishVideoResponse{
 			StatusCode: 500,
 			StatusMsg:  fmt.Sprintf("发布失败: %s", err.Error()),
@@ -504,7 +517,7 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 	return &pb.PublishVideoResponse{
 		StatusCode: statusCode,
 		StatusMsg:  statusMsg,
-		VideoId:    videoID,
+		VideoId:    uint32(videoID),
 	}, nil
 }
 
