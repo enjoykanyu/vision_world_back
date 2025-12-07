@@ -1,12 +1,5 @@
 package config
 
-import (
-	"fmt"
-	"strings"
-
-	"github.com/spf13/viper"
-)
-
 type Config struct {
 	Server    ServerConfig    `mapstructure:"server"`
 	Database  DatabaseConfig  `mapstructure:"database"`
@@ -116,45 +109,80 @@ type ServiceConfig struct {
 }
 
 func LoadConfig() (*Config, error) {
-	v := viper.New()
-
-	// 设置配置文件路径
-	// 默认在当前目录和config目录下查找配置文件
-	//v.AddConfigPath(".")
-	//v.AddConfigPath("./config")
-	v.AddConfigPath("../../internal/config")
-	v.SetConfigName("video-service")
-	v.SetConfigType("yaml")
-
-	// 读取配置文件
-	if err := v.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
-	}
-
-	// 绑定环境变量
-	v.AutomaticEnv()
-	v.SetEnvPrefix("VIDEO_SERVICE")
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	// 设置默认变量
-	v.SetDefault("minio.endpoint", "localhost:9000")
-	v.SetDefault("minio.access_key_id", "minioadmin")
-	v.SetDefault("minio.secret_access_key", "minioadmin")
-	v.SetDefault("minio.use_ssl", false)
-	v.SetDefault("minio.bucket_name", "videos")
-	v.SetDefault("minio.location", "us-east-1")
-
-	// 设置服务发现默认值
-	v.SetDefault("discovery.type", "etcd")
-	v.SetDefault("discovery.address", "localhost:2379")
-	v.SetDefault("discovery.interval", 10)
-	v.SetDefault("discovery.timeout", 5)
-	v.SetDefault("discovery.deregister_critical_service_after", "30s")
-
-	var config Config
-	if err := v.Unmarshal(&config); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
-	}
-
-	return &config, nil
+	// 直接返回默认配置，绕过配置文件读取
+	return &Config{
+		Server: ServerConfig{
+			Address:     ":50052",
+			Name:        "video-service",
+			Version:     "1.0.0",
+			Environment: "development",
+		},
+		Database: DatabaseConfig{
+			Host:         "localhost",
+			Port:         3306,
+			Username:     "root",
+			Password:     "901project",
+			Database:     "videoworld",
+			MaxOpenConns: 25,
+			MaxIdleConns: 5,
+		},
+		Redis: RedisConfig{
+			Host:         "localhost",
+			Port:         6379,
+			Password:     "",
+			DB:           0,
+			MaxRetries:   3,
+			DialTimeout:  5,
+			ReadTimeout:  3,
+			WriteTimeout: 3,
+		},
+		Kafka: KafkaConfig{
+			Brokers: []string{"localhost:9092"},
+			Topic:   "video-events",
+		},
+		RabbitMQ: RabbitMQConfig{
+			Host:      "localhost",
+			Port:      5672,
+			Username:  "guest",
+			Password:  "guest",
+			VHost:     "/",
+			QueueName: "audit_queue",
+		},
+		Discovery: DiscoveryConfig{
+			Type:                           "etcd",
+			Address:                        "localhost:2379",
+			Interval:                       10,
+			Timeout:                        5,
+			DeregisterCriticalServiceAfter: "30s",
+			Consul: ConsulConfig{
+				Datacenter: "dc1",
+				Token:      "",
+			},
+			Etcd: EtcdConfig{
+				DialTimeout: 5,
+				Username:    "",
+				Password:    "",
+			},
+		},
+		Logger: LoggerConfig{
+			Level:      "info",
+			Format:     "json",
+			OutputPath: "logs/video-service.log",
+		},
+		Services: ServicesConfig{
+			AuditService: ServiceConfig{
+				Name:    "audit-service",
+				Address: "localhost:50053",
+				Timeout: 5,
+			},
+		},
+		MinIO: MinIOConfig{
+			Endpoint:        "localhost:9000",
+			AccessKeyID:     "minioadmin",
+			SecretAccessKey: "minioadmin",
+			UseSSL:          false,
+			BucketName:      "videos",
+			Location:        "us-east-1",
+		},
+	}, nil
 }
