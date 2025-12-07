@@ -511,7 +511,7 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 	}
 
 	// 发布成功，视频进入审核中状态
-	statusCode := int32(202)
+	statusCode := int32(0)
 	statusMsg := "视频发布成功，正在审核中"
 
 	return &pb.PublishVideoResponse{
