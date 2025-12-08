@@ -734,6 +734,88 @@ func (h *VideoHandler) HandleVideoPublish(c *gin.Context) {
 	})
 }
 
+// GetUserPublishedVideos 获取用户发布的视频列表
+func (h *VideoHandler) GetUserPublishedVideos(c *gin.Context) {
+	// 获取查询参数
+	pageStr := c.DefaultQuery("page", "1")
+	pageSizeStr := c.DefaultQuery("page_size", "10")
+
+	// 转换参数
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil || pageSize < 1 || pageSize > 50 {
+		pageSize = 10
+	}
+
+	// 获取用户ID（从认证中间件）
+	userIDValue, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	userIDStr, ok := userIDValue.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// 将用户ID转换为uint32
+	userID, err := strconv.ParseUint(userIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user ID"})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务的GetUserVideos接口
+	req := &pb.GetUserVideosRequest{
+		UserId:   uint32(userID),
+		Token:    userIDStr,
+		Page:     uint32(page),
+		PageSize: uint32(pageSize),
+	}
+
+	resp, err := videoClient.GetUserVideos(ctx, req)
+	if err != nil {
+		log.Printf("Failed to get user videos: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user videos"})
+		return
+	}
+
+	if resp.StatusCode != 0 {
+		log.Printf("GetUserVideos failed with status code %d: %s", resp.StatusCode, resp.StatusMsg)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": resp.StatusMsg,
+			"code":  resp.StatusCode,
+		})
+		return
+	}
+
+	// 返回成功响应
+	c.JSON(http.StatusOK, gin.H{
+		"status_code": 0,
+		"status_msg":  "Success",
+		"videos":      resp.Videos,
+		"total":       resp.Total,
+		"has_more":    resp.HasMore,
+	})
+}
+
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
 func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandler) {
 	// 视频相关路由组
@@ -749,6 +831,7 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 		{
 			authGroup.GET("/personalized", videoHandler.GetPersonalizedVideos)
 			authGroup.GET("/follow", videoHandler.GetFollowVideos)
+			authGroup.GET("/user/published", videoHandler.GetUserPublishedVideos)
 			authGroup.POST("/publish", videoHandler.HandleVideoPublish)
 			authGroup.POST("/upload", videoHandler.HandleVideoUpload)
 

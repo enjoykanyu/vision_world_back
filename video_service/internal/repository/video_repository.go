@@ -72,10 +72,11 @@ func (r *videoRepository) GetVideoByID(ctx context.Context, videoID string) (*mo
 			}
 		}
 	}
-
+	fmt.Printf("video: %s\n", videoID)
 	// 缓存未命中，从数据库获取
 	var video model.Video
 	id, err := strconv.ParseUint(videoID, 10, 32)
+	fmt.Printf("video: %s\n", videoID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid video ID format: %s, error: %w", videoID, err)
 	}

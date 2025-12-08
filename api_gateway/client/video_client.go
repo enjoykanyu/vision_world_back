@@ -143,3 +143,11 @@ func (c *VideoServiceClient) PublishVideo(ctx context.Context, req *videopb.Publ
 	}
 	return c.client.PublishVideo(ctx, req)
 }
+
+// GetUserVideos 获取用户发布的视频列表
+func (c *VideoServiceClient) GetUserVideos(ctx context.Context, req *videopb.GetUserVideosRequest) (*videopb.GetUserVideosResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.GetUserVideos(ctx, req)
+}
