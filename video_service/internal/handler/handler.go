@@ -612,29 +612,69 @@ func (h *VideoHandler) GetVideoInfos(ctx context.Context, req *pb.GetVideoInfosR
 
 // GetUserVideos 获取用户发布的视频列表
 func (h *VideoHandler) GetUserVideos(ctx context.Context, req *pb.GetUserVideosRequest) (*pb.GetUserVideosResponse, error) {
-	h.logger.Info("GetUserVideos called", zap.Uint32("user_id", req.UserId), zap.Uint32("page", req.Page))
+	h.logger.Info("GetUserVideos called", zap.Uint32("user_id", req.UserId), zap.Uint32("page", req.Page), zap.Uint32("page_size", req.PageSize))
 
-	// TODO: 实现获取用户视频列表逻辑
-
-	videos := make([]*pb.Video, 0)
-	for i := uint32(0); i < req.PageSize; i++ {
-		videos = append(videos, &pb.Video{
-			Id:         uint32(i + 1),
-			Title:      "TODO: User Video Title",
-			CoverUrl:   "TODO: Cover URL",
-			VideoUrl:   "TODO: Video URL",
-			PlayCount:  100,
-			LikeCount:  50,
-			CreateTime: time.Now().Unix(),
-		})
+	// 调用服务层获取用户视频
+	videos, hasMore, err := h.videoService.GetVideosByAuthor(ctx, strconv.FormatUint(uint64(req.UserId), 10), int(req.Page), int(req.PageSize))
+	if err != nil {
+		h.logger.Error("Failed to get user videos", zap.Error(err))
+		return &pb.GetUserVideosResponse{
+			StatusCode: 500,
+			StatusMsg:  "获取视频列表失败",
+		}, nil
 	}
+
+	// 转换为protobuf格式
+	pbVideos := make([]*pb.Video, 0, len(videos))
+	for _, video := range videos {
+		// 将标签字符串转换为数组
+		var tags []string
+		if video.Tags != "" {
+			tags = strings.Split(video.Tags, ",")
+		}
+
+		// 解析视频ID
+		videoID, err := strconv.ParseUint(video.VideoID, 10, 32)
+		if err != nil {
+			h.logger.Warn("Invalid video ID format", zap.String("video_id", video.VideoID), zap.Error(err))
+			videoID = 0
+		}
+
+		pbVideo := &pb.Video{
+			Id:            uint32(videoID),
+			Title:         video.Title,
+			Description:   video.Description,
+			CoverUrl:      video.CoverURL,
+			VideoUrl:      video.PlayURL,
+			PlayCount:     uint32(video.ViewCount),
+			LikeCount:     uint32(video.LikeCount),
+			CommentCount:  0, // TODO: 从数据库获取真实评论数
+			ShareCount:    0, // TODO: 从数据库获取真实分享数
+			FavoriteCount: 0, // TODO: 从数据库获取真实收藏数
+			Tags:          tags,
+			Category:      video.Category,
+			CreateTime:    video.CreatedAt.Unix(),
+			UpdateTime:    video.UpdatedAt.Unix(),
+			Duration:      uint32(video.Duration), // 转换为uint32类型
+			Resolution:    "1080p",                // TODO: 从数据库获取真实分辨率
+			IsPublic:      true,
+			Status:        "normal",
+			IsLiked:       false, // TODO: 根据用户token判断是否点赞
+			IsFavorite:    false, // TODO: 根据用户token判断是否收藏
+		}
+
+		pbVideos = append(pbVideos, pbVideo)
+	}
+
+	// TODO: 实现真实总数计算，暂时使用当前列表长度
+	total := uint32(len(pbVideos))
 
 	return &pb.GetUserVideosResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		Videos:     videos,
-		Total:      100, // TODO: 真实的总数
-		HasMore:    true,
+		Videos:     pbVideos,
+		Total:      total,
+		HasMore:    hasMore,
 	}, nil
 }
 
