@@ -290,7 +290,8 @@ func (r *videoRepository) GetVideosByAuthor(ctx context.Context, author string, 
 
 	// 这里假设author是用户名，实际可能需要先根据用户名获取用户ID
 	// 简化处理，直接使用author作为用户名查询
-	query := r.db.WithContext(ctx).Where("status = ? AND is_public = ?", "normal", true)
+	// 放宽查询条件，允许查询reviewing和normal状态的视频
+	query := r.db.WithContext(ctx).Where("status IN ? AND is_public = ?", []string{"normal", "reviewing"}, true)
 
 	// TODO: 根据实际业务逻辑调整作者查询条件
 	// 这里简化处理，假设author是用户ID
