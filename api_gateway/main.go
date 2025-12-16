@@ -134,9 +134,19 @@ func main() {
 	router.GET("/api/live/stream/:id", liveHandler.GetLiveStream)
 	router.GET("/api/live/list", liveHandler.GetLiveList)
 
+	// 注册弹幕相关路由
+	danmakuHandler, err := routes.NewDanmakuHandler(cfg.Etcd.Endpoints)
+	if err != nil {
+		log.Fatalf("Failed to connect to danmaku service: %v", err)
+	}
+	defer danmakuHandler.Close()
+
 	// 注册首页相关路由
 	router.GET("/api/home/recommended", videoHandler.GetRecommendedVideos)
 	router.GET("/api/home/hot", videoHandler.GetHotVideos)
+
+	// 注册弹幕路由
+	routes.RegisterDanmakuRoutes(router, cfg.Etcd.Endpoints)
 
 	// 直接启动Gin服务器
 	log.Printf("Starting Vision World Gateway on port %s", ":8080")
