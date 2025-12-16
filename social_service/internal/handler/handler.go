@@ -2,21 +2,23 @@ package handler
 
 import (
 	"context"
-	"social_service/proto/proto_gen"
-
-	"social_service/internal/config"
-	"social_service/internal/converter"
-	"social_service/internal/repository"
-	"social_service/internal/service"
-	"social_service/pkg/logger"
 
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
+
+	"github.com/vision_world/social_service/internal/config"
+	"github.com/vision_world/social_service/internal/converter"
+	"github.com/vision_world/social_service/internal/repository"
+	"github.com/vision_world/social_service/internal/service"
+	"github.com/vision_world/social_service/pkg/logger"
+	proto_gen "github.com/vision_world/social_service/proto/proto_gen"
+	danmaku_proto "github.com/vision_world/social_service/proto/proto_gen/danmaku"
 )
 
 // UserServiceHandler 用户服务处理器
 type UserServiceHandler struct {
 	proto_gen.UnimplementedUserServiceServer
+	danmaku_proto.UnimplementedDanmakuServiceServer
 	config      *config.Config
 	logger      logger.Logger
 	userService service.UserService
@@ -255,5 +257,96 @@ func (h *UserServiceHandler) GetUserExistInformation(ctx context.Context, req *p
 		StatusCode: 0,
 		StatusMsg:  "success",
 		//Exist:      exists,
+	}, nil
+}
+
+// SendDanmaku 发送弹幕
+func (h *UserServiceHandler) SendDanmaku(ctx context.Context, req *danmaku_proto.SendDanmakuRequest) (*danmaku_proto.SendDanmakuResponse, error) {
+	h.logger.Info("SendDanmaku called", "video_id", req.VideoId, "text", req.Text)
+
+	// 从上下文获取用户ID（实际应用中应该从认证中间件获取）
+	userID := uint32(1) // 模拟用户ID，实际应该从JWT token中解析
+
+	// 调用服务层发送弹幕
+	danmaku, err := h.userService.SendDanmaku(
+		ctx,
+		userID,
+		req.VideoId,
+		req.Text,
+		req.Color,
+		req.VideoTimestamp,
+		req.Speed,
+	)
+
+	if err != nil {
+		h.logger.Error("SendDanmaku failed", "error", err)
+		return &danmaku_proto.SendDanmakuResponse{
+			Success: false,
+			Message: err.Error(),
+		}, nil
+	}
+
+	// 转换为proto格式
+	protoDanmaku := &danmaku_proto.Danmaku{
+		Id:             danmaku.ID,
+		UserId:         danmaku.UserID,
+		VideoId:        danmaku.VideoID,
+		Text:           danmaku.Text,
+		Color:          danmaku.Color,
+		VideoTimestamp: danmaku.VideoTimestamp,
+		Speed:          danmaku.Speed,
+		CreatedAt:      danmaku.CreatedAt.Unix(),
+	}
+
+	return &danmaku_proto.SendDanmakuResponse{
+		Success: true,
+		Message: "弹幕发送成功",
+		Danmaku: protoDanmaku,
+	}, nil
+}
+
+// GetDanmakus 获取视频弹幕列表
+func (h *UserServiceHandler) GetDanmakus(ctx context.Context, req *danmaku_proto.GetDanmakusRequest) (*danmaku_proto.GetDanmakusResponse, error) {
+	h.logger.Info("GetDanmakus called", "video_id", req.VideoId, "page", req.Page, "page_size", req.PageSize)
+
+	// 设置默认值
+	page := int(req.Page)
+	if page <= 0 {
+		page = 1
+	}
+
+	pageSize := int(req.PageSize)
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	// 调用服务层获取弹幕列表
+	danmakus, total, err := h.userService.GetDanmakus(ctx, req.VideoId, page, pageSize)
+	if err != nil {
+		h.logger.Error("GetDanmakus failed", "error", err)
+		return &danmaku_proto.GetDanmakusResponse{
+			Danmakus: nil,
+			Total:    0,
+		}, nil
+	}
+
+	// 转换为proto格式
+	protoDanmakus := make([]*danmaku_proto.Danmaku, len(danmakus))
+	for i, danmaku := range danmakus {
+		protoDanmakus[i] = &danmaku_proto.Danmaku{
+			Id:             danmaku.ID,
+			UserId:         danmaku.UserID,
+			VideoId:        danmaku.VideoID,
+			Text:           danmaku.Text,
+			Color:          danmaku.Color,
+			VideoTimestamp: danmaku.VideoTimestamp,
+			Speed:          danmaku.Speed,
+			CreatedAt:      danmaku.CreatedAt.Unix(),
+		}
+	}
+
+	return &danmaku_proto.GetDanmakusResponse{
+		Danmakus: protoDanmakus,
+		Total:    int32(total),
 	}, nil
 }
