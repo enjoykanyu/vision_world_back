@@ -31,6 +31,14 @@ type UserRepository interface {
 	DeleteSmsCode(ctx context.Context, phone string) error
 }
 
+// DanmakuRepository 弹幕数据访问接口
+type DanmakuRepository interface {
+	// 弹幕相关
+	Create(ctx context.Context, danmaku *model.Danmaku) error
+	GetByVideoID(ctx context.Context, videoID uint32, page, pageSize int) ([]*model.Danmaku, int64, error)
+	CountByVideoID(ctx context.Context, videoID uint32) (int64, error)
+}
+
 // userRepository 用户数据访问实现
 type userRepository struct {
 	db    *gorm.DB
@@ -192,4 +200,42 @@ func (r *userRepository) DeleteSmsCode(ctx context.Context, phone string) error 
 		return errors.New("failed to delete sms code")
 	}
 	return nil
+}
+
+// CreateDanmaku 创建弹幕
+func (r *userRepository) CreateDanmaku(ctx context.Context, danmaku *model.Danmaku) error {
+	if err := r.db.WithContext(ctx).Create(danmaku).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetDanmakusByVideoID 根据视频ID获取弹幕列表
+func (r *userRepository) GetDanmakusByVideoID(ctx context.Context, videoID uint32, page, pageSize int) ([]*model.Danmaku, int64, error) {
+	var danmakus []*model.Danmaku
+	var total int64
+
+	// 计算偏移量
+	offset := (page - 1) * pageSize
+
+	// 统计总数
+	if err := r.db.WithContext(ctx).Model(&model.Danmaku{}).Where("video_id = ?", videoID).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// 查询弹幕列表
+	if err := r.db.WithContext(ctx).Where("video_id = ?", videoID).Order("created_at ASC").Offset(offset).Limit(pageSize).Find(&danmakus).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return danmakus, total, nil
+}
+
+// CountDanmakusByVideoID 统计视频弹幕数量
+func (r *userRepository) CountDanmakusByVideoID(ctx context.Context, videoID uint32) (int64, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&model.Danmaku{}).Where("video_id = ?", videoID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }

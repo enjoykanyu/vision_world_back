@@ -170,3 +170,21 @@ func (u *User) UpdateStats(field string, delta int32) {
 		}
 	}
 }
+
+// Danmaku 弹幕表
+type Danmaku struct {
+	ID             uint32    `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID         uint32    `gorm:"index;not null;comment:用户ID" json:"user_id"`
+	VideoID        uint32    `gorm:"index;not null;comment:视频ID" json:"video_id"`
+	Text           string    `gorm:"size:200;not null;comment:弹幕内容" json:"text"`
+	Color          string    `gorm:"size:20;default:#FFFFFF;comment:弹幕颜色" json:"color"`
+	VideoTimestamp float32   `gorm:"not null;comment:视频时间戳(秒)" json:"video_timestamp"`
+	Speed          string    `gorm:"size:20;default:normal;comment:弹幕速度" json:"speed"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+// TableName 设置表名
+func (Danmaku) TableName() string {
+	return "danmakus"
+}

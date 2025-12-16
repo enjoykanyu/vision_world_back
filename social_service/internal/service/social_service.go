@@ -26,6 +26,14 @@ type UserService interface {
 	UpdateUserInfo(ctx context.Context, userID uint32, updates map[string]interface{}) error
 }
 
+// DanmakuService 弹幕服务接口
+type DanmakuService interface {
+	// 发送弹幕
+	SendDanmaku(ctx context.Context, userID uint32, videoID uint32, text string, color string, videoTimestamp float32, speed string) (*model.Danmaku, error)
+	// 获取视频弹幕列表
+	GetDanmakus(ctx context.Context, videoID uint32, page, pageSize int) ([]*model.Danmaku, int64, error)
+}
+
 // userService 用户服务实现
 type userService struct {
 	config      *config.Config
@@ -302,4 +310,72 @@ func (s *userService) validateSmsCode(ctx context.Context, phone, code string) e
 	}
 
 	return nil
+}
+
+// Danmaku 相关方法
+
+// SendDanmaku 发送弹幕
+func (s *userService) SendDanmaku(ctx context.Context, userID uint32, videoID uint32, text string, color string, videoTimestamp float32, speed string) (*model.Danmaku, error) {
+	s.logger.Info("SendDanmaku service called", "userID", userID, "videoID", videoID)
+
+	// 参数验证
+	if text == "" {
+		return nil, errors.New("danmaku text cannot be empty")
+	}
+
+	if len(text) > 200 {
+		return nil, errors.New("danmaku text too long")
+	}
+
+	// 设置默认值
+	if color == "" {
+		color = "#FFFFFF" // 默认白色
+	}
+
+	if speed == "" {
+		speed = "normal" // 默认正常速度
+	}
+
+	// 创建弹幕
+	danmaku := &model.Danmaku{
+		UserID:         userID,
+		VideoID:        videoID,
+		Text:           text,
+		Color:          color,
+		VideoTimestamp: videoTimestamp,
+		Speed:          speed,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+	}
+
+	// 保存到数据库
+	if err := s.userRepo.CreateDanmaku(ctx, danmaku); err != nil {
+		s.logger.Error("Failed to create danmaku", "error", err)
+		return nil, errors.New("failed to send danmaku")
+	}
+
+	return danmaku, nil
+}
+
+// GetDanmakus 获取视频弹幕列表
+func (s *userService) GetDanmakus(ctx context.Context, videoID uint32, page, pageSize int) ([]*model.Danmaku, int64, error) {
+	s.logger.Info("GetDanmakus service called", "videoID", videoID, "page", page, "pageSize", pageSize)
+
+	// 设置默认值
+	if page <= 0 {
+		page = 1
+	}
+
+	if pageSize <= 0 || pageSize > 100 {
+		pageSize = 20 // 默认20条，最大100条
+	}
+
+	// 从数据库获取弹幕列表
+	danmakus, total, err := s.userRepo.GetDanmakusByVideoID(ctx, videoID, page, pageSize)
+	if err != nil {
+		s.logger.Error("Failed to get danmakus", "error", err)
+		return nil, 0, errors.New("failed to get danmakus")
+	}
+
+	return danmakus, total, nil
 }

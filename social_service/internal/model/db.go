@@ -39,6 +39,17 @@ func Paginate(page, pageSize int) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
+// InitTables 初始化数据表
+func InitTables(db *gorm.DB) error {
+	return db.AutoMigrate(
+		&User{},
+		&UserFollow{},
+		&UserStats{},
+		&UserStatsDaily{},
+		&Danmaku{},
+	)
+}
+
 // UserTabler 用户表接口
 type UserTabler interface {
 	TableName() string
@@ -50,4 +61,5 @@ var (
 	_ UserTabler = (*UserFollow)(nil)
 	_ UserTabler = (*UserStats)(nil)
 	_ UserTabler = (*UserStatsDaily)(nil)
+	_ UserTabler = (*Danmaku)(nil)
 )

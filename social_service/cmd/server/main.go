@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"social_service/proto/proto_gen"
+	danmaku_proto "social_service/proto/proto_gen/danmaku"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -69,6 +70,12 @@ func main() {
 	model.SetDB(db)
 	logger.Info("Database models initialized successfully")
 
+	// 自动迁移数据库表
+	if err := model.InitTables(db); err != nil {
+		logger.Fatal("Failed to migrate database tables", "error", err)
+	}
+	logger.Info("Database tables migrated successfully")
+
 	// 4. 初始化Redis连接
 	redisClient, err := database.NewRedisClient(cfg.Redis)
 	if err != nil {
@@ -98,6 +105,10 @@ func main() {
 	userHandler := handler.NewUserServiceHandler(cfg, logger, db, redisClient)
 	proto_gen.RegisterUserServiceServer(grpcServer, userHandler)
 	logger.Info("User service registered")
+
+	// 注册弹幕服务
+	danmaku_proto.RegisterDanmakuServiceServer(grpcServer, userHandler)
+	logger.Info("Danmaku service registered")
 
 	// 9. 注册反射服务（用于调试）
 	reflection.Register(grpcServer)
