@@ -71,6 +71,19 @@ func (VideoComment) TableName() string {
 	return "video_comments"
 }
 
+// VideoCommentLike 视频评论点赞表
+type VideoCommentLike struct {
+	ID        uint32         `gorm:"primaryKey;autoIncrement" json:"id"`
+	CommentID uint32         `gorm:"index;not null;comment:评论ID" json:"comment_id"`
+	UserID    uint32         `gorm:"index;not null;comment:用户ID" json:"user_id"`
+	CreatedAt time.Time      `json:"created_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
+func (VideoCommentLike) TableName() string {
+	return "video_comment_likes"
+}
+
 // VideoShare 视频分享表
 type VideoShare struct {
 	ID        uint32    `gorm:"primaryKey;autoIncrement" json:"id"`

@@ -32,6 +32,7 @@ type VideoHandler struct {
 	pb.UnimplementedVideoServiceServer
 	config          *config.Config
 	videoService    *service.VideoService
+	commentService  *service.CommentService
 	auditClient     auditpb.AuditServiceClient
 	auditConn       *grpc.ClientConn
 	discoveryClient discovery.ServiceDiscovery
@@ -66,6 +67,12 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 	if err != nil {
 		return nil, fmt.Errorf("failed to create video service: %w", err)
 	}
+
+	// 创建model.DB实例
+	modelDB := model.NewDB(db)
+
+	// 创建CommentService实例
+	commentService := service.NewCommentService(modelDB)
 
 	// 创建服务发现客户端 - 参考api_gateway的实现方式
 	var discoveryClient discovery.ServiceDiscovery
@@ -152,6 +159,7 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 	return &VideoHandler{
 		config:          cfg,
 		videoService:    videoService,
+		commentService:  commentService,
 		auditClient:     auditClient,
 		auditConn:       auditConn,
 		discoveryClient: discoveryClient,
@@ -928,60 +936,21 @@ func (h *VideoHandler) ShareVideo(ctx context.Context, req *pb.ShareVideoRequest
 func (h *VideoHandler) CommentVideo(ctx context.Context, req *pb.CommentRequest) (*pb.CommentResponse, error) {
 	h.logger.Info("CommentVideo called", zap.Uint32("video_id", req.VideoId), zap.String("content", req.Content))
 
-	// TODO: 验证用户token
-	// TODO: 实现评论逻辑
-
-	return &pb.CommentResponse{
-		StatusCode: 0,
-		StatusMsg:  "success",
-		Comment: &pb.Comment{
-			Id:         1, // TODO: 真实的评论ID
-			Content:    req.Content,
-			VideoId:    req.VideoId,
-			ParentId:   req.ParentId,
-			LikeCount:  0,
-			CreateTime: time.Now().Unix(),
-		},
-	}, nil
+	return h.commentService.CommentVideo(ctx, req)
 }
 
 // DeleteComment 删除评论
 func (h *VideoHandler) DeleteComment(ctx context.Context, req *pb.DeleteCommentRequest) (*pb.DeleteCommentResponse, error) {
 	h.logger.Info("DeleteComment called", zap.Uint32("comment_id", req.CommentId))
 
-	// TODO: 验证用户token和权限
-	// TODO: 实现删除评论逻辑
-
-	return &pb.DeleteCommentResponse{
-		StatusCode: 0,
-		StatusMsg:  "success",
-	}, nil
+	return h.commentService.DeleteComment(ctx, req)
 }
 
 // GetVideoComments 获取视频评论列表
 func (h *VideoHandler) GetVideoComments(ctx context.Context, req *pb.GetVideoCommentsRequest) (*pb.GetVideoCommentsResponse, error) {
 	h.logger.Info("GetVideoComments called", zap.Uint32("video_id", req.VideoId), zap.Uint32("page", req.Page), zap.String("sort_order", req.SortOrder))
 
-	// TODO: 实现获取评论列表逻辑
-
-	comments := make([]*pb.Comment, 0)
-	for i := uint32(0); i < req.PageSize; i++ {
-		comments = append(comments, &pb.Comment{
-			Id:         uint32(i + 1),
-			Content:    "TODO: Comment content",
-			VideoId:    req.VideoId,
-			LikeCount:  10,
-			CreateTime: time.Now().Unix(),
-		})
-	}
-
-	return &pb.GetVideoCommentsResponse{
-		StatusCode: 0,
-		StatusMsg:  "success",
-		Comments:   comments,
-		Total:      100, // TODO: 真实的总数
-		HasMore:    true,
-	}, nil
+	return h.commentService.GetVideoComments(ctx, req)
 }
 
 // ==================== 辅助方法 ====================
