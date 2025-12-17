@@ -29,6 +29,10 @@ type UserRepository interface {
 	SetSmsCode(ctx context.Context, phone, code string, expiration time.Duration) error
 	GetSmsCode(ctx context.Context, phone string) (string, error)
 	DeleteSmsCode(ctx context.Context, phone string) error
+
+	// 弹幕相关
+	CreateDanmaku(ctx context.Context, danmaku *model.Danmaku) error
+	GetDanmakusByVideoID(ctx context.Context, videoID uint32, page, pageSize int) ([]*model.Danmaku, int64, error)
 }
 
 // DanmakuRepository 弹幕数据访问接口

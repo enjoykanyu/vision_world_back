@@ -108,7 +108,8 @@ func LoadConfig(configPath string) (*Config, error) {
 		v.AddConfigPath("./config")
 		v.AddConfigPath("../config")
 		v.AddConfigPath("../../config")
-		v.SetConfigName("user-service")
+		v.AddConfigPath("../../internal/config")
+		v.SetConfigName("social-service")
 		v.SetConfigType("yaml")
 	}
 
@@ -119,7 +120,7 @@ func LoadConfig(configPath string) (*Config, error) {
 
 	// 绑定环境变量
 	v.AutomaticEnv()
-	v.SetEnvPrefix("USER_SERVICE")
+	v.SetEnvPrefix("SOCIAL_SERVICE")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	var config Config
