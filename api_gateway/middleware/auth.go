@@ -177,6 +177,7 @@ func inAuthWhitelist(path, uri string) bool {
 		"/api/live/stream/",
 		"/api/search/hot",
 		"/api/category/list",
+		"/api/danmaku/",
 	}
 
 	// 静态资源接口（CDN和文件服务）
