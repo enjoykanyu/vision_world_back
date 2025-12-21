@@ -91,6 +91,7 @@ type LoggerConfig struct {
 
 type ServicesConfig struct {
 	AuditService ServiceConfig `mapstructure:"audit_service"`
+	UserService  ServiceConfig `mapstructure:"user_service"`
 }
 
 type RabbitMQConfig struct {
@@ -173,6 +174,11 @@ func LoadConfig() (*Config, error) {
 			AuditService: ServiceConfig{
 				Name:    "audit-service",
 				Address: "localhost:50053",
+				Timeout: 5,
+			},
+			UserService: ServiceConfig{
+				Name:    "user-service",
+				Address: "localhost:50051",
 				Timeout: 5,
 			},
 		},

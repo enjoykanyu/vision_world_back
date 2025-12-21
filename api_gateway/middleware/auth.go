@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	"api_gateway/client"
 	"api_gateway/discovery"
 	pb "api_gateway/proto_gen/user"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -45,11 +47,16 @@ func RequireAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// 调试：打印完整路径
+		log.Printf("Processing request: %s %s, FullPath: %s", c.Request.Method, c.Request.URL.Path, c.FullPath())
+
 		// 白名单路径（无需鉴权）
 		path := c.FullPath()
 		// 当 FullPath 为空（未命中路由前）回退到 RequestURI 前缀判断
 		uri := c.Request.RequestURI
+		log.Printf("Auth check: path=%s, uri=%s", path, uri)
 		if inAuthWhitelist(path, uri) {
+			log.Printf("Path %s is in whitelist, allowing access", path)
 			c.Next()
 			return
 		}
@@ -178,6 +185,7 @@ func inAuthWhitelist(path, uri string) bool {
 		"/api/search/hot",
 		"/api/category/list",
 		"/api/danmaku/",
+		"/api/video/", // 视频详情页
 	}
 
 	// 静态资源接口（CDN和文件服务）

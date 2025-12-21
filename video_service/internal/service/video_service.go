@@ -14,6 +14,8 @@ import (
 	"github.com/vision_world/video_service/internal/repository"
 	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
+	"github.com/vision_world/video_service/proto/proto_gen/user"
+	"google.golang.org/grpc"
 	"gorm.io/gorm"
 )
 
@@ -24,11 +26,22 @@ type VideoService struct {
 	minioClient *minio.Client
 	queueClient *queue.RabbitMQClient
 	logger      logger.Logger
+	userClient  user.UserServiceClient
 }
 
 // NewVideoService 创建视频服务
 func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client, minioClient *minio.Client, queueClient *queue.RabbitMQClient, log logger.Logger) (*VideoService, error) {
 	repo := repository.NewVideoRepository(db, redis)
+
+	// 初始化用户服务客户端
+	var userClient user.UserServiceClient
+	userConn, err := grpc.Dial(cfg.Services.UserService.Address, grpc.WithInsecure())
+	if err != nil {
+		log.Warn("Failed to connect to user service, will use mock user data", "error", err)
+		// 继续执行，使用默认的用户信息
+	} else {
+		userClient = user.NewUserServiceClient(userConn)
+	}
 
 	return &VideoService{
 		config:      cfg,
@@ -36,6 +49,7 @@ func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client, minio
 		minioClient: minioClient,
 		queueClient: queueClient,
 		logger:      log,
+		userClient:  userClient,
 	}, nil
 }
 
@@ -50,6 +64,70 @@ func (s *VideoService) Close() error {
 // GetVideoByID 根据ID获取视频详情
 func (s *VideoService) GetVideoByID(ctx context.Context, videoID string) (*model.RecommendationVideo, error) {
 	return s.repo.GetVideoByID(ctx, videoID)
+}
+
+// GetVideoDetail 根据ID获取完整视频详情，包括用户信息
+func (s *VideoService) GetVideoDetail(ctx context.Context, videoID string) (*model.VideoDetail, error) {
+	// 从仓库层获取视频详情
+	videoDetail, err := s.repo.GetVideoDetailByID(ctx, videoID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取视频作者信息
+	if err := s.populateUserInfo(ctx, videoDetail); err != nil {
+		s.logger.Warn("Failed to populate user info for video",
+			"video_id", videoID,
+			"user_id", videoDetail.UserInfo.UserID,
+			"error", err)
+		// 继续执行，使用默认的用户信息
+	}
+
+	return videoDetail, nil
+}
+
+// populateUserInfo 填充用户信息
+func (s *VideoService) populateUserInfo(ctx context.Context, videoDetail *model.VideoDetail) error {
+	if s.userClient == nil {
+		// 用户服务客户端未初始化，使用默认值
+		videoDetail.UserInfo.Username = fmt.Sprintf("用户%d", videoDetail.UserInfo.UserID)
+		videoDetail.UserInfo.AvatarURL = fmt.Sprintf("https://picsum.photos/seed/user%d/200/200.jpg", videoDetail.UserInfo.UserID)
+		videoDetail.UserInfo.FollowersCount = 0
+		return nil
+	}
+
+	// 调用用户服务获取用户信息
+	req := &user.GetUserInfoRequest{
+		UserId: videoDetail.UserInfo.UserID,
+	}
+
+	resp, err := s.userClient.GetUserInfo(ctx, req)
+	if err != nil {
+		return fmt.Errorf("failed to get user info: %w", err)
+	}
+
+	if resp.User == nil {
+		// 用户不存在，使用默认值
+		videoDetail.UserInfo.Username = fmt.Sprintf("用户%d", videoDetail.UserInfo.UserID)
+		videoDetail.UserInfo.AvatarURL = fmt.Sprintf("https://picsum.photos/seed/user%d/200/200.jpg", videoDetail.UserInfo.UserID)
+		videoDetail.UserInfo.FollowersCount = 0
+		return nil
+	}
+
+	// 填充用户信息
+	videoDetail.UserInfo.Username = resp.User.Name
+	if resp.User.Avatar != nil {
+		videoDetail.UserInfo.AvatarURL = *resp.User.Avatar
+	} else {
+		videoDetail.UserInfo.AvatarURL = fmt.Sprintf("https://picsum.photos/seed/user%d/200/200.jpg", videoDetail.UserInfo.UserID)
+	}
+	if resp.User.FollowerCount != nil {
+		videoDetail.UserInfo.FollowersCount = int64(*resp.User.FollowerCount)
+	} else {
+		videoDetail.UserInfo.FollowersCount = 0
+	}
+
+	return nil
 }
 
 // GetVideosByIDs 根据ID列表获取视频详情

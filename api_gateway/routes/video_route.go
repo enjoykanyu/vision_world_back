@@ -816,6 +816,95 @@ func (h *VideoHandler) GetUserPublishedVideos(c *gin.Context) {
 	})
 }
 
+// GetVideoDetail 获取视频详情
+func (h *VideoHandler) GetVideoDetail(c *gin.Context) {
+	// 获取视频ID
+	videoID := c.Param("id")
+	if videoID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Video ID is required"})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	// 调用视频服务的GetVideoInfo接口
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	videoIDUint, err := strconv.ParseUint(videoID, 10, 32)
+	if err != nil {
+		log.Printf("Failed to parse video ID: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		return
+	}
+
+	req := &pb.GetVideoInfoRequest{
+		VideoId: uint32(videoIDUint),
+	}
+
+	resp, err := videoClient.GetVideoInfo(ctx, req)
+	if err != nil {
+		log.Printf("Failed to get video info: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get video info"})
+		return
+	}
+
+	if resp.StatusCode != 0 {
+		log.Printf("GetVideoInfo failed with status code %d: %s", resp.StatusCode, resp.StatusMsg)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": resp.StatusMsg,
+			"code":  resp.StatusCode,
+		})
+		return
+	}
+
+	// 字段映射：将protobuf响应转换为前端期望的JSON格式
+	video := resp.Video
+	mappedVideo := gin.H{
+		"video_id":       video.Id,
+		"title":          video.Title,
+		"description":    video.Description,
+		"cover_url":      video.CoverUrl,
+		"video_url":      video.VideoUrl, // 已设置为空字符串保护视频资源
+		"view_count":     video.PlayCount,
+		"like_count":     video.LikeCount,
+		"comment_count":  video.CommentCount,
+		"share_count":    video.ShareCount,
+		"favorite_count": video.FavoriteCount,
+		"is_liked":       video.IsLiked,
+		"is_favorite":    video.IsFavorite,
+		"tags":           video.Tags,
+		"location":       video.Location,
+		"category":       video.Category,
+		"create_time":    video.CreateTime,
+		"update_time":    video.UpdateTime,
+		"duration":       video.Duration,
+		"resolution":     video.Resolution,
+		"is_public":      video.IsPublic,
+		"status":         video.Status,
+		"author": gin.H{
+			"id":             video.Author.Id,
+			"username":       video.Author.Name,
+			"avatar":         video.Author.Avatar,
+			"follower_count": video.Author.FollowerCount,
+		},
+	}
+
+	// 返回成功响应
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"video": mappedVideo,
+		},
+		"status": "success",
+	})
+}
+
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
 func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandler) {
 	// 视频相关路由组
@@ -824,7 +913,8 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 		// 公开路由
 		videoGroup.GET("/recommended", videoHandler.GetRecommendedVideos)
 		videoGroup.GET("/hot", videoHandler.GetHotVideos)
-
+		// 公开视频详情路由，使用/api/videos/:id格式
+		videoGroup.GET("/:id", videoHandler.GetVideoDetail)
 		// 需要认证的路由
 		authGroup := videoGroup.Group("/")
 		authGroup.Use(middleware.RequireAuthMiddleware())

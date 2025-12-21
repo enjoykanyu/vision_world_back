@@ -121,6 +121,8 @@ func main() {
 	router.POST("/api/user/login/code", userHandler.CodeLogin)
 	router.POST("/api/user/sms/send", userHandler.SendSmsCode)
 	router.GET("/api/user/info/:id", userHandler.GetUserInfo)
+	// 添加Token验证路由
+	router.POST("/api/user/token/verify", userHandler.VerifyToken)
 
 	// 添加认证相关路由，与前端API路径保持一致
 	router.POST("/api/auth/login", userHandler.CodeLogin) // 使用验证码登录接口
