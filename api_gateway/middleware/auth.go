@@ -185,7 +185,6 @@ func inAuthWhitelist(path, uri string) bool {
 		"/api/search/hot",
 		"/api/category/list",
 		"/api/danmaku/",
-		"/api/video/", // 视频详情页
 	}
 
 	// 静态资源接口（CDN和文件服务）

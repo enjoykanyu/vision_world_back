@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -81,6 +83,53 @@ func (s *VideoService) GetVideoDetail(ctx context.Context, videoID string) (*mod
 			"user_id", videoDetail.UserInfo.UserID,
 			"error", err)
 		// 继续执行，使用默认的用户信息
+	}
+
+	// 重新生成视频URL：根据视频ID和标题构建对象名
+	// 解析原始URL，提取完整的对象名
+	objectName := "video.mp4" // 默认值
+	if videoDetail.PlayURL != "" {
+		// 查找bucket名称后的路径
+		bucketName := s.minioClient.GetBucketName()
+		bucketIndex := strings.Index(videoDetail.PlayURL, "/"+bucketName+"/")
+		if bucketIndex != -1 {
+			// 提取bucket名称后的路径，包括文件名
+			pathWithQuery := videoDetail.PlayURL[bucketIndex+len("/"+bucketName+"/"):]
+			// 去除查询参数
+			path := strings.Split(pathWithQuery, "?")[0]
+			// 检查路径是否包含重复的bucket名称前缀（兼容旧URL）
+			if strings.HasPrefix(path, bucketName+"/") {
+				// 去除重复的bucket名称前缀
+				objectName = path[len(bucketName+"/"):]
+			} else {
+				objectName = path
+			}
+		} else {
+			// 备用方案：使用videoID直接构建对象名
+			// 从URL中提取文件名
+			fileName := "video.mp4"
+			lastSlashIndex := strings.LastIndex(videoDetail.PlayURL, "/")
+			if lastSlashIndex != -1 && lastSlashIndex < len(videoDetail.PlayURL)-1 {
+				fileNameWithQuery := videoDetail.PlayURL[lastSlashIndex+1:]
+				fileName = strings.Split(fileNameWithQuery, "?")[0]
+			}
+			objectName = fmt.Sprintf("%s/%s", videoID, fileName)
+		}
+	} else {
+		// 使用videoID直接构建对象名
+		objectName = fmt.Sprintf("%s/video.mp4", videoID)
+	}
+
+	// 生成新的预签名URL，有效期24小时
+	presignedURL, err := s.minioClient.GeneratePresignedURL(ctx, objectName, 24*time.Hour)
+	if err != nil {
+		s.logger.Warn("Failed to generate presigned URL for video",
+			"video_id", videoID,
+			"error", err)
+		// 继续执行，使用数据库中存储的旧URL
+	} else {
+		// 使用新生成的URL替换旧URL
+		videoDetail.PlayURL = presignedURL
 	}
 
 	return videoDetail, nil
@@ -204,27 +253,6 @@ func (s *VideoService) GetVideosByTags(ctx context.Context, tags []string, page,
 
 // UploadVideo 上传视频
 func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title, description, category string, tags []string, videoData []byte) (uint32, string, string, error) {
-	// 生成视频ID (使用基于时间的精确值，避免冲突)
-	videoID := uint32(time.Now().UnixNano() / int64(time.Second))
-
-	// 创建对象名称
-	objectName := fmt.Sprintf("videos/%d/%s", videoID, fileName)
-
-	// 将视频数据上传到MinIO
-	videoURL, err := s.minioClient.UploadFileFromReader(ctx, objectName,
-		bytes.NewReader(videoData),
-		int64(len(videoData)),
-		"video/mp4")
-	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to upload video to MinIO: %w", err)
-	}
-
-	// 生成预签名URL，有效期24小时
-	presignedURL, err := s.minioClient.GeneratePresignedURL(ctx, objectName, 24*time.Hour)
-	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to generate presigned URL: %w", err)
-	}
-
 	// 将用户ID转换为uint32类型
 	userIDUint32, err := strconv.ParseUint(userID, 10, 32)
 	if err != nil {
@@ -242,16 +270,15 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 		}
 	}
 
-	// 创建视频记录
+	// 1. 先创建视频记录，获取数据库自增ID
 	video := &model.Video{
-		ID:            videoID,
 		UserID:        uint32(userIDUint32),
 		Title:         title,
 		Description:   description,
 		CoverURL:      "https://default-cover-url.com/default.jpg", // 使用默认封面URL，确保not null字段有值
-		VideoURL:      presignedURL,
-		Duration:      0,       // TODO: 可以从视频文件中获取时长
-		Resolution:    "1080p", // 设置默认分辨率，确保字段有值
+		VideoURL:      "",                                          // 稍后更新
+		Duration:      0,                                           // TODO: 可以从视频文件中获取时长
+		Resolution:    "1080p",                                     // 设置默认分辨率，确保字段有值
 		Size:          uint64(len(videoData)),
 		Tags:          tagsStr,
 		Category:      category,
@@ -264,8 +291,43 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 		Status:        "uploading", // 上传后状态为uploading，等待发布
 	}
 
+	// 保存视频信息到数据库，获取自增ID
+	if err := s.repo.CreateVideo(ctx, video); err != nil {
+		return 0, "", "", fmt.Errorf("failed to save video info: %w", err)
+	}
+
+	// 2. 使用数据库生成的ID作为视频ID
+	videoID := video.ID
+
+	// 3. 创建对象名称
+	objectName := fmt.Sprintf("%d/%s", videoID, fileName)
+
+	// 根据文件扩展名确定MIME类型
+	contentType := getContentTypeFromFileName(fileName)
+
+	// 4. 将视频数据上传到MinIO
+	videoURL, err := s.minioClient.UploadFileFromReader(ctx, objectName,
+		bytes.NewReader(videoData),
+		int64(len(videoData)),
+		contentType)
+	if err != nil {
+		return 0, "", "", fmt.Errorf("failed to upload video to MinIO: %w", err)
+	}
+
+	// 5. 生成预签名URL，有效期24小时
+	presignedURL, err := s.minioClient.GeneratePresignedURL(ctx, objectName, 24*time.Hour)
+	if err != nil {
+		return 0, "", "", fmt.Errorf("failed to generate presigned URL: %w", err)
+	}
+
+	// 6. 更新视频记录，保存视频URL
+	video.VideoURL = presignedURL
+	if err := s.repo.UpdateVideoURL(ctx, videoID, presignedURL); err != nil {
+		s.logger.Warn("Failed to update video URL", "video_id", videoID, "error", err)
+	}
+
 	// 添加日志记录，便于调试
-	s.logger.Info("Creating video record",
+	s.logger.Info("Video uploaded successfully",
 		"video_id", videoID,
 		"title", title,
 		"cover_url", video.CoverURL,
@@ -273,13 +335,37 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 		"category", category,
 		"tags", tagsStr)
 
-	// 保存视频信息到数据库
-	if err := s.repo.CreateVideo(ctx, video); err != nil {
-		return 0, "", "", fmt.Errorf("failed to save video info: %w", err)
-	}
+	// 返回数据库生成的ID，以及URL
+	return videoID, presignedURL, videoURL, nil
+}
 
-	// 返回数据库实际生成的ID，而不是我们自己生成的
-	return video.ID, presignedURL, videoURL, nil
+// getContentTypeFromFileName 根据文件名获取MIME类型
+func getContentTypeFromFileName(fileName string) string {
+	// 获取文件扩展名
+	ext := filepath.Ext(fileName)
+	// 转换为小写
+	ext = strings.ToLower(ext)
+
+	// 根据扩展名返回对应的MIME类型
+	switch ext {
+	case ".mp4":
+		return "video/mp4"
+	case ".avi":
+		return "video/x-msvideo"
+	case ".mov", ".qt":
+		return "video/quicktime"
+	case ".wmv":
+		return "video/x-ms-wmv"
+	case ".flv":
+		return "video/x-flv"
+	case ".mkv":
+		return "video/x-matroska"
+	case ".webm":
+		return "video/webm"
+	default:
+		// 默认返回MP4类型
+		return "video/mp4"
+	}
 }
 
 // PublishVideo 发布视频

@@ -9,7 +9,6 @@ import (
 
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/pkg/logger"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -143,11 +142,13 @@ func (c *PortChecker) Name() string {
 // HealthServer 健康检查服务器
 type HealthServer struct {
 	checkers []Checker
+	logger   logger.Logger
 }
 
-func NewHealthServer() *HealthServer {
+func NewHealthServer(log logger.Logger) *HealthServer {
 	return &HealthServer{
 		checkers: make([]Checker, 0),
+		logger:   log,
 	}
 }
 
@@ -164,12 +165,12 @@ func (s *HealthServer) Check(ctx context.Context) map[string]error {
 		results[name] = err
 
 		if err != nil {
-			logger.Error("Health check failed",
-				zap.String("component", name),
-				zap.Error(err))
+			s.logger.Error("Health check failed",
+				"component", name,
+				"error", err)
 		} else {
-			logger.Debug("Health check passed",
-				zap.String("component", name))
+			s.logger.Debug("Health check passed",
+				"component", name)
 		}
 	}
 
@@ -189,8 +190,8 @@ func (s *HealthServer) IsHealthy(ctx context.Context) bool {
 }
 
 // SetupHealthCheck 设置健康检查
-func SetupHealthCheck(cfg *config.Config, db *sql.DB) *HealthServer {
-	healthServer := NewHealthServer()
+func SetupHealthCheck(cfg *config.Config, db *sql.DB, log logger.Logger) *HealthServer {
+	healthServer := NewHealthServer(log)
 
 	// 添加数据库检查
 	if db != nil {

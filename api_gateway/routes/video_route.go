@@ -871,7 +871,7 @@ func (h *VideoHandler) GetVideoDetail(c *gin.Context) {
 		"title":          video.Title,
 		"description":    video.Description,
 		"cover_url":      video.CoverUrl,
-		"video_url":      video.VideoUrl, // 已设置为空字符串保护视频资源
+		"video_url":      video.VideoUrl,
 		"view_count":     video.PlayCount,
 		"like_count":     video.LikeCount,
 		"comment_count":  video.CommentCount,

@@ -20,6 +20,11 @@ type Client struct {
 	location   string
 }
 
+// GetBucketName 获取bucket名称
+func (c *Client) GetBucketName() string {
+	return c.bucketName
+}
+
 // Config MinIO配置
 type Config struct {
 	Endpoint        string

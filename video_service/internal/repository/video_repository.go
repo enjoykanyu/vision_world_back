@@ -20,6 +20,7 @@ type VideoRepository interface {
 	GetVideoDetailByID(ctx context.Context, videoID string) (*model.VideoDetail, error)
 	GetVideosByIDs(ctx context.Context, videoIDs []string) ([]*model.RecommendationVideo, error)
 	UpdateVideoStatus(ctx context.Context, videoID uint32, status string) error
+	UpdateVideoURL(ctx context.Context, videoID uint32, videoURL string) error
 
 	// 视频列表查询
 	GetHotVideos(ctx context.Context, page, pageSize int, category string) ([]*model.RecommendationVideo, bool, error)
@@ -501,6 +502,25 @@ func (r *videoRepository) DecrementLikeCount(ctx context.Context, videoID string
 		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoID)
 		// 简单处理，直接删除缓存，下次访问时重新加载
 		r.redis.Del(ctx, cacheKey)
+	}
+
+	return nil
+}
+
+// UpdateVideoURL 更新视频URL
+func (r *videoRepository) UpdateVideoURL(ctx context.Context, videoID uint32, videoURL string) error {
+	// 更新数据库中的视频URL
+	if err := r.db.WithContext(ctx).Model(&model.Video{}).Where("id = ?", videoID).Update("video_url", videoURL).Error; err != nil {
+		return fmt.Errorf("failed to update video URL: %w", err)
+	}
+
+	// 更新缓存
+	if r.redis != nil {
+		cacheKey := fmt.Sprintf("%s%d", model.CacheKeyVideo, videoID)
+		r.redis.Del(ctx, cacheKey)
+		// 清除详情缓存
+		detailCacheKey := fmt.Sprintf("%s%d_detail", model.CacheKeyVideo, videoID)
+		r.redis.Del(ctx, detailCacheKey)
 	}
 
 	return nil
