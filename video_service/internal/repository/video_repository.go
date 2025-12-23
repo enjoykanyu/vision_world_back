@@ -21,6 +21,8 @@ type VideoRepository interface {
 	GetVideosByIDs(ctx context.Context, videoIDs []string) ([]*model.RecommendationVideo, error)
 	UpdateVideoStatus(ctx context.Context, videoID uint32, status string) error
 	UpdateVideoURL(ctx context.Context, videoID uint32, videoURL string) error
+	UpdateVideoTranscodeStatus(ctx context.Context, videoID uint32, status string, playlistURL string) error
+	GetVideoTranscodeStatus(ctx context.Context, videoID uint32) (string, string, error)
 
 	// 视频列表查询
 	GetHotVideos(ctx context.Context, page, pageSize int, category string) ([]*model.RecommendationVideo, bool, error)
@@ -182,6 +184,7 @@ func (r *videoRepository) GetVideoDetailByID(ctx context.Context, videoID string
 		Duration:    int32(video.Duration),
 		CoverURL:    video.CoverURL,
 		PlayURL:     video.VideoURL,
+		PlaylistURL: video.PlaylistURL,
 		Category:    video.Category,
 		Tags:        video.Tags,
 		Location:    video.Location,
@@ -524,6 +527,42 @@ func (r *videoRepository) UpdateVideoURL(ctx context.Context, videoID uint32, vi
 	}
 
 	return nil
+}
+
+// UpdateVideoTranscodeStatus 更新视频转码状态和播放列表URL
+func (r *videoRepository) UpdateVideoTranscodeStatus(ctx context.Context, videoID uint32, status string, playlistURL string) error {
+	// 更新数据库中的视频转码状态和播放列表URL
+	if err := r.db.WithContext(ctx).Model(&model.Video{}).Where("id = ?", videoID).Updates(map[string]interface{}{
+		"transcode_status": status,
+		"playlist_url":     playlistURL,
+		"updated_at":       time.Now(),
+	}).Error; err != nil {
+		return fmt.Errorf("failed to update video transcode status: %w", err)
+	}
+
+	// 更新缓存
+	if r.redis != nil {
+		cacheKey := fmt.Sprintf("%s%d", model.CacheKeyVideo, videoID)
+		r.redis.Del(ctx, cacheKey)
+		// 清除详情缓存
+		detailCacheKey := fmt.Sprintf("%s%d_detail", model.CacheKeyVideo, videoID)
+		r.redis.Del(ctx, detailCacheKey)
+	}
+
+	return nil
+}
+
+// GetVideoTranscodeStatus 获取视频转码状态和播放列表URL
+func (r *videoRepository) GetVideoTranscodeStatus(ctx context.Context, videoID uint32) (string, string, error) {
+	var video model.Video
+	if err := r.db.WithContext(ctx).Select("transcode_status", "playlist_url").Where("id = ?", videoID).First(&video).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return "", "", fmt.Errorf("video not found: %w", err)
+		}
+		return "", "", fmt.Errorf("failed to get video transcode status: %w", err)
+	}
+
+	return video.TranscodeStatus, video.PlaylistURL, nil
 }
 
 // Close 关闭资源

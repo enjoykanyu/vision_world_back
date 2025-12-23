@@ -1,13 +1,16 @@
 package main
 
 import (
-	"github.com/vision_world/video_service/internal/config"
-	"github.com/vision_world/video_service/internal/handler"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/vision_world/video_service/internal/config"
+	"github.com/vision_world/video_service/internal/handler"
+	"github.com/vision_world/video_service/internal/model"
+
 	//"github.com/vision_world/video_service/proto/proto_gen"
 
 	//"github.com/vision_world/video_service/internal/health"
@@ -49,6 +52,13 @@ func main() {
 			sqlDB.Close()
 		}
 	}()
+
+	// 自动迁移数据库表结构
+	modelDB := model.NewDB(db)
+	if err := modelDB.InitTables(); err != nil {
+		log.Fatalf("Failed to migrate database tables: %v", err)
+	}
+	logger.Info("Database tables migrated successfully")
 
 	redisClient, err := database.NewRedisClient(cfg.Redis)
 	if err != nil {

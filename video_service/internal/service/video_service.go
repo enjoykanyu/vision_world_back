@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -14,8 +15,10 @@ import (
 	"github.com/vision_world/video_service/internal/model"
 	"github.com/vision_world/video_service/internal/queue"
 	"github.com/vision_world/video_service/internal/repository"
+	"github.com/vision_world/video_service/pkg/auth"
 	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
+	"github.com/vision_world/video_service/pkg/transcode"
 	"github.com/vision_world/video_service/proto/proto_gen/user"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
@@ -23,12 +26,14 @@ import (
 
 // VideoService 视频服务业务逻辑层
 type VideoService struct {
-	config      *config.Config
-	repo        repository.VideoRepository
-	minioClient *minio.Client
-	queueClient *queue.RabbitMQClient
-	logger      logger.Logger
-	userClient  user.UserServiceClient
+	config           *config.Config
+	repo             repository.VideoRepository
+	minioClient      *minio.Client
+	queueClient      *queue.RabbitMQClient
+	logger           logger.Logger
+	userClient       user.UserServiceClient
+	authService      auth.Service
+	transcodeService transcode.Service
 }
 
 // NewVideoService 创建视频服务
@@ -52,6 +57,20 @@ func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client, minio
 		queueClient: queueClient,
 		logger:      log,
 		userClient:  userClient,
+		authService: auth.NewService(auth.Config{
+			SecretKey:      "your-secret-key", // 从配置中读取
+			ExpireDuration: 24 * time.Hour,
+			AllowOrigin:    []string{"localhost", "127.0.0.1"},
+		}),
+		transcodeService: transcode.NewService(transcode.Config{
+			FFmpegPath:      "ffmpeg",
+			WorkDir:         "/tmp/transcode",
+			OutputDir:       "/tmp/output",
+			Preset:          "medium",
+			SegmentDuration: 10,
+			Timeout:         2 * time.Hour,
+			LogLevel:        "info",
+		}, log),
 	}, nil
 }
 
@@ -85,51 +104,67 @@ func (s *VideoService) GetVideoDetail(ctx context.Context, videoID string) (*mod
 		// 继续执行，使用默认的用户信息
 	}
 
-	// 重新生成视频URL：根据视频ID和标题构建对象名
-	// 解析原始URL，提取完整的对象名
-	objectName := "video.mp4" // 默认值
-	if videoDetail.PlayURL != "" {
-		// 查找bucket名称后的路径
-		bucketName := s.minioClient.GetBucketName()
-		bucketIndex := strings.Index(videoDetail.PlayURL, "/"+bucketName+"/")
-		if bucketIndex != -1 {
-			// 提取bucket名称后的路径，包括文件名
-			pathWithQuery := videoDetail.PlayURL[bucketIndex+len("/"+bucketName+"/"):]
-			// 去除查询参数
-			path := strings.Split(pathWithQuery, "?")[0]
-			// 检查路径是否包含重复的bucket名称前缀（兼容旧URL）
-			if strings.HasPrefix(path, bucketName+"/") {
-				// 去除重复的bucket名称前缀
-				objectName = path[len(bucketName+"/"):]
-			} else {
-				objectName = path
-			}
+	// 生成HLS播放URL
+	if videoDetail.PlaylistURL != "" {
+		// 使用HLS播放列表URL
+		baseURL := fmt.Sprintf("http://%s", s.config.MinIO.Endpoint)
+		playURL, err := s.authService.GeneratePlayURL(videoID, baseURL, 24*time.Hour)
+		if err != nil {
+			s.logger.Warn("Failed to generate play URL",
+				"video_id", videoID,
+				"error", err)
+			// 继续执行，使用原始URL
 		} else {
-			// 备用方案：使用videoID直接构建对象名
-			// 从URL中提取文件名
-			fileName := "video.mp4"
-			lastSlashIndex := strings.LastIndex(videoDetail.PlayURL, "/")
-			if lastSlashIndex != -1 && lastSlashIndex < len(videoDetail.PlayURL)-1 {
-				fileNameWithQuery := videoDetail.PlayURL[lastSlashIndex+1:]
-				fileName = strings.Split(fileNameWithQuery, "?")[0]
-			}
-			objectName = fmt.Sprintf("%s/%s", videoID, fileName)
+			videoDetail.PlayURL = playURL
 		}
 	} else {
-		// 使用videoID直接构建对象名
-		objectName = fmt.Sprintf("%s/video.mp4", videoID)
-	}
+		// 如果HLS播放列表不存在，使用原始URL
+		// 但我们需要重新生成预签名URL，有效期24小时
+		// 解析原始URL，提取完整的对象名
+		objectName := "video.mp4" // 默认值
+		if videoDetail.PlayURL != "" {
+			// 查找bucket名称后的路径
+			bucketName := s.minioClient.GetBucketName()
+			bucketIndex := strings.Index(videoDetail.PlayURL, "/"+bucketName+"/")
+			if bucketIndex != -1 {
+				// 提取bucket名称后的路径，包括文件名
+				pathWithQuery := videoDetail.PlayURL[bucketIndex+len("/"+bucketName+"/"):]
+				// 去除查询参数
+				path := strings.Split(pathWithQuery, "?")[0]
+				// 检查路径是否包含重复的bucket名称前缀（兼容旧URL）
+				if strings.HasPrefix(path, bucketName+"/") {
+					// 去除重复的bucket名称前缀
+					objectName = path[len(bucketName+"/"):]
+				} else {
+					objectName = path
+				}
+			} else {
+				// 备用方案：使用videoID直接构建对象名
+				// 从URL中提取文件名
+				fileName := "video.mp4"
+				lastSlashIndex := strings.LastIndex(videoDetail.PlayURL, "/")
+				if lastSlashIndex != -1 && lastSlashIndex < len(videoDetail.PlayURL)-1 {
+					fileNameWithQuery := videoDetail.PlayURL[lastSlashIndex+1:]
+					fileName = strings.Split(fileNameWithQuery, "?")[0]
+				}
+				objectName = fmt.Sprintf("%s/%s", videoID, fileName)
+			}
+		} else {
+			// 使用videoID直接构建对象名
+			objectName = fmt.Sprintf("%s/video.mp4", videoID)
+		}
 
-	// 生成新的预签名URL，有效期24小时
-	presignedURL, err := s.minioClient.GeneratePresignedURL(ctx, objectName, 24*time.Hour)
-	if err != nil {
-		s.logger.Warn("Failed to generate presigned URL for video",
-			"video_id", videoID,
-			"error", err)
-		// 继续执行，使用数据库中存储的旧URL
-	} else {
-		// 使用新生成的URL替换旧URL
-		videoDetail.PlayURL = presignedURL
+		// 生成新的预签名URL，有效期24小时
+		presignedURL, err := s.minioClient.GeneratePresignedURL(ctx, objectName, 24*time.Hour)
+		if err != nil {
+			s.logger.Warn("Failed to generate presigned URL for video",
+				"video_id", videoID,
+				"error", err)
+			// 继续执行，使用数据库中存储的旧URL
+		} else {
+			// 使用新生成的URL替换旧URL
+			videoDetail.PlayURL = presignedURL
+		}
 	}
 
 	return videoDetail, nil
@@ -272,23 +307,25 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 
 	// 1. 先创建视频记录，获取数据库自增ID
 	video := &model.Video{
-		UserID:        uint32(userIDUint32),
-		Title:         title,
-		Description:   description,
-		CoverURL:      "https://default-cover-url.com/default.jpg", // 使用默认封面URL，确保not null字段有值
-		VideoURL:      "",                                          // 稍后更新
-		Duration:      0,                                           // TODO: 可以从视频文件中获取时长
-		Resolution:    "1080p",                                     // 设置默认分辨率，确保字段有值
-		Size:          uint64(len(videoData)),
-		Tags:          tagsStr,
-		Category:      category,
-		PlayCount:     0,
-		LikeCount:     0,
-		CommentCount:  0,
-		ShareCount:    0,
-		FavoriteCount: 0,
-		IsPublic:      true,
-		Status:        "uploading", // 上传后状态为uploading，等待发布
+		UserID:          uint32(userIDUint32),
+		Title:           title,
+		Description:     description,
+		CoverURL:        "https://default-cover-url.com/default.jpg", // 使用默认封面URL，确保not null字段有值
+		VideoURL:        "",                                          // 稍后更新
+		PlaylistURL:     "",                                          // HLS播放列表URL，转码后更新
+		TranscodeStatus: "pending",                                   // 初始转码状态
+		Duration:        0,                                           // TODO: 可以从视频文件中获取时长
+		Resolution:      "1080p",                                     // 设置默认分辨率，确保字段有值
+		Size:            uint64(len(videoData)),
+		Tags:            tagsStr,
+		Category:        category,
+		PlayCount:       0,
+		LikeCount:       0,
+		CommentCount:    0,
+		ShareCount:      0,
+		FavoriteCount:   0,
+		IsPublic:        true,
+		Status:          "uploading", // 上传后状态为uploading，等待发布
 	}
 
 	// 保存视频信息到数据库，获取自增ID
@@ -324,6 +361,57 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 	video.VideoURL = presignedURL
 	if err := s.repo.UpdateVideoURL(ctx, videoID, presignedURL); err != nil {
 		s.logger.Warn("Failed to update video URL", "video_id", videoID, "error", err)
+	}
+
+	// 7. 创建临时文件用于转码
+	tmpFilePath := fmt.Sprintf("/tmp/%d_%s", videoID, fileName)
+	if err := os.WriteFile(tmpFilePath, videoData, 0644); err != nil {
+		s.logger.Warn("Failed to write temporary file for transcoding", "video_id", videoID, "error", err)
+		// 继续执行，不影响视频上传
+	} else {
+		// 8. 提交转码任务
+		transcodeTask := &transcode.Task{
+			ID:         fmt.Sprintf("%d", time.Now().UnixNano()),
+			VideoID:    strconv.FormatUint(uint64(videoID), 10),
+			InputPath:  tmpFilePath,
+			OutputPath: fmt.Sprintf("/tmp/transcode_output/%d", videoID),
+			Qualities:  transcode.DefaultQualities(),
+			Status:     "pending",
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		}
+
+		// 异步执行转码任务
+		go func(vid uint32, transcodeTask *transcode.Task, tmpFilePath string) {
+			transcodeCtx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
+			defer cancel()
+			defer os.Remove(tmpFilePath) // 清理临时文件
+
+			s.logger.Info("Starting video transcoding", "video_id", vid)
+			if err := s.transcodeService.TranscodeVideo(transcodeCtx, transcodeTask); err != nil {
+				s.logger.Error("Failed to transcode video", "video_id", vid, "error", err)
+				// 更新转码状态为失败
+				if err := s.repo.UpdateVideoTranscodeStatus(transcodeCtx, vid, "failed", ""); err != nil {
+					s.logger.Warn("Failed to update transcode status", "video_id", vid, "error", err)
+				}
+			} else {
+				s.logger.Info("Video transcoding completed", "video_id", vid)
+				// 上传转码结果到MinIO
+				playlistURL, err := s.uploadTranscodeResult(transcodeCtx, vid, transcodeTask.OutputPath)
+				if err != nil {
+					s.logger.Error("Failed to upload transcode result", "video_id", vid, "error", err)
+					// 更新转码状态为失败
+					if err := s.repo.UpdateVideoTranscodeStatus(transcodeCtx, vid, "failed", ""); err != nil {
+						s.logger.Warn("Failed to update transcode status", "video_id", vid, "error", err)
+					}
+					return
+				}
+				// 更新视频记录的PlaylistURL和TranscodeStatus
+				if err := s.repo.UpdateVideoTranscodeStatus(transcodeCtx, vid, "completed", playlistURL); err != nil {
+					s.logger.Warn("Failed to update transcode status", "video_id", vid, "error", err)
+				}
+			}
+		}(videoID, transcodeTask, tmpFilePath)
 	}
 
 	// 添加日志记录，便于调试
@@ -362,10 +450,92 @@ func getContentTypeFromFileName(fileName string) string {
 		return "video/x-matroska"
 	case ".webm":
 		return "video/webm"
+	case ".m3u8":
+		return "application/x-mpegURL"
+	case ".ts":
+		return "video/MP2T"
 	default:
 		// 默认返回MP4类型
-		return "video/mp4"
+		return "application/octet-stream"
 	}
+}
+
+// uploadTranscodeResult 上传转码结果到MinIO
+func (s *VideoService) uploadTranscodeResult(ctx context.Context, videoID uint32, outputPath string) (string, error) {
+	// 遍历转码输出目录
+	entries, err := os.ReadDir(outputPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read output directory: %w", err)
+	}
+
+	// 定义HLS主播放列表URL
+	playlistURL := fmt.Sprintf("%d/hls/index.m3u8", videoID)
+
+	// 上传所有转码文件
+	for _, entry := range entries {
+		if entry.IsDir() {
+			// 递归上传子目录
+			subDirPath := filepath.Join(outputPath, entry.Name())
+			subEntries, err := os.ReadDir(subDirPath)
+			if err != nil {
+				s.logger.Warn("Failed to read subdirectory", "path", subDirPath, "error", err)
+				continue
+			}
+
+			for _, subEntry := range subEntries {
+				// 上传子目录中的文件
+				filePath := filepath.Join(subDirPath, subEntry.Name())
+				objectName := fmt.Sprintf("%d/hls/%s/%s", videoID, entry.Name(), subEntry.Name())
+				if err := s.uploadFileToMinIO(ctx, filePath, objectName); err != nil {
+					s.logger.Warn("Failed to upload file", "file_path", filePath, "object_name", objectName, "error", err)
+					continue
+				}
+				s.logger.Info("File uploaded successfully", "file_path", filePath, "object_name", objectName)
+			}
+		} else {
+			// 上传单个文件
+			filePath := filepath.Join(outputPath, entry.Name())
+			objectName := fmt.Sprintf("%d/hls/%s", videoID, entry.Name())
+			if err := s.uploadFileToMinIO(ctx, filePath, objectName); err != nil {
+				s.logger.Warn("Failed to upload file", "file_path", filePath, "object_name", objectName, "error", err)
+				continue
+			}
+			s.logger.Info("File uploaded successfully", "file_path", filePath, "object_name", objectName)
+		}
+	}
+
+	return playlistURL, nil
+}
+
+// uploadFileToMinIO 上传单个文件到MinIO
+func (s *VideoService) uploadFileToMinIO(ctx context.Context, filePath, objectName string) error {
+	// 打开文件
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	// 获取文件大小
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to get file info: %w", err)
+	}
+
+	// 确定文件的MIME类型
+	contentType := "application/octet-stream"
+	ext := filepath.Ext(filePath)
+	if ext != "" {
+		contentType = getContentTypeFromFileName(filePath)
+	}
+
+	// 上传文件到MinIO
+	_, err = s.minioClient.UploadFileFromReader(ctx, objectName, file, fileInfo.Size(), contentType)
+	if err != nil {
+		return fmt.Errorf("failed to upload file to MinIO: %w", err)
+	}
+
+	return nil
 }
 
 // PublishVideo 发布视频

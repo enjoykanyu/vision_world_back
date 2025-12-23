@@ -8,33 +8,35 @@ import (
 
 // Video 视频信息表
 type Video struct {
-	ID            uint32         `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserID        uint32         `gorm:"index;not null;comment:用户ID" json:"user_id"`
-	Title         string         `gorm:"size:200;not null;comment:视频标题" json:"title"`
-	Description   string         `gorm:"size:1000;comment:视频描述" json:"description"`
-	CoverURL      string         `gorm:"size:500;not null;comment:封面URL" json:"cover_url"`
-	VideoURL      string         `gorm:"size:500;not null;comment:视频URL" json:"video_url"`
-	Duration      uint32         `gorm:"not null;comment:视频时长(秒)" json:"duration"`
-	Resolution    string         `gorm:"size:20;comment:分辨率" json:"resolution"`
-	Size          uint64         `gorm:"comment:文件大小(字节)" json:"size"`
-	Tags          string         `gorm:"size:500;comment:标签，逗号分隔" json:"tags"`
-	Location      string         `gorm:"size:100;comment:拍摄地点" json:"location"`
-	MusicID       *uint32        `gorm:"index;comment:背景音乐ID" json:"music_id"`
-	MusicTitle    string         `gorm:"size:200;comment:音乐标题" json:"music_title"`
-	MusicURL      string         `gorm:"size:500;comment:音乐URL" json:"music_url"`
-	Category      string         `gorm:"size:50;index;comment:视频分类" json:"category"`
-	PlayCount     uint32         `gorm:"default:0;comment:播放次数" json:"play_count"`
-	LikeCount     uint32         `gorm:"default:0;comment:点赞数" json:"like_count"`
-	CommentCount  uint32         `gorm:"default:0;comment:评论数" json:"comment_count"`
-	ShareCount    uint32         `gorm:"default:0;comment:分享数" json:"share_count"`
-	FavoriteCount uint32         `gorm:"default:0;comment:收藏数" json:"favorite_count"`
-	Source        string         `gorm:"size:200;comment:转载来源" json:"source"`
-	IsPublic      bool           `gorm:"default:true;comment:是否公开" json:"is_public"`
-	Status        string         `gorm:"size:20;default:normal;comment:状态" json:"status"` // normal, deleted, banned, reviewing
-	ExtraData     string         `gorm:"type:text;comment:扩展数据" json:"extra_data"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	ID              uint32         `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID          uint32         `gorm:"index;not null;comment:用户ID" json:"user_id"`
+	Title           string         `gorm:"size:200;not null;comment:视频标题" json:"title"`
+	Description     string         `gorm:"size:1000;comment:视频描述" json:"description"`
+	CoverURL        string         `gorm:"size:500;not null;comment:封面URL" json:"cover_url"`
+	VideoURL        string         `gorm:"size:500;not null;comment:视频URL" json:"video_url"`
+	PlaylistURL     string         `gorm:"size:500;comment:HLS播放列表URL" json:"playlist_url"`
+	TranscodeStatus string         `gorm:"size:20;default:'pending';comment:转码状态(pending,processing,completed,failed)" json:"transcode_status"`
+	Duration        uint32         `gorm:"not null;comment:视频时长(秒)" json:"duration"`
+	Resolution      string         `gorm:"size:20;comment:分辨率" json:"resolution"`
+	Size            uint64         `gorm:"comment:文件大小(字节)" json:"size"`
+	Tags            string         `gorm:"size:500;comment:标签，逗号分隔" json:"tags"`
+	Location        string         `gorm:"size:100;comment:拍摄地点" json:"location"`
+	MusicID         *uint32        `gorm:"index;comment:背景音乐ID" json:"music_id"`
+	MusicTitle      string         `gorm:"size:200;comment:音乐标题" json:"music_title"`
+	MusicURL        string         `gorm:"size:500;comment:音乐URL" json:"music_url"`
+	Category        string         `gorm:"size:50;index;comment:视频分类" json:"category"`
+	PlayCount       uint32         `gorm:"default:0;comment:播放次数" json:"play_count"`
+	LikeCount       uint32         `gorm:"default:0;comment:点赞数" json:"like_count"`
+	CommentCount    uint32         `gorm:"default:0;comment:评论数" json:"comment_count"`
+	ShareCount      uint32         `gorm:"default:0;comment:分享数" json:"share_count"`
+	FavoriteCount   uint32         `gorm:"default:0;comment:收藏数" json:"favorite_count"`
+	Source          string         `gorm:"size:200;comment:转载来源" json:"source"`
+	IsPublic        bool           `gorm:"default:true;comment:是否公开" json:"is_public"`
+	Status          string         `gorm:"size:20;default:normal;comment:状态" json:"status"` // normal, deleted, banned, reviewing
+	ExtraData       string         `gorm:"type:text;comment:扩展数据" json:"extra_data"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
 func (Video) TableName() string {
