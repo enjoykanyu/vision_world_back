@@ -1,15 +1,16 @@
 package config
 
 type Config struct {
-	Server    ServerConfig    `mapstructure:"server"`
-	Database  DatabaseConfig  `mapstructure:"database"`
-	Redis     RedisConfig     `mapstructure:"redis"`
-	Kafka     KafkaConfig     `mapstructure:"kafka"`
-	RabbitMQ  RabbitMQConfig  `mapstructure:"rabbitmq"`
-	Discovery DiscoveryConfig `mapstructure:"discovery"`
-	Logger    LoggerConfig    `mapstructure:"logger"`
-	Services  ServicesConfig  `mapstructure:"services"`
-	MinIO     MinIOConfig     `mapstructure:"minio"`
+	Server     ServerConfig     `mapstructure:"server"`
+	Database   DatabaseConfig   `mapstructure:"database"`
+	Redis      RedisConfig      `mapstructure:"redis"`
+	Kafka      KafkaConfig      `mapstructure:"kafka"`
+	RabbitMQ   RabbitMQConfig   `mapstructure:"rabbitmq"`
+	Discovery  DiscoveryConfig  `mapstructure:"discovery"`
+	Logger     LoggerConfig     `mapstructure:"logger"`
+	Services   ServicesConfig   `mapstructure:"services"`
+	MinIO      MinIOConfig      `mapstructure:"minio"`
+	APIGateway APIGatewayConfig `mapstructure:"api_gateway"`
 }
 
 type ServerConfig struct {
@@ -27,6 +28,11 @@ type MinIOConfig struct {
 	UseSSL          bool   `mapstructure:"use_ssl"`
 	BucketName      string `mapstructure:"bucket_name"`
 	Location        string `mapstructure:"location"`
+}
+
+// APIGatewayConfig API网关配置
+type APIGatewayConfig struct {
+	Endpoint string `mapstructure:"endpoint"`
 }
 
 // DatabaseConfig 数据库配置
@@ -189,6 +195,9 @@ func LoadConfig() (*Config, error) {
 			UseSSL:          false,
 			BucketName:      "videos",
 			Location:        "us-east-1",
+		},
+		APIGateway: APIGatewayConfig{
+			Endpoint: "http://localhost:3000",
 		},
 	}, nil
 }

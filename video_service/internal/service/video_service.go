@@ -106,8 +106,8 @@ func (s *VideoService) GetVideoDetail(ctx context.Context, videoID string) (*mod
 
 	// 生成HLS播放URL
 	if videoDetail.PlaylistURL != "" {
-		// 使用HLS播放列表URL
-		baseURL := fmt.Sprintf("http://%s", s.config.MinIO.Endpoint)
+		// 使用API网关端点生成HLS播放URL
+		baseURL := s.config.APIGateway.Endpoint + "/video"
 		playURL, err := s.authService.GeneratePlayURL(videoID, baseURL, 24*time.Hour)
 		if err != nil {
 			s.logger.Warn("Failed to generate play URL",
