@@ -1,6 +1,6 @@
 syntax = "proto3";
 package rpc.video;
-option go_package = "api_gateway/proto_gen/video";
+option go_package = "proto_gen/video";
 
 import "proto/user.proto";
 

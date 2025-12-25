@@ -873,6 +873,7 @@ func (h *VideoHandler) GetVideoDetail(c *gin.Context) {
 		"description":    video.Description,
 		"cover_url":      video.CoverUrl,
 		"video_url":      video.VideoUrl,
+		"playlist_url":   video.PlaylistUrl,
 		"view_count":     video.PlayCount,
 		"like_count":     video.LikeCount,
 		"comment_count":  video.CommentCount,
@@ -1015,10 +1016,10 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 		// 公开路由
 		videoGroup.GET("/recommended", videoHandler.GetRecommendedVideos)
 		videoGroup.GET("/hot", videoHandler.GetHotVideos)
-		// 公开视频详情路由，使用/api/videos/:id格式
+		// 公开视频详情路由
 		videoGroup.GET("/:id", videoHandler.GetVideoDetail)
 		// HLS视频流代理路由（支持分片传输）
-		videoGroup.GET("/:id/*filepath", videoHandler.ProxyHLSStream)
+		videoGroup.GET("/:id/stream/*filepath", videoHandler.ProxyHLSStream)
 		// 需要认证的路由
 		authGroup := videoGroup.Group("/")
 		authGroup.Use(middleware.RequireAuthMiddleware())

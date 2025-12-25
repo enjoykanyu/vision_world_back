@@ -1952,26 +1952,27 @@ type Video struct {
 	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                            // 视频描述
 	CoverUrl      string                 `protobuf:"bytes,5,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`                  // 视频封面URL
 	VideoUrl      string                 `protobuf:"bytes,6,opt,name=video_url,json=videoUrl,proto3" json:"video_url,omitempty"`                  // 视频播放URL
-	PlayCount     uint32                 `protobuf:"varint,7,opt,name=play_count,json=playCount,proto3" json:"play_count,omitempty"`              // 播放次数
-	LikeCount     uint32                 `protobuf:"varint,8,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`              // 点赞数
-	CommentCount  uint32                 `protobuf:"varint,9,opt,name=comment_count,json=commentCount,proto3" json:"comment_count,omitempty"`     // 评论数
-	ShareCount    uint32                 `protobuf:"varint,10,opt,name=share_count,json=shareCount,proto3" json:"share_count,omitempty"`          // 分享数
-	FavoriteCount uint32                 `protobuf:"varint,11,opt,name=favorite_count,json=favoriteCount,proto3" json:"favorite_count,omitempty"` // 收藏数
-	IsLiked       bool                   `protobuf:"varint,12,opt,name=is_liked,json=isLiked,proto3" json:"is_liked,omitempty"`                   // 是否已点赞 (需要token)
-	IsFavorite    bool                   `protobuf:"varint,13,opt,name=is_favorite,json=isFavorite,proto3" json:"is_favorite,omitempty"`          // 是否已收藏 (需要token)
-	Tags          []string               `protobuf:"bytes,14,rep,name=tags,proto3" json:"tags,omitempty"`                                         // 视频标签
-	Location      *string                `protobuf:"bytes,15,opt,name=location,proto3,oneof" json:"location,omitempty"`                           // 拍摄地点
-	MusicId       *string                `protobuf:"bytes,16,opt,name=music_id,json=musicId,proto3,oneof" json:"music_id,omitempty"`              // 背景音乐ID
-	MusicTitle    *string                `protobuf:"bytes,17,opt,name=music_title,json=musicTitle,proto3,oneof" json:"music_title,omitempty"`     // 音乐标题
-	MusicUrl      *string                `protobuf:"bytes,18,opt,name=music_url,json=musicUrl,proto3,oneof" json:"music_url,omitempty"`           // 音乐URL
-	Category      string                 `protobuf:"bytes,19,opt,name=category,proto3" json:"category,omitempty"`                                 // 视频分类
-	CreateTime    int64                  `protobuf:"varint,20,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`          // 发布时间戳
-	UpdateTime    int64                  `protobuf:"varint,21,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`          // 更新时间戳
-	Duration      uint32                 `protobuf:"varint,22,opt,name=duration,proto3" json:"duration,omitempty"`                                // 视频时长 (秒)
-	Resolution    string                 `protobuf:"bytes,23,opt,name=resolution,proto3" json:"resolution,omitempty"`                             // 分辨率，如1080p
-	ExtraData     *string                `protobuf:"bytes,24,opt,name=extra_data,json=extraData,proto3,oneof" json:"extra_data,omitempty"`        // 扩展数据，JSON格式
-	IsPublic      bool                   `protobuf:"varint,25,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`                // 是否公开
-	Status        string                 `protobuf:"bytes,26,opt,name=status,proto3" json:"status,omitempty"`                                     // 状态: normal, deleted, banned, reviewing
+	PlaylistUrl   string                 `protobuf:"bytes,7,opt,name=playlist_url,json=playlistUrl,proto3" json:"playlist_url,omitempty"`         // HLS播放列表URL
+	PlayCount     uint32                 `protobuf:"varint,8,opt,name=play_count,json=playCount,proto3" json:"play_count,omitempty"`              // 播放次数
+	LikeCount     uint32                 `protobuf:"varint,9,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`              // 点赞数
+	CommentCount  uint32                 `protobuf:"varint,10,opt,name=comment_count,json=commentCount,proto3" json:"comment_count,omitempty"`    // 评论数
+	ShareCount    uint32                 `protobuf:"varint,11,opt,name=share_count,json=shareCount,proto3" json:"share_count,omitempty"`          // 分享数
+	FavoriteCount uint32                 `protobuf:"varint,12,opt,name=favorite_count,json=favoriteCount,proto3" json:"favorite_count,omitempty"` // 收藏数
+	IsLiked       bool                   `protobuf:"varint,13,opt,name=is_liked,json=isLiked,proto3" json:"is_liked,omitempty"`                   // 是否已点赞 (需要token)
+	IsFavorite    bool                   `protobuf:"varint,14,opt,name=is_favorite,json=isFavorite,proto3" json:"is_favorite,omitempty"`          // 是否已收藏 (需要token)
+	Tags          []string               `protobuf:"bytes,15,rep,name=tags,proto3" json:"tags,omitempty"`                                         // 视频标签
+	Location      *string                `protobuf:"bytes,16,opt,name=location,proto3,oneof" json:"location,omitempty"`                           // 拍摄地点
+	MusicId       *string                `protobuf:"bytes,17,opt,name=music_id,json=musicId,proto3,oneof" json:"music_id,omitempty"`              // 背景音乐ID
+	MusicTitle    *string                `protobuf:"bytes,18,opt,name=music_title,json=musicTitle,proto3,oneof" json:"music_title,omitempty"`     // 音乐标题
+	MusicUrl      *string                `protobuf:"bytes,19,opt,name=music_url,json=musicUrl,proto3,oneof" json:"music_url,omitempty"`           // 音乐URL
+	Category      string                 `protobuf:"bytes,20,opt,name=category,proto3" json:"category,omitempty"`                                 // 视频分类
+	CreateTime    int64                  `protobuf:"varint,21,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`          // 发布时间戳
+	UpdateTime    int64                  `protobuf:"varint,22,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`          // 更新时间戳
+	Duration      uint32                 `protobuf:"varint,23,opt,name=duration,proto3" json:"duration,omitempty"`                                // 视频时长 (秒)
+	Resolution    string                 `protobuf:"bytes,24,opt,name=resolution,proto3" json:"resolution,omitempty"`                             // 分辨率，如1080p
+	ExtraData     *string                `protobuf:"bytes,25,opt,name=extra_data,json=extraData,proto3,oneof" json:"extra_data,omitempty"`        // 扩展数据，JSON格式
+	IsPublic      bool                   `protobuf:"varint,26,opt,name=is_public,json=isPublic,proto3" json:"is_public,omitempty"`                // 是否公开
+	Status        string                 `protobuf:"bytes,27,opt,name=status,proto3" json:"status,omitempty"`                                     // 状态: normal, deleted, banned, reviewing
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2044,6 +2045,13 @@ func (x *Video) GetCoverUrl() string {
 func (x *Video) GetVideoUrl() string {
 	if x != nil {
 		return x.VideoUrl
+	}
+	return ""
+}
+
+func (x *Video) GetPlaylistUrl() string {
+	if x != nil {
+		return x.PlaylistUrl
 	}
 	return ""
 }
@@ -2908,45 +2916,46 @@ const file_proto_video_proto_rawDesc = "" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x12.\n" +
 	"\bcomments\x18\x03 \x03(\v2\x12.rpc.video.CommentR\bcomments\x12\x14\n" +
 	"\x05total\x18\x04 \x01(\rR\x05total\x12\x19\n" +
-	"\bhas_more\x18\x05 \x01(\bR\ahasMore\"\xef\x06\n" +
+	"\bhas_more\x18\x05 \x01(\bR\ahasMore\"\x92\a\n" +
 	"\x05Video\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12&\n" +
 	"\x06author\x18\x02 \x01(\v2\x0e.rpc.user.UserR\x06author\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x1b\n" +
 	"\tcover_url\x18\x05 \x01(\tR\bcoverUrl\x12\x1b\n" +
-	"\tvideo_url\x18\x06 \x01(\tR\bvideoUrl\x12\x1d\n" +
+	"\tvideo_url\x18\x06 \x01(\tR\bvideoUrl\x12!\n" +
+	"\fplaylist_url\x18\a \x01(\tR\vplaylistUrl\x12\x1d\n" +
 	"\n" +
-	"play_count\x18\a \x01(\rR\tplayCount\x12\x1d\n" +
+	"play_count\x18\b \x01(\rR\tplayCount\x12\x1d\n" +
 	"\n" +
-	"like_count\x18\b \x01(\rR\tlikeCount\x12#\n" +
-	"\rcomment_count\x18\t \x01(\rR\fcommentCount\x12\x1f\n" +
-	"\vshare_count\x18\n" +
-	" \x01(\rR\n" +
+	"like_count\x18\t \x01(\rR\tlikeCount\x12#\n" +
+	"\rcomment_count\x18\n" +
+	" \x01(\rR\fcommentCount\x12\x1f\n" +
+	"\vshare_count\x18\v \x01(\rR\n" +
 	"shareCount\x12%\n" +
-	"\x0efavorite_count\x18\v \x01(\rR\rfavoriteCount\x12\x19\n" +
-	"\bis_liked\x18\f \x01(\bR\aisLiked\x12\x1f\n" +
-	"\vis_favorite\x18\r \x01(\bR\n" +
+	"\x0efavorite_count\x18\f \x01(\rR\rfavoriteCount\x12\x19\n" +
+	"\bis_liked\x18\r \x01(\bR\aisLiked\x12\x1f\n" +
+	"\vis_favorite\x18\x0e \x01(\bR\n" +
 	"isFavorite\x12\x12\n" +
-	"\x04tags\x18\x0e \x03(\tR\x04tags\x12\x1f\n" +
-	"\blocation\x18\x0f \x01(\tH\x00R\blocation\x88\x01\x01\x12\x1e\n" +
-	"\bmusic_id\x18\x10 \x01(\tH\x01R\amusicId\x88\x01\x01\x12$\n" +
-	"\vmusic_title\x18\x11 \x01(\tH\x02R\n" +
+	"\x04tags\x18\x0f \x03(\tR\x04tags\x12\x1f\n" +
+	"\blocation\x18\x10 \x01(\tH\x00R\blocation\x88\x01\x01\x12\x1e\n" +
+	"\bmusic_id\x18\x11 \x01(\tH\x01R\amusicId\x88\x01\x01\x12$\n" +
+	"\vmusic_title\x18\x12 \x01(\tH\x02R\n" +
 	"musicTitle\x88\x01\x01\x12 \n" +
-	"\tmusic_url\x18\x12 \x01(\tH\x03R\bmusicUrl\x88\x01\x01\x12\x1a\n" +
-	"\bcategory\x18\x13 \x01(\tR\bcategory\x12\x1f\n" +
-	"\vcreate_time\x18\x14 \x01(\x03R\n" +
+	"\tmusic_url\x18\x13 \x01(\tH\x03R\bmusicUrl\x88\x01\x01\x12\x1a\n" +
+	"\bcategory\x18\x14 \x01(\tR\bcategory\x12\x1f\n" +
+	"\vcreate_time\x18\x15 \x01(\x03R\n" +
 	"createTime\x12\x1f\n" +
-	"\vupdate_time\x18\x15 \x01(\x03R\n" +
+	"\vupdate_time\x18\x16 \x01(\x03R\n" +
 	"updateTime\x12\x1a\n" +
-	"\bduration\x18\x16 \x01(\rR\bduration\x12\x1e\n" +
+	"\bduration\x18\x17 \x01(\rR\bduration\x12\x1e\n" +
 	"\n" +
-	"resolution\x18\x17 \x01(\tR\n" +
+	"resolution\x18\x18 \x01(\tR\n" +
 	"resolution\x12\"\n" +
 	"\n" +
-	"extra_data\x18\x18 \x01(\tH\x04R\textraData\x88\x01\x01\x12\x1b\n" +
-	"\tis_public\x18\x19 \x01(\bR\bisPublic\x12\x16\n" +
-	"\x06status\x18\x1a \x01(\tR\x06statusB\v\n" +
+	"extra_data\x18\x19 \x01(\tH\x04R\textraData\x88\x01\x01\x12\x1b\n" +
+	"\tis_public\x18\x1a \x01(\bR\bisPublic\x12\x16\n" +
+	"\x06status\x18\x1b \x01(\tR\x06statusB\v\n" +
 	"\t_locationB\v\n" +
 	"\t_music_idB\x0e\n" +
 	"\f_music_titleB\f\n" +
@@ -3027,7 +3036,7 @@ const file_proto_video_proto_rawDesc = "" +
 	"ShareVideo\x12\x1c.rpc.video.ShareVideoRequest\x1a\x1d.rpc.video.ShareVideoResponse\x12E\n" +
 	"\fCommentVideo\x12\x19.rpc.video.CommentRequest\x1a\x1a.rpc.video.CommentResponse\x12R\n" +
 	"\rDeleteComment\x12\x1f.rpc.video.DeleteCommentRequest\x1a .rpc.video.DeleteCommentResponse\x12[\n" +
-	"\x10GetVideoComments\x12\".rpc.video.GetVideoCommentsRequest\x1a#.rpc.video.GetVideoCommentsResponseB\x1dZ\x1bapi_gateway/proto_gen/videob\x06proto3"
+	"\x10GetVideoComments\x12\".rpc.video.GetVideoCommentsRequest\x1a#.rpc.video.GetVideoCommentsResponseB\x11Z\x0fproto_gen/videob\x06proto3"
 
 var (
 	file_proto_video_proto_rawDescOnce sync.Once
