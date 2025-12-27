@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -75,12 +76,13 @@ func main() {
 	// 初始化统一鉴权（基于 etcd 的 user-service 验证）
 	middleware.InitAuth(cfg.Etcd.Endpoints)
 
-	// 添加中间件（将鉴权放在业务路由前，全局生效）
-	router.Use(middleware.MetricsMiddleware())     // 自定义监控中间件
-	router.Use(middleware.LoggerMiddleware())      // 日志中间件
-	router.Use(middleware.RecoveryMiddleware())    // 恢复中间件
-	router.Use(middleware.CORSMiddleware())        // CORS中间件
-	router.Use(middleware.RequireAuthMiddleware()) // 统一鉴权中间件
+	// 添加中间件（将鉴权放在业务路由前，但不使用全局鉴权）
+	router.Use(middleware.MetricsMiddleware())  // 自定义监控中间件
+	router.Use(middleware.LoggerMiddleware())   // 日志中间件
+	router.Use(middleware.RecoveryMiddleware()) // 恢复中间件
+	router.Use(middleware.CORSMiddleware())     // CORS中间件
+	// 移除全局鉴权中间件，改为在需要认证的路由组中使用
+	// router.Use(middleware.RequireAuthMiddleware()) // 统一鉴权中间件
 
 	// 健康检查路由
 	router.GET("/health", middleware.HealthCheck())
@@ -129,6 +131,8 @@ func main() {
 	router.POST("/api/auth/logout", userHandler.Logout)
 	router.POST("/api/auth/refresh", userHandler.RefreshToken)
 	router.GET("/api/auth/userinfo", userHandler.GetUserInfo)
+	// 添加认证相关的Token验证路由
+	router.POST("/api/auth/token/verify", userHandler.VerifyToken)
 
 	// 注册直播相关路由
 	router.POST("/api/live/start", liveHandler.StartLive)
@@ -151,11 +155,11 @@ func main() {
 	routes.RegisterDanmakuRoutes(router, cfg.Etcd.Endpoints)
 
 	// 直接启动Gin服务器
-	log.Printf("Starting Vision World Gateway on port %s", ":8080")
+	log.Printf("Starting Vision World Gateway on port %d", cfg.Server.Port)
 
 	// 创建HTTP服务器
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
 		Handler: router,
 	}
 
