@@ -65,3 +65,13 @@ minio:
   use_ssl: false
   bucket_name: "videos"
   location: "us-east-1"
+
+# 转码服务配置
+transcode:
+  ffmpeg_path: "ffmpeg"
+  work_dir: "/tmp/transcode"
+  output_dir: "/tmp/output"
+  preset: "medium"
+  segment_duration: 10
+  timeout: 7200  # 2小时
+  log_level: "info"

@@ -16,7 +16,7 @@ import (
 	//"github.com/vision_world/video_service/internal/health"
 	"github.com/vision_world/video_service/pkg/database"
 	"github.com/vision_world/video_service/pkg/logger"
-	pb "github.com/vision_world/video_service/proto/proto_gen/video"
+	pb "github.com/vision_world/video_service/proto/video"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"

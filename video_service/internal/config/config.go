@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 type Config struct {
 	Server     ServerConfig     `mapstructure:"server"`
 	Database   DatabaseConfig   `mapstructure:"database"`
@@ -11,6 +13,7 @@ type Config struct {
 	Services   ServicesConfig   `mapstructure:"services"`
 	MinIO      MinIOConfig      `mapstructure:"minio"`
 	APIGateway APIGatewayConfig `mapstructure:"api_gateway"`
+	Transcode  TranscodeConfig  `mapstructure:"transcode"`
 }
 
 type ServerConfig struct {
@@ -33,6 +36,17 @@ type MinIOConfig struct {
 // APIGatewayConfig API网关配置
 type APIGatewayConfig struct {
 	Endpoint string `mapstructure:"endpoint"`
+}
+
+// TranscodeConfig 转码服务配置
+type TranscodeConfig struct {
+	FFmpegPath      string        `mapstructure:"ffmpeg_path"`
+	WorkDir         string        `mapstructure:"work_dir"`
+	OutputDir       string        `mapstructure:"output_dir"`
+	Preset          string        `mapstructure:"preset"`
+	SegmentDuration int           `mapstructure:"segment_duration"`
+	Timeout         time.Duration `mapstructure:"timeout"`
+	LogLevel        string        `mapstructure:"log_level"`
 }
 
 // DatabaseConfig 数据库配置
@@ -198,6 +212,15 @@ func LoadConfig() (*Config, error) {
 		},
 		APIGateway: APIGatewayConfig{
 			Endpoint: "http://localhost:3000",
+		},
+		Transcode: TranscodeConfig{
+			FFmpegPath:      "ffmpeg",
+			WorkDir:         "/tmp/transcode",
+			OutputDir:       "/tmp/output",
+			Preset:          "medium",
+			SegmentDuration: 10,
+			Timeout:         2 * time.Hour,
+			LogLevel:        "info",
 		},
 	}, nil
 }

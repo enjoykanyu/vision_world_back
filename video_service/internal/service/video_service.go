@@ -19,7 +19,7 @@ import (
 	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
 	"github.com/vision_world/video_service/pkg/transcode"
-	"github.com/vision_world/video_service/proto/proto_gen/user"
+	"github.com/vision_world/video_service/proto/user"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 )
@@ -63,13 +63,13 @@ func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client, minio
 			AllowOrigin:    []string{"localhost", "127.0.0.1"},
 		}),
 		transcodeService: transcode.NewService(transcode.Config{
-			FFmpegPath:      "ffmpeg",
-			WorkDir:         "/tmp/transcode",
-			OutputDir:       "/tmp/output",
-			Preset:          "medium",
-			SegmentDuration: 10,
-			Timeout:         2 * time.Hour,
-			LogLevel:        "info",
+			FFmpegPath:      cfg.Transcode.FFmpegPath,
+			WorkDir:         cfg.Transcode.WorkDir,
+			OutputDir:       cfg.Transcode.OutputDir,
+			Preset:          cfg.Transcode.Preset,
+			SegmentDuration: cfg.Transcode.SegmentDuration,
+			Timeout:         cfg.Transcode.Timeout,
+			LogLevel:        cfg.Transcode.LogLevel,
 		}, log),
 	}, nil
 }
@@ -115,57 +115,29 @@ func (s *VideoService) GetVideoDetail(ctx context.Context, videoID string) (*mod
 				"error", err)
 			// 继续执行，使用原始URL
 		} else {
-			// 修改生成的URL，添加/stream路径
+			// 修改生成的URL，添加/stream路径用于HLS流
 			playURL = strings.Replace(playURL, "/play/", "/play/stream/", 1)
 			videoDetail.PlayURL = playURL
+			s.logger.Info("Generated HLS play URL", "video_id", videoID, "play_url", playURL)
 		}
 	} else {
-		// 如果HLS播放列表不存在，使用原始URL
-		// 但我们需要重新生成预签名URL，有效期24小时
-		// 解析原始URL，提取完整的对象名
-		objectName := "video.mp4" // 默认值
+		// 如果HLS播放列表不存在，检查是否有原始视频URL
 		if videoDetail.PlayURL != "" {
-			// 查找bucket名称后的路径
-			bucketName := s.minioClient.GetBucketName()
-			bucketIndex := strings.Index(videoDetail.PlayURL, "/"+bucketName+"/")
-			if bucketIndex != -1 {
-				// 提取bucket名称后的路径，包括文件名
-				pathWithQuery := videoDetail.PlayURL[bucketIndex+len("/"+bucketName+"/"):]
-				// 去除查询参数
-				path := strings.Split(pathWithQuery, "?")[0]
-				// 检查路径是否包含重复的bucket名称前缀（兼容旧URL）
-				if strings.HasPrefix(path, bucketName+"/") {
-					// 去除重复的bucket名称前缀
-					objectName = path[len(bucketName+"/"):]
-				} else {
-					objectName = path
-				}
+			// 重新生成预签名URL，有效期24小时
+			objectName := fmt.Sprintf("%s/video.mp4", videoID)
+			presignedURL, err := s.minioClient.GeneratePresignedURL(ctx, objectName, 24*time.Hour)
+			if err != nil {
+				s.logger.Warn("Failed to generate presigned URL for video",
+					"video_id", videoID,
+					"error", err)
+				// 继续执行，使用数据库中存储的旧URL
 			} else {
-				// 备用方案：使用videoID直接构建对象名
-				// 从URL中提取文件名
-				fileName := "video.mp4"
-				lastSlashIndex := strings.LastIndex(videoDetail.PlayURL, "/")
-				if lastSlashIndex != -1 && lastSlashIndex < len(videoDetail.PlayURL)-1 {
-					fileNameWithQuery := videoDetail.PlayURL[lastSlashIndex+1:]
-					fileName = strings.Split(fileNameWithQuery, "?")[0]
-				}
-				objectName = fmt.Sprintf("%s/%s", videoID, fileName)
+				// 使用新生成的URL替换旧URL
+				videoDetail.PlayURL = presignedURL
+				s.logger.Info("Generated new presigned URL for video", "video_id", videoID, "url", presignedURL)
 			}
 		} else {
-			// 使用videoID直接构建对象名
-			objectName = fmt.Sprintf("%s/video.mp4", videoID)
-		}
-
-		// 生成新的预签名URL，有效期24小时
-		presignedURL, err := s.minioClient.GeneratePresignedURL(ctx, objectName, 24*time.Hour)
-		if err != nil {
-			s.logger.Warn("Failed to generate presigned URL for video",
-				"video_id", videoID,
-				"error", err)
-			// 继续执行，使用数据库中存储的旧URL
-		} else {
-			// 使用新生成的URL替换旧URL
-			videoDetail.PlayURL = presignedURL
+			s.logger.Warn("No video URL available", "video_id", videoID)
 		}
 	}
 
@@ -312,12 +284,12 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 		UserID:          uint32(userIDUint32),
 		Title:           title,
 		Description:     description,
-		CoverURL:        "https://default-cover-url.com/default.jpg", // 使用默认封面URL，确保not null字段有值
-		VideoURL:        "",                                          // 稍后更新
-		PlaylistURL:     "",                                          // HLS播放列表URL，转码后更新
-		TranscodeStatus: "pending",                                   // 初始转码状态
-		Duration:        0,                                           // TODO: 可以从视频文件中获取时长
-		Resolution:      "1080p",                                     // 设置默认分辨率，确保字段有值
+		CoverURL:        "https://via.placeholder.com/640x360/4F46E5/FFFFFF?text=Video+Cover", // 使用默认封面URL，确保not null字段有值
+		VideoURL:        "",                                                                   // 稍后更新
+		PlaylistURL:     "",                                                                   // HLS播放列表URL，转码后更新
+		TranscodeStatus: "pending",                                                            // 初始转码状态
+		Duration:        0,                                                                    // TODO: 可以从视频文件中获取时长
+		Resolution:      "1080p",                                                              // 设置默认分辨率，确保字段有值
 		Size:            uint64(len(videoData)),
 		Tags:            tagsStr,
 		Category:        category,
@@ -385,6 +357,16 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 
 		// 异步执行转码任务
 		go func(vid uint32, transcodeTask *transcode.Task, tmpFilePath string) {
+			defer func() {
+				if r := recover(); r != nil {
+					s.logger.Error("Transcode goroutine panicked", "video_id", vid, "error", r)
+					// 更新转码状态为失败
+					if err := s.repo.UpdateVideoTranscodeStatus(context.Background(), vid, "failed", "goroutine panic"); err != nil {
+						s.logger.Warn("Failed to update transcode status after panic", "video_id", vid, "error", err)
+					}
+				}
+			}()
+
 			transcodeCtx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
 			defer cancel()
 			defer os.Remove(tmpFilePath) // 清理临时文件
@@ -408,6 +390,7 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 					}
 					return
 				}
+				s.logger.Info("Transcode result uploaded successfully", "video_id", vid, "playlist_url", playlistURL)
 				// 更新视频记录的PlaylistURL和TranscodeStatus
 				if err := s.repo.UpdateVideoTranscodeStatus(transcodeCtx, vid, "completed", playlistURL); err != nil {
 					s.logger.Warn("Failed to update transcode status", "video_id", vid, "error", err)

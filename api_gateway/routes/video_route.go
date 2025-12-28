@@ -921,6 +921,14 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 		filePath = "hls/index.m3u8"
 	}
 
+	// 清理路径，移除前导斜杠
+	filePath = strings.TrimPrefix(filePath, "/")
+
+	// 确保文件路径以hls/开头
+	if !strings.HasPrefix(filePath, "hls/") {
+		filePath = "hls/" + filePath
+	}
+
 	// 构建MinIO对象路径
 	objectName := fmt.Sprintf("%s/%s", videoID, filePath)
 
@@ -953,9 +961,22 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 
 	// 检查视频是否已转码为HLS
 	if resp.Video.PlaylistUrl == "" {
+		// 如果没有HLS播放列表，尝试提供原始视频URL作为降级方案
+		if resp.Video.VideoUrl != "" {
+			log.Printf("HLS stream not available for video %s, falling back to original video URL", videoID)
+			// 返回原始视频URL，让前端处理
+			c.JSON(http.StatusOK, gin.H{
+				"error":        "HLS stream not available",
+				"fallback_url": resp.Video.VideoUrl,
+				"message":      "Video transcoding may be in progress, using original video URL",
+			})
+			return
+		}
 		c.JSON(http.StatusNotFound, gin.H{"error": "HLS stream not available, video transcoding may be in progress"})
 		return
 	}
+
+	log.Printf("Proxying HLS stream for video %s, file: %s", videoID, filePath)
 
 	// 解析MinIO端点
 	minioEndpoint := "http://localhost:9000"
@@ -963,15 +984,37 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 
 	// 构建完整的MinIO URL
 	minioURL := fmt.Sprintf("%s/%s/%s", minioEndpoint, bucketName, objectName)
+	log.Printf("Fetching from MinIO: %s", minioURL)
 
 	// 发起HTTP请求到MinIO
 	respMinio, err := http.Get(minioURL)
 	if err != nil {
 		log.Printf("Failed to fetch from MinIO: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch video stream"})
+		// 如果MinIO不可用，尝试返回原始视频URL作为降级方案
+		if resp.Video.VideoUrl != "" {
+			log.Printf("MinIO unavailable for video %s, providing fallback URL", videoID)
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error":        "Video stream service temporarily unavailable",
+				"fallback_url": resp.Video.VideoUrl,
+				"message":      "Please try again later or use the provided fallback URL",
+			})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch video stream"})
+		}
 		return
 	}
 	defer respMinio.Body.Close()
+
+	// 检查MinIO响应状态
+	if respMinio.StatusCode != http.StatusOK {
+		log.Printf("MinIO returned status %d for video %s, file: %s", respMinio.StatusCode, videoID, filePath)
+		if respMinio.StatusCode == http.StatusNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Video stream file not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch video stream"})
+		}
+		return
+	}
 
 	// 如果请求的是m3u8播放列表，需要修改其中的分片URL为API网关地址
 	if strings.HasSuffix(filePath, ".m3u8") {
@@ -984,8 +1027,11 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 
 		// 将相对路径的分片URL替换为API网关的绝对路径
 		playlistContent := string(body)
-		gatewayURL := fmt.Sprintf("/api/video/%s/", videoID)
-		playlistContent = strings.ReplaceAll(playlistContent, "segment_", gatewayURL+"hls/segment_")
+		gatewayURL := fmt.Sprintf("/api/video/%s/stream/", videoID)
+		playlistContent = strings.ReplaceAll(playlistContent, "segment_", gatewayURL+"segment_")
+		playlistContent = strings.ReplaceAll(playlistContent, "../", gatewayURL)
+
+		log.Printf("Modified playlist content length: %d", len(playlistContent))
 
 		// 设置响应头
 		c.Header("Content-Type", "application/vnd.apple.mpegurl")
@@ -1006,6 +1052,8 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 	c.Header("Cache-Control", "max-age=86400")
 	c.Status(respMinio.StatusCode)
 	io.Copy(c.Writer, respMinio.Body)
+
+	log.Printf("Successfully streamed %s for video %s", filePath, videoID)
 }
 
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
