@@ -929,54 +929,10 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 		filePath = "hls/" + filePath
 	}
 
-	// 构建MinIO对象路径
-	objectName := fmt.Sprintf("%s/%s", videoID, filePath)
+	// 构建MinIO对象路径 - 添加videos/前缀以匹配实际存储路径
+	objectName := fmt.Sprintf("videos/%s/%s", videoID, filePath)
 
-	// 从视频服务获取视频信息，验证视频是否存在
-	videoClient, err := h.getVideoClient()
-	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	videoIDUint, err := strconv.ParseUint(videoID, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
-		return
-	}
-
-	req := &pb.GetVideoInfoRequest{
-		VideoId: uint32(videoIDUint),
-	}
-
-	resp, err := videoClient.GetVideoInfo(ctx, req)
-	if err != nil || resp.StatusCode != 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Video not found"})
-		return
-	}
-
-	// 检查视频是否已转码为HLS
-	if resp.Video.PlaylistUrl == "" {
-		// 如果没有HLS播放列表，尝试提供原始视频URL作为降级方案
-		if resp.Video.VideoUrl != "" {
-			log.Printf("HLS stream not available for video %s, falling back to original video URL", videoID)
-			// 返回原始视频URL，让前端处理
-			c.JSON(http.StatusOK, gin.H{
-				"error":        "HLS stream not available",
-				"fallback_url": resp.Video.VideoUrl,
-				"message":      "Video transcoding may be in progress, using original video URL",
-			})
-			return
-		}
-		c.JSON(http.StatusNotFound, gin.H{"error": "HLS stream not available, video transcoding may be in progress"})
-		return
-	}
-
-	log.Printf("Proxying HLS stream for video %s, file: %s", videoID, filePath)
+	log.Printf("Proxying HLS stream for video %s, file: %s, object: %s", videoID, filePath, objectName)
 
 	// 解析MinIO端点
 	minioEndpoint := "http://localhost:9000"
@@ -990,17 +946,33 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 	respMinio, err := http.Get(minioURL)
 	if err != nil {
 		log.Printf("Failed to fetch from MinIO: %v", err)
-		// 如果MinIO不可用，尝试返回原始视频URL作为降级方案
-		if resp.Video.VideoUrl != "" {
-			log.Printf("MinIO unavailable for video %s, providing fallback URL", videoID)
-			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"error":        "Video stream service temporarily unavailable",
-				"fallback_url": resp.Video.VideoUrl,
-				"message":      "Please try again later or use the provided fallback URL",
-			})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch video stream"})
+
+		// 尝试从视频服务获取视频信息，提供降级方案
+		videoClient, err := h.getVideoClient()
+		if err == nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			videoIDUint, parseErr := strconv.ParseUint(videoID, 10, 32)
+			if parseErr == nil {
+				req := &pb.GetVideoInfoRequest{
+					VideoId: uint32(videoIDUint),
+				}
+
+				resp, err := videoClient.GetVideoInfo(ctx, req)
+				if err == nil && resp.StatusCode == 0 && resp.Video.VideoUrl != "" {
+					log.Printf("MinIO unavailable for video %s, providing fallback URL", videoID)
+					c.JSON(http.StatusServiceUnavailable, gin.H{
+						"error":        "Video stream service temporarily unavailable",
+						"fallback_url": resp.Video.VideoUrl,
+						"message":      "Please try again later or use the provided fallback URL",
+					})
+					return
+				}
+			}
 		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch video stream"})
 		return
 	}
 	defer respMinio.Body.Close()
@@ -1009,6 +981,37 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 	if respMinio.StatusCode != http.StatusOK {
 		log.Printf("MinIO returned status %d for video %s, file: %s", respMinio.StatusCode, videoID, filePath)
 		if respMinio.StatusCode == http.StatusNotFound {
+			// HLS文件不存在，检查是否转码未完成
+			videoClient, err := h.getVideoClient()
+			if err == nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+
+				videoIDUint, parseErr := strconv.ParseUint(videoID, 10, 32)
+				if parseErr == nil {
+					req := &pb.GetVideoInfoRequest{
+						VideoId: uint32(videoIDUint),
+					}
+
+					resp, err := videoClient.GetVideoInfo(ctx, req)
+					if err == nil && resp.StatusCode == 0 {
+						// 检查是否有HLS播放列表URL
+						if resp.Video.PlaylistUrl == "" {
+							// 没有HLS播放列表，可能转码未完成
+							if resp.Video.VideoUrl != "" {
+								// 提供原始视频URL作为降级方案
+								c.JSON(http.StatusOK, gin.H{
+									"error":        "HLS stream not available",
+									"fallback_url": resp.Video.VideoUrl,
+									"message":      "Video transcoding may be in progress, using original video URL",
+								})
+								return
+							}
+						}
+					}
+				}
+			}
+
 			c.JSON(http.StatusNotFound, gin.H{"error": "Video stream file not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch video stream"})

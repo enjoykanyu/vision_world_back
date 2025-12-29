@@ -107,24 +107,17 @@ func (s *VideoService) GetVideoDetail(ctx context.Context, videoID string) (*mod
 	// 生成HLS播放URL
 	if videoDetail.PlaylistURL != "" {
 		// 使用API网关端点生成HLS播放URL
-		baseURL := s.config.APIGateway.Endpoint + "/api/video"
-		playURL, err := s.authService.GeneratePlayURL(videoID, baseURL, 24*time.Hour)
-		if err != nil {
-			s.logger.Warn("Failed to generate play URL",
-				"video_id", videoID,
-				"error", err)
-			// 继续执行，使用原始URL
-		} else {
-			// 修改生成的URL，添加/stream路径用于HLS流
-			playURL = strings.Replace(playURL, "/play/", "/play/stream/", 1)
-			videoDetail.PlayURL = playURL
-			s.logger.Info("Generated HLS play URL", "video_id", videoID, "play_url", playURL)
-		}
+		// 直接构建正确的API网关HLS流URL，不需要签名
+		baseURL := s.config.APIGateway.Endpoint
+		playURL := fmt.Sprintf("%s/api/video/%s/stream/index.m3u8", baseURL, videoID)
+		videoDetail.PlayURL = playURL
+		s.logger.Info("Generated HLS play URL", "video_id", videoID, "play_url", playURL)
 	} else {
 		// 如果HLS播放列表不存在，检查是否有原始视频URL
 		if videoDetail.PlayURL != "" {
 			// 重新生成预签名URL，有效期24小时
-			objectName := fmt.Sprintf("%s/video.mp4", videoID)
+			// 构建正确的对象名称，包含videos/前缀
+			objectName := fmt.Sprintf("videos/%s/video.mp4", videoID)
 			presignedURL, err := s.minioClient.GeneratePresignedURL(ctx, objectName, 24*time.Hour)
 			if err != nil {
 				s.logger.Warn("Failed to generate presigned URL for video",
@@ -284,12 +277,12 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 		UserID:          uint32(userIDUint32),
 		Title:           title,
 		Description:     description,
-		CoverURL:        "https://via.placeholder.com/640x360/4F46E5/FFFFFF?text=Video+Cover", // 使用默认封面URL，确保not null字段有值
-		VideoURL:        "",                                                                   // 稍后更新
-		PlaylistURL:     "",                                                                   // HLS播放列表URL，转码后更新
-		TranscodeStatus: "pending",                                                            // 初始转码状态
-		Duration:        0,                                                                    // TODO: 可以从视频文件中获取时长
-		Resolution:      "1080p",                                                              // 设置默认分辨率，确保字段有值
+		CoverURL:        fmt.Sprintf("https://picsum.photos/640/360?random=%d", time.Now().Unix()), // 使用随机图片作为默认封面
+		VideoURL:        "",                                                                        // 稍后更新
+		PlaylistURL:     "",                                                                        // HLS播放列表URL，转码后更新
+		TranscodeStatus: "pending",                                                                 // 初始转码状态
+		Duration:        0,                                                                         // TODO: 可以从视频文件中获取时长
+		Resolution:      "1080p",                                                                   // 设置默认分辨率，确保字段有值
 		Size:            uint64(len(videoData)),
 		Tags:            tagsStr,
 		Category:        category,
