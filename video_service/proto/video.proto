@@ -233,7 +233,7 @@ message Video {
   string title = 3; // 视频标题
   string description = 4; // 视频描述
   string cover_url = 5; // 视频封面URL
-  string video_url = 6; // 视频播放URL
+  string video_url = 6; // 视频播放URL (原始视频URL，用于降级)
   string playlist_url = 7; // HLS播放列表URL
   uint32 play_count = 8; // 播放次数
   uint32 like_count = 9; // 点赞数
@@ -257,6 +257,7 @@ message Video {
   string status = 27; // 状态: normal, deleted, banned, reviewing
   optional string type = 28; // 视频类型: original(原创), repost(转载)
   optional string source = 29; // 转载来源，仅当type为repost时有效
+  optional string transcode_status = 30; // 转码状态: pending, processing, completed, failed
 }
 
 message Comment {

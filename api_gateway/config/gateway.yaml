@@ -11,10 +11,15 @@ logger:
   level: "info"
   format: "json"
 
-#minio:
-#  endpoint: "localhost:9000"
-#  access_key_id: "minioadmin"
-#  secret_access_key: "minioadmin"
-#  use_ssl: false
-#  bucket_name: "videos"
-#  location: "us-east-1"
+minio:
+  endpoint: "localhost:9000"
+  access_key_id: "minioadmin"
+  secret_access_key: "minioadmin"
+  use_ssl: false
+  bucket_name: "vision-world"
+  location: "us-east-1"
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0

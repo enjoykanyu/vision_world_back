@@ -154,6 +154,11 @@ func (c *Client) GetFileInfo(ctx context.Context, objectName string) (*minio.Obj
 	return &info, nil
 }
 
+// GetClient 获取底层的 MinIO 客户端
+func (c *Client) GetClient() *minio.Client {
+	return c.client
+}
+
 // Close 关闭客户端连接
 func (c *Client) Close() error {
 	// MinIO客户端没有显式的关闭方法

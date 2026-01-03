@@ -105,7 +105,7 @@ func main() {
 	defer liveHandler.Close()
 
 	// 注册视频服务路由
-	videoHandler, err := routes.NewVideoHandler(cfg.Etcd.Endpoints)
+	videoHandler, err := routes.NewVideoHandler(cfg.Etcd.Endpoints, minioClient.GetClient(), cfg.MinIO.BucketName)
 	if err != nil {
 		log.Fatalf("Failed to connect to video service: %v", err)
 	}
