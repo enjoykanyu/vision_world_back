@@ -16,7 +16,7 @@ minio:
   access_key_id: "minioadmin"
   secret_access_key: "minioadmin"
   use_ssl: false
-  bucket_name: "vision-world"
+  bucket_name: "videos"
   location: "us-east-1"
 
 redis:
