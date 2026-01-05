@@ -105,32 +105,28 @@ func (s *VideoService) GetVideoDetail(ctx context.Context, videoID string) (*mod
 	}
 
 	// 生成HLS播放URL
+	// 优先使用API网关HLS代理，即使没有转码完成也尝试使用
+	baseURL := s.config.APIGateway.Endpoint
+	playURL := fmt.Sprintf("%s/api/video/%s/stream/index.m3u8", baseURL, videoID)
+
 	if videoDetail.PlaylistURL != "" {
-		// 使用API网关端点生成HLS播放URL
-		// 直接构建正确的API网关HLS流URL，不需要签名
-		baseURL := s.config.APIGateway.Endpoint
-		playURL := fmt.Sprintf("%s/api/video/%s/stream/index.m3u8", baseURL, videoID)
+		// 有HLS播放列表，使用API网关代理
 		videoDetail.PlayURL = playURL
-		s.logger.Info("Generated HLS play URL", "video_id", videoID, "play_url", playURL)
+		s.logger.Info("Generated HLS play URL from playlist", "video_id", videoID, "play_url", playURL, "playlist_url", videoDetail.PlaylistURL)
 	} else {
-		// 如果HLS播放列表不存在，检查是否有原始视频URL
+		// 没有HLS播放列表，仍然尝试使用API网关代理（可能转码未完成或失败）
+		// 同时保留原始视频URL作为降级选项
 		if videoDetail.PlayURL != "" {
-			// 重新生成预签名URL，有效期24小时
-			// 构建正确的对象名称，包含videos/前缀
-			objectName := fmt.Sprintf("videos/%s/video.mp4", videoID)
-			presignedURL, err := s.minioClient.GeneratePresignedURL(ctx, objectName, 24*time.Hour)
-			if err != nil {
-				s.logger.Warn("Failed to generate presigned URL for video",
-					"video_id", videoID,
-					"error", err)
-				// 继续执行，使用数据库中存储的旧URL
-			} else {
-				// 使用新生成的URL替换旧URL
-				videoDetail.PlayURL = presignedURL
-				s.logger.Info("Generated new presigned URL for video", "video_id", videoID, "url", presignedURL)
-			}
+			originalURL := videoDetail.PlayURL
+			videoDetail.PlayURL = playURL
+			s.logger.Info("Generated HLS play URL (transcode may not be complete)",
+				"video_id", videoID,
+				"play_url", playURL,
+				"original_url", originalURL)
 		} else {
-			s.logger.Warn("No video URL available", "video_id", videoID)
+			// 没有任何视频URL，使用API网关代理
+			videoDetail.PlayURL = playURL
+			s.logger.Warn("No video URL available, using API gateway proxy", "video_id", videoID, "play_url", playURL)
 		}
 	}
 

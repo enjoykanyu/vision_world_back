@@ -16,6 +16,7 @@ import (
 	"api_gateway/client"
 	"api_gateway/discovery"
 	"api_gateway/middleware"
+	"api_gateway/pkg/minio"
 	recpb "api_gateway/proto_gen/recommendation"
 	pb "api_gateway/proto_gen/video"
 
@@ -27,16 +28,19 @@ type VideoHandler struct {
 	videoClient          *client.VideoServiceClient
 	recommendClient      *client.RecommendationServiceClient
 	discovery            *discovery.EtcdServiceDiscovery
+	recommendDiscovery   *discovery.EtcdServiceDiscovery
 	etcdEndpoints        []string
 	videoServiceAddr     string
 	recommendServiceAddr string
+	minioClient          *minio.Client
+	bucketName           string
 	mu                   sync.RWMutex
 	lastFailTime         time.Time
 	circuitBreaker       *CircuitBreaker
 }
 
 // NewVideoHandler 创建视频处理器
-func NewVideoHandler(etcdEndpoints []string) (*VideoHandler, error) {
+func NewVideoHandler(etcdEndpoints []string, minioClient *minio.Client, bucketName string) (*VideoHandler, error) {
 	// 创建服务发现客户端
 	serviceDiscovery, err := discovery.NewEtcdServiceDiscovery(etcdEndpoints, "video-service")
 	if err != nil {
@@ -50,9 +54,12 @@ func NewVideoHandler(etcdEndpoints []string) (*VideoHandler, error) {
 	}
 
 	handler := &VideoHandler{
-		etcdEndpoints:  etcdEndpoints,
-		discovery:      serviceDiscovery,
-		circuitBreaker: NewCircuitBreaker(),
+		etcdEndpoints:      etcdEndpoints,
+		discovery:          serviceDiscovery,
+		recommendDiscovery: recommendDiscovery,
+		minioClient:        minioClient,
+		bucketName:         bucketName,
+		circuitBreaker:     NewCircuitBreaker(),
 	}
 
 	// 监听视频服务变化
@@ -452,9 +459,9 @@ func (h *VideoHandler) GetHotVideos(c *gin.Context) {
 }
 
 // RegisterVideoRoutes 注册视频相关路由
-func RegisterVideoRoutes(router *gin.Engine, etcdEndpoints []string) {
+func RegisterVideoRoutes(router *gin.Engine, etcdEndpoints []string, minioClient *minio.Client, bucketName string) {
 	// 创建视频处理器
-	videoHandler, err := NewVideoHandler(etcdEndpoints)
+	videoHandler, err := NewVideoHandler(etcdEndpoints, minioClient, bucketName)
 	if err != nil {
 		log.Fatalf("Failed to create video handler: %v", err)
 	}
@@ -1017,6 +1024,66 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch video stream"})
 		}
 		return
+	}
+
+	// 检查Content-Type，确保返回的是M3U8或TS文件
+	contentType := respMinio.Header.Get("Content-Type")
+	log.Printf("MinIO returned Content-Type: %s for video %s, file: %s", contentType, videoID, filePath)
+
+	// 如果请求的是m3u8文件，但返回的不是M3U8类型，说明HLS文件不存在
+	if strings.HasSuffix(filePath, ".m3u8") {
+		if !strings.Contains(contentType, "mpegurl") && !strings.Contains(contentType, "m3u8") && !strings.Contains(contentType, "text/plain") {
+			log.Printf("Invalid Content-Type %s for M3U8 file, HLS file may not exist", contentType)
+
+			// 获取转码状态
+			videoClient, err := h.getVideoClient()
+			if err == nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+
+				videoIDUint, parseErr := strconv.ParseUint(videoID, 10, 32)
+				if parseErr == nil {
+					req := &pb.GetVideoInfoRequest{
+						VideoId: uint32(videoIDUint),
+					}
+
+					resp, err := videoClient.GetVideoInfo(ctx, req)
+					if err == nil && resp.StatusCode == 0 && resp.Video != nil {
+						transcodeStatus := "unknown"
+						playlistURL := resp.Video.PlaylistUrl
+
+						if playlistURL != "" {
+							transcodeStatus = "completed"
+						} else {
+							transcodeStatus = "pending"
+						}
+
+						log.Printf("HLS file not found (invalid content type) for video %s, transcode status: %s", videoID, transcodeStatus)
+
+						errorPlaylist := fmt.Sprintf("#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-ERROR: %s\n#EXT-X-FALLBACK-URL: /api/video/%s/original\n", transcodeStatus, videoID)
+						c.Header("Content-Type", "application/vnd.apple.mpegurl")
+						c.Header("Access-Control-Allow-Origin", "*")
+						c.Header("Cache-Control", "no-cache")
+						c.Header("X-Transcode-Status", transcodeStatus)
+						c.Header("X-Fallback-URL", fmt.Sprintf("/api/video/%s/original", videoID))
+						c.String(http.StatusNotFound, errorPlaylist)
+						return
+					}
+				}
+			}
+
+			c.JSON(http.StatusNotFound, gin.H{"error": "HLS file not found"})
+			return
+		}
+	}
+
+	// 如果请求的是ts文件，但返回的不是TS类型，说明分片文件不存在
+	if strings.HasSuffix(filePath, ".ts") {
+		if !strings.Contains(contentType, "mp2t") && !strings.Contains(contentType, "video/MP2T") {
+			log.Printf("Invalid Content-Type %s for TS file", contentType)
+			c.JSON(http.StatusNotFound, gin.H{"error": "Video segment file not found"})
+			return
+		}
 	}
 
 	// 如果请求的是m3u8播放列表，需要修改其中的分片URL为API网关地址
