@@ -5,9 +5,10 @@ import (
 	"errors"
 	"time"
 
+	"user_service/internal/model"
+
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
-	"user_service/internal/model"
 )
 
 // UserRepository 用户数据访问接口
@@ -56,10 +57,7 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 // GetByID 根据ID获取用户
 func (r *userRepository) GetByID(ctx context.Context, userID uint32) (*model.User, error) {
 	var user model.User
-	if err := r.db.WithContext(ctx).Where("id = ? AND status = ?", userID, model.UserStatusActive).First(&user).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.New("user not found")
-		}
+	if err := r.db.WithContext(ctx).Where("id = ?", userID).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -68,10 +66,7 @@ func (r *userRepository) GetByID(ctx context.Context, userID uint32) (*model.Use
 // GetByPhone 根据手机号获取用户
 func (r *userRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
 	var user model.User
-	if err := r.db.WithContext(ctx).Where("phone = ? AND status = ?", phone, model.UserStatusActive).First(&user).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.New("user not found")
-		}
+	if err := r.db.WithContext(ctx).Where("phone = ?", phone).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -92,19 +87,10 @@ func (r *userRepository) GetByIDs(ctx context.Context, userIDs []uint32) ([]*mod
 
 // Update 更新用户信息
 func (r *userRepository) Update(ctx context.Context, userID uint32, updates map[string]interface{}) error {
-	// 验证用户是否存在
-	var user model.User
-	if err := r.db.WithContext(ctx).Where("id = ? AND status = ?", userID, model.UserStatusActive).First(&user).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return errors.New("user not found")
-		}
-		return err
-	}
-
 	// 更新时间
 	updates["updated_at"] = time.Now()
 
-	if err := r.db.WithContext(ctx).Model(&user).Updates(updates).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userID).Updates(updates).Error; err != nil {
 		return err
 	}
 

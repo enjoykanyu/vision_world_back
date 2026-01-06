@@ -8,13 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 	"user_service/internal/cache"
 	"user_service/internal/config"
 	"user_service/internal/model"
 	"user_service/internal/repository"
 	"user_service/pkg/logger"
+
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 ) // UserService 用户服务接口
 
 type UserService interface {
@@ -84,8 +85,57 @@ func (s *userService) PhoneLogin(ctx context.Context, phone, password, deviceID,
 	// 从数据库获取用户
 	user, err := s.userRepo.GetByPhone(ctx, phone)
 	if err != nil {
-		s.logger.Error("Failed to query user", "error", err)
-		return nil, "", errors.New("user not found")
+		// 检查是否是用户不存在的错误
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Info("没有注册过的用户，直接注册成功", "phone", phone)
+			// 新用户，创建用户
+			// 对密码进行bcrypt哈希处理
+			passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+			if err != nil {
+				s.logger.Error("Failed to hash password", "error", err)
+				return nil, "", errors.New("password hashing failed")
+			}
+
+			newUser := &model.User{
+				Phone:        phone,
+				PasswordHash: string(passwordHash),
+				Status:       model.UserStatusActive,
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
+				AvatarURL:    "https://picsum.photos/seed/useravatar/200/200", // 默认头像URL
+			}
+			if err := s.userRepo.Create(ctx, newUser); err != nil {
+				s.logger.Error("Failed to create user", "error", err)
+				return nil, "", errors.New("user creation failed")
+			}
+
+			// 更新用户名和昵称，使用"用户+id"格式
+			newUser.Username = "用户" + fmt.Sprint(newUser.ID)
+			newUser.Nickname = "用户" + fmt.Sprint(newUser.ID)
+			if err := s.userRepo.Update(ctx, newUser.ID, map[string]interface{}{
+				"username": newUser.Username,
+				"nickname": newUser.Nickname,
+			}); err != nil {
+				s.logger.Error("Failed to update user name", "error", err)
+				// 不影响主流程，只记录警告
+			}
+			user = newUser
+		} else {
+			// 其他数据库错误
+			s.logger.Error("Failed to query user", "error", err)
+			return nil, "", errors.New("database error")
+		}
+	} else {
+		// 检查用户状态
+		if user.Status != model.UserStatusActive {
+			return nil, "", errors.New("user account is disabled")
+		}
+
+		// 验证密码（使用bcrypt加密比较）
+		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+			s.logger.Error("Password verification failed", "error", err)
+			return nil, "", errors.New("invalid password")
+		}
 	}
 
 	// 将用户信息转换为缓存格式并存储到Redis
@@ -105,17 +155,6 @@ func (s *userService) PhoneLogin(ctx context.Context, phone, password, deviceID,
 	if cacheErr := s.cacheService.SetUser(ctx, user.ID, userCache, 30*time.Minute); cacheErr != nil {
 		s.logger.Warn("Failed to cache user", "phone", phone, "error", cacheErr)
 		// 不影响主流程，只记录警告
-	}
-
-	// 检查用户状态
-	if user.Status != model.UserStatusActive {
-		return nil, "", errors.New("user account is disabled")
-	}
-
-	// 验证密码（使用bcrypt加密比较）
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		s.logger.Error("Password verification failed", "error", err)
-		return nil, "", errors.New("invalid password")
 	}
 
 	// 生成token
@@ -191,21 +230,38 @@ func (s *userService) CodeLogin(ctx context.Context, phone, code, deviceID, osTy
 	// 从数据库获取用户
 	user, err := s.userRepo.GetByPhone(ctx, phone)
 	if err != nil {
-		s.logger.Error("没有注册过的用户，直接注册成功", "error", err)
-		// 新用户，创建用户
-		newUser := &model.User{
-			Username:  "user_" + phone[7:], // 默认用户名
-			Phone:     phone,
-			Nickname:  "用户" + phone[7:], // 默认昵称
-			Status:    model.UserStatusActive,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+		// 检查是否是用户不存在的错误
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.logger.Info("没有注册过的用户，直接注册成功", "phone", phone)
+			// 新用户，创建用户
+			newUser := &model.User{
+				Phone:     phone,
+				Status:    model.UserStatusActive,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+				AvatarURL: "https://picsum.photos/seed/useravatar/200/200", // 默认头像URL
+			}
+			if err := s.userRepo.Create(ctx, newUser); err != nil {
+				s.logger.Error("Failed to create user", "error", err)
+				return nil, "", errors.New("user creation failed")
+			}
+
+			// 更新用户名和昵称，使用"用户+id"格式
+			newUser.Username = "用户" + fmt.Sprint(newUser.ID)
+			newUser.Nickname = "用户" + fmt.Sprint(newUser.ID)
+			if err := s.userRepo.Update(ctx, newUser.ID, map[string]interface{}{
+				"username": newUser.Username,
+				"nickname": newUser.Nickname,
+			}); err != nil {
+				s.logger.Error("Failed to update user name", "error", err)
+				// 不影响主流程，只记录警告
+			}
+			user = newUser
+		} else {
+			// 其他数据库错误
+			s.logger.Error("Failed to query user", "error", err)
+			return nil, "", errors.New("database error")
 		}
-		if err := s.userRepo.Create(ctx, newUser); err != nil {
-			s.logger.Error("Failed to create user", "error", err)
-			return nil, "", errors.New("user creation failed")
-		}
-		user = newUser
 	}
 
 	// 将用户信息转换为缓存格式并存储到Redis
