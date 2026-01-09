@@ -22,6 +22,7 @@ type VideoRepository interface {
 	UpdateVideoStatus(ctx context.Context, videoID uint32, status string) error
 	UpdateVideoURL(ctx context.Context, videoID uint32, videoURL string) error
 	UpdateVideoTranscodeStatus(ctx context.Context, videoID uint32, status string, playlistURL string) error
+	UpdateVideoMetadata(ctx context.Context, videoID uint32, title, description, coverURL, category string, tags []string) error
 	GetVideoTranscodeStatus(ctx context.Context, videoID uint32) (string, string, error)
 
 	// 视频列表查询
@@ -563,6 +564,44 @@ func (r *videoRepository) GetVideoTranscodeStatus(ctx context.Context, videoID u
 	}
 
 	return video.TranscodeStatus, video.PlaylistURL, nil
+}
+
+// UpdateVideoMetadata 更新视频元数据
+func (r *videoRepository) UpdateVideoMetadata(ctx context.Context, videoID uint32, title, description, coverURL, category string, tags []string) error {
+	// 构建更新字段
+	updates := make(map[string]interface{})
+	if title != "" {
+		updates["title"] = title
+	}
+	if description != "" {
+		updates["description"] = description
+	}
+	if coverURL != "" {
+		updates["cover_url"] = coverURL
+	}
+	if category != "" {
+		updates["category"] = category
+	}
+	if tags != nil && len(tags) > 0 {
+		updates["tags"] = tags
+	}
+	updates["updated_at"] = time.Now()
+
+	// 更新数据库
+	if err := r.db.WithContext(ctx).Model(&model.Video{}).Where("id = ?", videoID).Updates(updates).Error; err != nil {
+		return fmt.Errorf("failed to update video metadata: %w", err)
+	}
+
+	// 清除相关缓存
+	if r.redis != nil {
+		cacheKey := fmt.Sprintf("%s%d", model.CacheKeyVideo, videoID)
+		r.redis.Del(ctx, cacheKey)
+		// 清除详情缓存
+		detailCacheKey := fmt.Sprintf("%s%d_detail", model.CacheKeyVideo, videoID)
+		r.redis.Del(ctx, detailCacheKey)
+	}
+
+	return nil
 }
 
 // Close 关闭资源

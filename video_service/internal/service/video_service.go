@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/vision_world/video_service/github.com/vision_world/video_service/proto/proto_gen/user"
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/internal/model"
 	"github.com/vision_world/video_service/internal/queue"
@@ -19,7 +20,6 @@ import (
 	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
 	"github.com/vision_world/video_service/pkg/transcode"
-	"github.com/vision_world/video_service/proto/user"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 )
@@ -537,6 +537,15 @@ func (s *VideoService) PublishVideo(ctx context.Context, userID string, videoID 
 			"video_id", videoID,
 			"error", err)
 		return fmt.Errorf("failed to update video status: %w", err)
+	}
+
+	// 更新视频元数据（标题和描述）
+	err = s.repo.UpdateVideoMetadata(ctx, videoID, title, description, "", "", nil)
+	if err != nil {
+		s.logger.Error("Failed to update video metadata",
+			"video_id", videoID,
+			"error", err)
+		// 元数据更新失败不影响发布流程，只记录日志
 	}
 
 	// 发送审核消息到RabbitMQ队列，添加重试逻辑
