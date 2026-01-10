@@ -937,24 +937,48 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 	}
 
 	// 构建MinIO对象路径 - 添加videos/前缀以匹配实际存储路径
-	objectName := fmt.Sprintf("videos/%s/%s", videoID, filePath)
+	objectName := fmt.Sprintf("%s/%s", videoID, filePath)
 
 	log.Printf("Proxying HLS stream for video %s, file: %s, object: %s", videoID, filePath, objectName)
 
-	// 解析MinIO端点
-	minioEndpoint := "http://localhost:9000"
-	bucketName := "videos"
+	presignedURL, err := h.minioClient.GeneratePresignedURL(context.Background(), objectName, 24*time.Hour)
+	if err != nil {
+		log.Printf("Failed to generate presigned URL: %v", err)
 
-	// 构建完整的MinIO URL
-	minioURL := fmt.Sprintf("%s/%s/%s", minioEndpoint, bucketName, objectName)
-	log.Printf("Fetching from MinIO: %s", minioURL)
+		videoClient, err := h.getVideoClient()
+		if err == nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 
-	// 发起HTTP请求到MinIO
-	respMinio, err := http.Get(minioURL)
+			videoIDUint, parseErr := strconv.ParseUint(videoID, 10, 32)
+			if parseErr == nil {
+				req := &pb.GetVideoInfoRequest{
+					VideoId: uint32(videoIDUint),
+				}
+
+				resp, err := videoClient.GetVideoInfo(ctx, req)
+				if err == nil && resp.StatusCode == 0 && resp.Video.VideoUrl != "" {
+					log.Printf("MinIO unavailable for video %s, providing fallback URL", videoID)
+					c.JSON(http.StatusServiceUnavailable, gin.H{
+						"error":        "Video stream service temporarily unavailable",
+						"fallback_url": resp.Video.VideoUrl,
+						"message":      "Please try again later or use the provided fallback URL",
+					})
+					return
+				}
+			}
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch video stream"})
+		return
+	}
+
+	log.Printf("Fetching from MinIO: %s", presignedURL)
+
+	respMinio, err := http.Get(presignedURL)
 	if err != nil {
 		log.Printf("Failed to fetch from MinIO: %v", err)
 
-		// 尝试从视频服务获取视频信息，提供降级方案
 		videoClient, err := h.getVideoClient()
 		if err == nil {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

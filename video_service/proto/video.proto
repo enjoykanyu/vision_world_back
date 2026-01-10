@@ -2,7 +2,7 @@ syntax = "proto3";
 package rpc.video;
 option go_package = "github.com/vision_world/video_service/proto/proto_gen/video";
 
-import "proto/user.proto";
+import "user.proto";
 
 // ==================== 基础请求响应结构 ====================
 
@@ -66,6 +66,17 @@ message DeleteVideoRequest {
 }
 
 message DeleteVideoResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+}
+
+// 重试转码请求
+message RetryTranscodeRequest {
+  string token = 1; // 用户token
+  uint32 video_id = 2; // 要转码的视频ID
+}
+
+message RetryTranscodeResponse {
   int32 status_code = 1; // 状态码，0-成功，其他值-失败
   string status_msg = 2; // 返回状态描述
 }
@@ -280,6 +291,7 @@ service VideoService {
   rpc UploadVideo(UploadVideoRequest) returns(UploadVideoResponse);
   rpc PublishVideo(PublishVideoRequest) returns(PublishVideoResponse);
   rpc DeleteVideo(DeleteVideoRequest) returns(DeleteVideoResponse);
+  rpc RetryTranscode(RetryTranscodeRequest) returns(RetryTranscodeResponse);
   
   // 视频信息获取
   rpc GetVideoInfo(GetVideoInfoRequest) returns(VideoResponse);

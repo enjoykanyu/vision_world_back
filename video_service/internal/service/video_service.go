@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/vision_world/video_service/github.com/vision_world/video_service/proto/proto_gen/user"
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/internal/model"
 	"github.com/vision_world/video_service/internal/queue"
@@ -20,6 +19,7 @@ import (
 	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
 	"github.com/vision_world/video_service/pkg/transcode"
+	"github.com/vision_world/video_service/proto/proto_gen/user"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 )
@@ -609,5 +609,113 @@ func (s *VideoService) PublishVideo(ctx context.Context, userID string, videoID 
 		"video_id", videoID,
 		"status", "reviewing")
 
+	return nil
+}
+
+// RetryTranscode 手动触发视频转码
+func (s *VideoService) RetryTranscode(ctx context.Context, videoID uint32) error {
+	s.logger.Info("Starting manual transcoding", "video_id", videoID)
+
+	// 获取视频信息
+	videoStrID := strconv.FormatUint(uint64(videoID), 10)
+	video, err := s.repo.GetVideoByID(ctx, videoStrID)
+	if err != nil {
+		s.logger.Error("Video not found for transcoding",
+			"video_id", videoID,
+			"error", err)
+		return fmt.Errorf("failed to get video info: %w", err)
+	}
+
+	// 从video URL中提取文件名
+	videoURL := video.PlayURL
+	if videoURL == "" {
+		return fmt.Errorf("video URL is empty")
+	}
+
+	// 解析URL获取文件名
+	parts := strings.Split(videoURL, "/")
+	fileName := parts[len(parts)-1]
+	if strings.Contains(fileName, "?") {
+		fileName = strings.Split(fileName, "?")[0]
+	}
+
+	// 从MinIO下载视频文件
+	objectName := fmt.Sprintf("%d/%s", videoID, fileName)
+	videoData, err := s.minioClient.DownloadFile(ctx, objectName)
+	if err != nil {
+		s.logger.Error("Failed to download video from MinIO",
+			"video_id", videoID,
+			"object_name", objectName,
+			"error", err)
+		return fmt.Errorf("failed to download video: %w", err)
+	}
+
+	// 创建临时文件用于转码
+	tmpFilePath := fmt.Sprintf("/tmp/%d_%s", videoID, fileName)
+	if err := os.WriteFile(tmpFilePath, videoData, 0644); err != nil {
+		s.logger.Error("Failed to write temporary file for transcoding",
+			"video_id", videoID,
+			"error", err)
+		return fmt.Errorf("failed to write temporary file: %w", err)
+	}
+
+	// 更新转码状态为pending
+	if err := s.repo.UpdateVideoTranscodeStatus(ctx, videoID, "pending", ""); err != nil {
+		s.logger.Warn("Failed to update transcode status to pending",
+			"video_id", videoID,
+			"error", err)
+	}
+
+	// 创建转码任务
+	transcodeTask := &transcode.Task{
+		ID:         fmt.Sprintf("%d", time.Now().UnixNano()),
+		VideoID:    strconv.FormatUint(uint64(videoID), 10),
+		InputPath:  tmpFilePath,
+		OutputPath: fmt.Sprintf("/tmp/transcode_output/%d", videoID),
+		Qualities:  transcode.DefaultQualities(),
+		Status:     "pending",
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+
+	// 异步执行转码任务
+	go func(vid uint32, transcodeTask *transcode.Task, tmpFilePath string) {
+		defer func() {
+			if r := recover(); r != nil {
+				s.logger.Error("Transcode goroutine panicked", "video_id", vid, "error", r)
+				if err := s.repo.UpdateVideoTranscodeStatus(context.Background(), vid, "failed", "goroutine panic"); err != nil {
+					s.logger.Warn("Failed to update transcode status after panic", "video_id", vid, "error", err)
+				}
+			}
+		}()
+
+		transcodeCtx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
+		defer cancel()
+		defer os.Remove(tmpFilePath) // 清理临时文件
+
+		s.logger.Info("Starting video transcoding", "video_id", vid)
+		if err := s.transcodeService.TranscodeVideo(transcodeCtx, transcodeTask); err != nil {
+			s.logger.Error("Failed to transcode video", "video_id", vid, "error", err)
+			if err := s.repo.UpdateVideoTranscodeStatus(transcodeCtx, vid, "failed", ""); err != nil {
+				s.logger.Warn("Failed to update transcode status", "video_id", vid, "error", err)
+			}
+		} else {
+			s.logger.Info("Video transcoding completed", "video_id", vid)
+			playlistURL, err := s.uploadTranscodeResult(transcodeCtx, vid, transcodeTask.OutputPath)
+			if err != nil {
+				s.logger.Error("Failed to upload transcode result", "video_id", vid, "error", err)
+				if err := s.repo.UpdateVideoTranscodeStatus(transcodeCtx, vid, "failed", ""); err != nil {
+					s.logger.Warn("Failed to update transcode status", "video_id", vid, "error", err)
+				}
+				return
+			}
+			s.logger.Info("Transcode result uploaded successfully", "video_id", vid, "playlist_url", playlistURL)
+			if err := s.repo.UpdateVideoTranscodeStatus(transcodeCtx, vid, "completed", playlistURL); err != nil {
+				s.logger.Warn("Failed to update transcode status", "video_id", vid, "error", err)
+			}
+		}
+	}(videoID, transcodeTask, tmpFilePath)
+
+	s.logger.Info("Transcode task submitted successfully", "video_id", videoID)
 	return nil
 }

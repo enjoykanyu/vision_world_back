@@ -159,6 +159,28 @@ func (c *Client) GetFileInfo(ctx context.Context, objectName string) (*minio.Obj
 	return &info, nil
 }
 
+// DownloadFile 从MinIO下载文件
+func (c *Client) DownloadFile(ctx context.Context, objectName string) ([]byte, error) {
+	obj, err := c.client.GetObject(ctx, c.bucketName, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get object: %w", err)
+	}
+	defer obj.Close()
+
+	stat, err := obj.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get object stat: %w", err)
+	}
+
+	data := make([]byte, stat.Size)
+	_, err = obj.Read(data)
+	if err != nil && err != io.EOF {
+		return nil, fmt.Errorf("failed to read object data: %w", err)
+	}
+
+	return data, nil
+}
+
 // Close 关闭客户端连接
 func (c *Client) Close() error {
 	// MinIO客户端没有显式的关闭方法
