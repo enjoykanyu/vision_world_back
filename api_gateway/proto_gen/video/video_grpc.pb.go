@@ -22,6 +22,7 @@ const (
 	VideoService_UploadVideo_FullMethodName        = "/rpc.video.VideoService/UploadVideo"
 	VideoService_PublishVideo_FullMethodName       = "/rpc.video.VideoService/PublishVideo"
 	VideoService_DeleteVideo_FullMethodName        = "/rpc.video.VideoService/DeleteVideo"
+	VideoService_RetryTranscode_FullMethodName     = "/rpc.video.VideoService/RetryTranscode"
 	VideoService_GetVideoInfo_FullMethodName       = "/rpc.video.VideoService/GetVideoInfo"
 	VideoService_GetVideoInfos_FullMethodName      = "/rpc.video.VideoService/GetVideoInfos"
 	VideoService_GetUserVideos_FullMethodName      = "/rpc.video.VideoService/GetUserVideos"
@@ -46,6 +47,7 @@ type VideoServiceClient interface {
 	UploadVideo(ctx context.Context, in *UploadVideoRequest, opts ...grpc.CallOption) (*UploadVideoResponse, error)
 	PublishVideo(ctx context.Context, in *PublishVideoRequest, opts ...grpc.CallOption) (*PublishVideoResponse, error)
 	DeleteVideo(ctx context.Context, in *DeleteVideoRequest, opts ...grpc.CallOption) (*DeleteVideoResponse, error)
+	RetryTranscode(ctx context.Context, in *RetryTranscodeRequest, opts ...grpc.CallOption) (*RetryTranscodeResponse, error)
 	// 视频信息获取
 	GetVideoInfo(ctx context.Context, in *GetVideoInfoRequest, opts ...grpc.CallOption) (*VideoResponse, error)
 	GetVideoInfos(ctx context.Context, in *GetVideoInfosRequest, opts ...grpc.CallOption) (*GetVideoInfosResponse, error)
@@ -95,6 +97,15 @@ func (c *videoServiceClient) PublishVideo(ctx context.Context, in *PublishVideoR
 func (c *videoServiceClient) DeleteVideo(ctx context.Context, in *DeleteVideoRequest, opts ...grpc.CallOption) (*DeleteVideoResponse, error) {
 	out := new(DeleteVideoResponse)
 	err := c.cc.Invoke(ctx, VideoService_DeleteVideo_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoServiceClient) RetryTranscode(ctx context.Context, in *RetryTranscodeRequest, opts ...grpc.CallOption) (*RetryTranscodeResponse, error) {
+	out := new(RetryTranscodeResponse)
+	err := c.cc.Invoke(ctx, VideoService_RetryTranscode_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -235,6 +246,7 @@ type VideoServiceServer interface {
 	UploadVideo(context.Context, *UploadVideoRequest) (*UploadVideoResponse, error)
 	PublishVideo(context.Context, *PublishVideoRequest) (*PublishVideoResponse, error)
 	DeleteVideo(context.Context, *DeleteVideoRequest) (*DeleteVideoResponse, error)
+	RetryTranscode(context.Context, *RetryTranscodeRequest) (*RetryTranscodeResponse, error)
 	// 视频信息获取
 	GetVideoInfo(context.Context, *GetVideoInfoRequest) (*VideoResponse, error)
 	GetVideoInfos(context.Context, *GetVideoInfosRequest) (*GetVideoInfosResponse, error)
@@ -268,6 +280,9 @@ func (UnimplementedVideoServiceServer) PublishVideo(context.Context, *PublishVid
 }
 func (UnimplementedVideoServiceServer) DeleteVideo(context.Context, *DeleteVideoRequest) (*DeleteVideoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteVideo not implemented")
+}
+func (UnimplementedVideoServiceServer) RetryTranscode(context.Context, *RetryTranscodeRequest) (*RetryTranscodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RetryTranscode not implemented")
 }
 func (UnimplementedVideoServiceServer) GetVideoInfo(context.Context, *GetVideoInfoRequest) (*VideoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVideoInfo not implemented")
@@ -374,6 +389,24 @@ func _VideoService_DeleteVideo_Handler(srv interface{}, ctx context.Context, dec
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VideoServiceServer).DeleteVideo(ctx, req.(*DeleteVideoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_RetryTranscode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetryTranscodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).RetryTranscode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_RetryTranscode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).RetryTranscode(ctx, req.(*RetryTranscodeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -648,6 +681,10 @@ var VideoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteVideo",
 			Handler:    _VideoService_DeleteVideo_Handler,
+		},
+		{
+			MethodName: "RetryTranscode",
+			Handler:    _VideoService_RetryTranscode_Handler,
 		},
 		{
 			MethodName: "GetVideoInfo",

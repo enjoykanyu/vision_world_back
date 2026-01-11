@@ -742,6 +742,74 @@ func (h *VideoHandler) HandleVideoPublish(c *gin.Context) {
 	})
 }
 
+// RetryTranscode 重试视频转码
+func (h *VideoHandler) RetryTranscode(c *gin.Context) {
+	// 获取请求参数
+	videoIDStr := c.PostForm("video_id")
+	if videoIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Video ID is required"})
+		return
+	}
+
+	// 转换视频ID
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		return
+	}
+
+	// 获取用户ID（从认证中间件）
+	userIDValue, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	userID, ok := userIDValue.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	// 调用视频服务的RetryTranscode接口
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req := &pb.RetryTranscodeRequest{
+		Token:   userID,
+		VideoId: uint32(videoID),
+	}
+
+	resp, err := videoClient.RetryTranscode(ctx, req)
+	if err != nil {
+		log.Printf("Failed to retry transcode: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retry transcode"})
+		return
+	}
+
+	if resp.StatusCode != 0 {
+		log.Printf("Retry transcode failed with status code %d: %s", resp.StatusCode, resp.StatusMsg)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": resp.StatusMsg,
+			"code":  resp.StatusCode,
+		})
+		return
+	}
+
+	// 返回成功响应
+	c.JSON(http.StatusOK, gin.H{
+		"message": resp.StatusMsg,
+	})
+}
+
 // GetUserPublishedVideos 获取用户发布的视频列表
 func (h *VideoHandler) GetUserPublishedVideos(c *gin.Context) {
 	// 获取查询参数
@@ -1171,6 +1239,7 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 			authGroup.GET("/user/published", videoHandler.GetUserPublishedVideos)
 			authGroup.POST("/publish", videoHandler.HandleVideoPublish)
 			authGroup.POST("/upload", videoHandler.HandleVideoUpload)
+			authGroup.POST("/retry-transcode", videoHandler.RetryTranscode)
 
 		}
 	}

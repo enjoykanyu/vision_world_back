@@ -7,6 +7,7 @@ import (
 	"time"
 
 	videopb "api_gateway/proto_gen/video"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
@@ -142,6 +143,14 @@ func (c *VideoServiceClient) PublishVideo(ctx context.Context, req *videopb.Publ
 		return nil, fmt.Errorf("connection not ready")
 	}
 	return c.client.PublishVideo(ctx, req)
+}
+
+// RetryTranscode 重试视频转码
+func (c *VideoServiceClient) RetryTranscode(ctx context.Context, req *videopb.RetryTranscodeRequest) (*videopb.RetryTranscodeResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.RetryTranscode(ctx, req)
 }
 
 // GetUserVideos 获取用户发布的视频列表
