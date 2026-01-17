@@ -62,15 +62,17 @@ func main() {
 
 	redisClient, err := database.NewRedisClient(cfg.Redis)
 	if err != nil {
-		logger.Fatal("Failed to connect to redis", "error", err)
+		log.Printf("FATAL ERROR: Failed to connect to redis: %v\n", err)
+		logger.Fatal("Failed to connect to redis", zap.Error(err))
 	}
-	logger.Info("Redis connected successfully")
+	log.Println("Redis connected successfully")
 	defer redisClient.Close()
 	// 创建gRPC服务器，增加最大消息大小限制以支持大文件上传
 	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(100*1024*1024), // 设置最大接收消息大小为100MB
 		grpc.MaxSendMsgSize(100*1024*1024), // 设置最大发送消息大小为100MB
 	)
+	log.Println("gRPC server created")
 
 	// 注册健康检查服务
 	healthServer := health.NewServer()
@@ -78,11 +80,14 @@ func main() {
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	// 创建视频处理器
+	log.Println("Creating video handler...")
 	videoHandler, err := handler.NewVideoHandler(cfg, logger, db, redisClient)
-	logger.Info("video handler registered")
+	log.Println("Video handler created")
 	if err != nil {
+		log.Printf("ERROR: Failed to create video handler: %v\n", err)
 		logger.Fatal("Failed to create video handler", zap.Error(err))
 	}
+	log.Println("Video handler created successfully")
 
 	// 注册视频服务
 	pb.RegisterVideoServiceServer(grpcServer, videoHandler)
@@ -90,13 +95,17 @@ func main() {
 	// 监听端口
 	lis, err := net.Listen("tcp", cfg.Server.Address)
 	if err != nil {
+		log.Printf("FATAL ERROR: Failed to listen on %s: %v\n", cfg.Server.Address, err)
 		logger.Fatal("Failed to listen", zap.String("address", cfg.Server.Address), zap.Error(err))
 	}
+	log.Println("Listening on", zap.String("address", cfg.Server.Address))
 
 	// 启动服务发现注册
+	logger.Info("Registering service...")
 	if err := videoHandler.RegisterService(); err != nil {
 		logger.Fatal("Failed to register service", zap.Error(err))
 	}
+	logger.Info("Service registered successfully")
 
 	// 优雅关闭
 	go func() {

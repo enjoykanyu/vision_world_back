@@ -2,6 +2,8 @@ module api_gateway
 
 go 1.25.0
 
+//replace api_gateway/proto_gen => ./proto/proto_gen
+
 require (
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.1
@@ -13,7 +15,6 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.9
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.36.6
-	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (

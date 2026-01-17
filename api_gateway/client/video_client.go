@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	videopb "api_gateway/proto_gen/video"
+	videopb "api_gateway/proto/proto_gen/video"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
@@ -95,6 +95,14 @@ func (c *VideoServiceClient) UploadVideo(ctx context.Context, req *videopb.Uploa
 		return nil, fmt.Errorf("connection not ready")
 	}
 	return c.client.UploadVideo(ctx, req)
+}
+
+// CreateVideoRecord 创建视频记录（用于分片上传完成后）
+func (c *VideoServiceClient) CreateVideoRecord(ctx context.Context, req *videopb.CreateVideoRecordRequest) (*videopb.CreateVideoRecordResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.CreateVideoRecord(ctx, req)
 }
 
 // GetVideoInfo 获取视频信息

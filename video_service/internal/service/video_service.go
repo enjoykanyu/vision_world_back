@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -11,6 +13,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/google/uuid"
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/internal/model"
 	"github.com/vision_world/video_service/internal/queue"
@@ -251,11 +254,21 @@ func (s *VideoService) GetVideosByTags(ctx context.Context, tags []string, page,
 
 // UploadVideo 上传视频
 func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title, description, category string, tags []string, videoData []byte) (uint32, string, string, error) {
+	s.logger.Info("UploadVideo called",
+		"user_id", userID,
+		"file_name", fileName,
+		"title", title,
+		"video_data_size", len(videoData))
+
 	// 将用户ID转换为uint32类型
 	userIDUint32, err := strconv.ParseUint(userID, 10, 32)
 	if err != nil {
+		s.logger.Error("Failed to parse user ID",
+			"user_id", userID,
+			"error", err)
 		return 0, "", "", fmt.Errorf("invalid user ID: %w", err)
 	}
+	s.logger.Info("User ID parsed successfully", "user_id_uint32", uint32(userIDUint32))
 
 	// 将标签数组转换为逗号分隔的字符串
 	tagsStr := ""
@@ -270,6 +283,7 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 
 	// 1. 先创建视频记录，获取数据库自增ID
 	video := &model.Video{
+		UUID:            uuid.New().String(),
 		UserID:          uint32(userIDUint32),
 		Title:           title,
 		Description:     description,
@@ -401,6 +415,167 @@ func (s *VideoService) UploadVideo(ctx context.Context, userID, fileName, title,
 	return videoID, presignedURL, videoURL, nil
 }
 
+// CreateVideoRecord 创建视频记录（用于分片上传完成后）
+func (s *VideoService) CreateVideoRecord(ctx context.Context, userID, fileName, title, description, category string, tags []string, videoURL, uuid string) (uint32, string, error) {
+	// 将用户ID转换为uint32类型
+	userIDUint32, err := strconv.ParseUint(userID, 10, 32)
+	if err != nil {
+		return 0, "", fmt.Errorf("invalid user ID: %w", err)
+	}
+
+	// 将标签数组转换为逗号分隔的字符串
+	tagsStr := ""
+	if len(tags) > 0 {
+		for i, tag := range tags {
+			if i > 0 {
+				tagsStr += ","
+			}
+			tagsStr += tag
+		}
+	}
+
+	// 创建视频记录
+	video := &model.Video{
+		UserID:          uint32(userIDUint32),
+		Title:           title,
+		Description:     description,
+		CoverURL:        fmt.Sprintf("https://picsum.photos/640/360?random=%d", time.Now().Unix()),
+		VideoURL:        videoURL,
+		PlaylistURL:     "",
+		TranscodeStatus: "pending",
+		Duration:        0,
+		Resolution:      "1080p",
+		Size:            0,
+		Tags:            tagsStr,
+		Category:        category,
+		PlayCount:       0,
+		LikeCount:       0,
+		CommentCount:    0,
+		ShareCount:      0,
+		FavoriteCount:   0,
+		IsPublic:        true,
+		Status:          "uploading",
+		UUID:            uuid,
+	}
+
+	// 保存视频信息到数据库
+	if err := s.repo.CreateVideo(ctx, video); err != nil {
+		return 0, "", fmt.Errorf("failed to save video info: %w", err)
+	}
+
+	videoID := video.ID
+
+	// 下载视频文件用于转码
+	tmpFilePath := fmt.Sprintf("/tmp/%d_%s", videoID, fileName)
+	if err := s.downloadVideoForTranscode(ctx, videoURL, tmpFilePath); err != nil {
+		s.logger.Warn("Failed to download video for transcoding", "video_id", videoID, "error", err)
+	} else {
+		// 提交转码任务
+		transcodeTask := &transcode.Task{
+			ID:         fmt.Sprintf("%d", time.Now().UnixNano()),
+			VideoID:    strconv.FormatUint(uint64(videoID), 10),
+			InputPath:  tmpFilePath,
+			OutputPath: fmt.Sprintf("/tmp/transcode_output/%d", videoID),
+			Qualities:  transcode.DefaultQualities(),
+			Status:     "pending",
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		}
+
+		// 异步执行转码任务
+		go func(vid uint32, transcodeTask *transcode.Task, tmpFilePath string) {
+			defer func() {
+				if r := recover(); r != nil {
+					s.logger.Error("Transcode goroutine panicked", "video_id", vid, "error", r)
+					s.repo.UpdateVideoTranscodeStatus(context.Background(), vid, "failed", "goroutine panic")
+				}
+			}()
+
+			transcodeCtx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
+			defer cancel()
+			defer os.Remove(tmpFilePath)
+
+			s.logger.Info("Starting video transcoding", "video_id", vid)
+			if err := s.transcodeService.TranscodeVideo(transcodeCtx, transcodeTask); err != nil {
+				s.logger.Error("Failed to transcode video", "video_id", vid, "error", err)
+				s.repo.UpdateVideoTranscodeStatus(transcodeCtx, vid, "failed", "")
+			} else {
+				s.logger.Info("Video transcoding completed", "video_id", vid)
+				playlistURL, err := s.uploadTranscodeResult(transcodeCtx, vid, transcodeTask.OutputPath)
+				if err != nil {
+					s.logger.Error("Failed to upload transcode result", "video_id", vid, "error", err)
+					s.repo.UpdateVideoTranscodeStatus(transcodeCtx, vid, "failed", "")
+					return
+				}
+				s.logger.Info("Transcode result uploaded successfully", "video_id", vid, "playlist_url", playlistURL)
+				s.repo.UpdateVideoTranscodeStatus(transcodeCtx, vid, "completed", playlistURL)
+			}
+		}(videoID, transcodeTask, tmpFilePath)
+	}
+
+	s.logger.Info("Video record created successfully",
+		"video_id", videoID,
+		"title", title,
+		"video_url", videoURL,
+		"uuid", uuid)
+
+	return videoID, videoURL, nil
+}
+
+// downloadVideoForTranscode 从URL下载视频文件用于转码
+func (s *VideoService) downloadVideoForTranscode(ctx context.Context, videoURL, localPath string) error {
+	// 如果URL是本地文件，直接复制
+	if strings.HasPrefix(videoURL, "http://localhost:9000/") || strings.HasPrefix(videoURL, "http://127.0.0.1:9000/") {
+		// 从MinIO下载
+		resp, err := http.Get(videoURL)
+		if err != nil {
+			return fmt.Errorf("failed to download video: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("failed to download video: status %d", resp.StatusCode)
+		}
+
+		out, err := os.Create(localPath)
+		if err != nil {
+			return fmt.Errorf("failed to create local file: %w", err)
+		}
+		defer out.Close()
+
+		_, err = io.Copy(out, resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to write video file: %w", err)
+		}
+
+		return nil
+	}
+
+	// 如果是本地文件路径
+	if strings.HasPrefix(videoURL, "/tmp/") || strings.HasPrefix(videoURL, "/var/folders/") {
+		input, err := os.Open(videoURL)
+		if err != nil {
+			return fmt.Errorf("failed to open local file: %w", err)
+		}
+		defer input.Close()
+
+		out, err := os.Create(localPath)
+		if err != nil {
+			return fmt.Errorf("failed to create local file: %w", err)
+		}
+		defer out.Close()
+
+		_, err = io.Copy(out, input)
+		if err != nil {
+			return fmt.Errorf("failed to copy video file: %w", err)
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("unsupported video URL format: %s", videoURL)
+}
+
 // getContentTypeFromFileName 根据文件名获取MIME类型
 func getContentTypeFromFileName(fileName string) string {
 	// 获取文件扩展名
@@ -513,7 +688,7 @@ func (s *VideoService) uploadFileToMinIO(ctx context.Context, filePath, objectNa
 }
 
 // PublishVideo 发布视频
-func (s *VideoService) PublishVideo(ctx context.Context, userID string, videoID uint32, title, description string) error {
+func (s *VideoService) PublishVideo(ctx context.Context, userID string, videoID string, title, description string) error {
 	// 添加日志记录
 	s.logger.Info("Publishing video",
 		"video_id", videoID,
@@ -521,8 +696,7 @@ func (s *VideoService) PublishVideo(ctx context.Context, userID string, videoID 
 		"user_id", userID)
 
 	// 先检查视频是否存在
-	videoStrID := strconv.FormatUint(uint64(videoID), 10)
-	video, err := s.repo.GetVideoByID(ctx, videoStrID)
+	video, err := s.repo.GetVideoByID(ctx, videoID)
 	if err != nil {
 		s.logger.Error("Video not found when publishing",
 			"video_id", videoID,
@@ -545,18 +719,17 @@ func (s *VideoService) PublishVideo(ctx context.Context, userID string, videoID 
 		s.logger.Error("Failed to update video metadata",
 			"video_id", videoID,
 			"error", err)
-		// 元数据更新失败不影响发布流程，只记录日志
 	}
 
 	// 发送审核消息到RabbitMQ队列，添加重试逻辑
 	auditMessage := &queue.AuditMessage{
-		ContentID:    fmt.Sprintf("video_%d", videoID),
+		ContentID:    fmt.Sprintf("video_%s", videoID),
 		ContentType:  "video",
 		Title:        title,
 		URL:          video.PlayURL,
 		Metadata:     description,
 		UploaderID:   userID,
-		UploaderName: userID, // TODO: 从用户信息获取用户名
+		UploaderName: userID,
 	}
 
 	// 最多重试3次发送审核消息

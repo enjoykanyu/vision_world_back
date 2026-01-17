@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -17,8 +18,8 @@ import (
 	"api_gateway/discovery"
 	"api_gateway/middleware"
 	"api_gateway/pkg/minio"
-	recpb "api_gateway/proto_gen/recommendation"
-	pb "api_gateway/proto_gen/video"
+	recpb "api_gateway/proto/proto_gen/recommendation"
+	pb "api_gateway/proto/proto_gen/video"
 
 	"github.com/gin-gonic/gin"
 )
@@ -131,6 +132,19 @@ func (h *VideoHandler) onRecommendServiceChange(serviceAddr string, isAdded bool
 			}
 		}
 	}
+}
+
+// getTokenFromHeader 从请求头中获取原始 JWT token
+func getTokenFromHeader(c *gin.Context) string {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return ""
+	}
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+		return strings.TrimSpace(parts[1])
+	}
+	return ""
 }
 
 // getVideoClient 获取视频服务客户端（懒加载）
@@ -289,7 +303,7 @@ func (h *VideoHandler) GetRecommendedVideos(c *gin.Context) {
 	defer cancel()
 
 	req := &pb.GetRecommendVideosRequest{
-		Token:    userID,
+		Token:    getTokenFromHeader(c),
 		Page:     uint32(page),
 		PageSize: uint32(pageSize),
 	}
@@ -385,7 +399,7 @@ func (h *VideoHandler) GetFollowVideos(c *gin.Context) {
 		return
 	}
 
-	userID, ok := userIDValue.(string)
+	_, ok := userIDValue.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
 		return
@@ -403,7 +417,7 @@ func (h *VideoHandler) GetFollowVideos(c *gin.Context) {
 	defer cancel()
 
 	req := &pb.GetFollowVideosRequest{
-		Token:    userID,
+		Token:    getTokenFromHeader(c),
 		Page:     uint32(page),
 		PageSize: uint32(pageSize),
 	}
@@ -485,7 +499,7 @@ func (h *VideoHandler) Close() {
 	}
 }
 
-// HandleVideoUpload 处理视频上传请求
+// HandleVideoUpload 处理视频上传请求这里后端会进行转码
 func (h *VideoHandler) HandleVideoUpload(c *gin.Context) {
 	// 获取表单数据
 	title := c.PostForm("title")
@@ -550,7 +564,29 @@ func (h *VideoHandler) HandleVideoUpload(c *gin.Context) {
 		return
 	}
 
-	//token := fmt.Sprintf("%v", tokenValue)
+	// 获取用户ID（中间件已验证token）
+	userIDValue, exists := c.Get("user_id")
+	if !exists {
+		log.Printf("User not authenticated")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户未认证"})
+		return
+	}
+	_, ok := userIDValue.(string)
+	if !ok {
+		log.Printf("Invalid user ID")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "无效的用户ID"})
+		return
+	}
+
+	// 获取原始token（传递给video_service进行二次验证）
+	authHeader := c.GetHeader("Authorization")
+	token := ""
+	if authHeader != "" {
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+			token = strings.TrimSpace(parts[1])
+		}
+	}
 
 	// 准备标签
 	var tags []string
@@ -566,7 +602,7 @@ func (h *VideoHandler) HandleVideoUpload(c *gin.Context) {
 	defer cancel()
 
 	req := &pb.UploadVideoRequest{
-		//Token:       token,
+		Token:       token,
 		VideoData:   fileBytes,
 		FileName:    header.Filename,
 		Title:       title,
@@ -635,7 +671,7 @@ func (h *VideoHandler) HandleVideoPublish(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
-	userID, ok := userIDValue.(string)
+	_, ok := userIDValue.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
 		return
@@ -707,16 +743,16 @@ func (h *VideoHandler) HandleVideoPublish(c *gin.Context) {
 	}
 
 	req := &pb.PublishVideoRequest{
-		Token:       userID,
+		Token:       getTokenFromHeader(c),
 		Title:       title,
 		Description: description,
 		CoverUrl:    coverURL,
-		VideoUrl:    fmt.Sprintf("http://localhost:9000/videos/%s.mp4", videoId), // 这里应该从视频服务获取真实的视频URL
+		VideoUrl:    fmt.Sprintf("http://localhost:9000/videos/%s.mp4", videoId),
 		Tags:        tags,
 		IsPublic:    &isPublic,
 		Type:        typePtr,
 		Source:      sourcePtr,
-		VideoId:     videoId, // 添加视频ID，来自表单中的video_id
+		VideoId:     videoId,
 	}
 
 	resp, err := videoClient.PublishVideo(ctx, req)
@@ -765,7 +801,7 @@ func (h *VideoHandler) RetryTranscode(c *gin.Context) {
 		return
 	}
 
-	userID, ok := userIDValue.(string)
+	_, ok := userIDValue.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
 		return
@@ -784,7 +820,7 @@ func (h *VideoHandler) RetryTranscode(c *gin.Context) {
 	defer cancel()
 
 	req := &pb.RetryTranscodeRequest{
-		Token:   userID,
+		Token:   getTokenFromHeader(c),
 		VideoId: uint32(videoID),
 	}
 
@@ -861,7 +897,7 @@ func (h *VideoHandler) GetUserPublishedVideos(c *gin.Context) {
 	// 调用视频服务的GetUserVideos接口
 	req := &pb.GetUserVideosRequest{
 		UserId:   uint32(userID),
-		Token:    userIDStr,
+		Token:    getTokenFromHeader(c),
 		Page:     uint32(page),
 		PageSize: uint32(pageSize),
 	}
@@ -1218,8 +1254,259 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 	log.Printf("Successfully streamed %s for video %s", filePath, videoID)
 }
 
+// CheckUploadStatus 检查上传进度
+func (h *VideoHandler) CheckUploadStatus(c *gin.Context) {
+	_ = c.Query("fileId") // 忽略未使用的fileId
+	// 实际场景中使用Redis存储已上传分片列表
+	c.JSON(http.StatusOK, gin.H{"uploadedChunks": []int{}})
+}
+
+// UploadChunk 处理分片上传
+func (h *VideoHandler) UploadChunk(c *gin.Context) {
+	fileId := c.PostForm("fileId")
+	chunkIndexStr := c.PostForm("chunkIndex")
+	totalChunksStr := c.PostForm("totalChunks")
+
+	log.Printf("UploadChunk: fileId=%s, chunkIndex=%s, totalChunks=%s", fileId, chunkIndexStr, totalChunksStr)
+
+	if fileId == "" {
+		log.Printf("UploadChunk: fileId is empty")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "fileId不能为空"})
+		return
+	}
+
+	chunkIndex, err := strconv.Atoi(chunkIndexStr)
+	if err != nil {
+		log.Printf("UploadChunk: invalid chunkIndex: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的分片索引"})
+		return
+	}
+
+	totalChunks, err := strconv.Atoi(totalChunksStr)
+	if err != nil {
+		log.Printf("UploadChunk: invalid totalChunks: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的总分片数"})
+		return
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		log.Printf("UploadChunk: no file uploaded: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "未上传分片文件"})
+		return
+	}
+
+	log.Printf("UploadChunk: file=%s, size=%d", file.Filename, file.Size)
+
+	src, err := file.Open()
+	if err != nil {
+		log.Printf("UploadChunk: failed to open file: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("打开分片失败: %v", err)})
+		return
+	}
+	defer src.Close()
+
+	// 保存分片到临时目录
+	tmpDir := fmt.Sprintf("/tmp/upload/%s", fileId)
+	log.Printf("UploadChunk: creating tmpDir: %s", tmpDir)
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		log.Printf("UploadChunk: failed to create tmpDir: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("创建临时目录失败: %v", err)})
+		return
+	}
+
+	tmpPath := fmt.Sprintf("%s/chunk_%d", tmpDir, chunkIndex)
+	log.Printf("UploadChunk: creating tmpPath: %s", tmpPath)
+
+	out, err := os.Create(tmpPath)
+	if err != nil {
+		log.Printf("UploadChunk: failed to create file: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("创建临时文件失败: %v", err)})
+		return
+	}
+	defer out.Close()
+
+	written, err := io.Copy(out, src)
+	if err != nil {
+		log.Printf("UploadChunk: failed to copy file: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("保存分片失败: %v", err)})
+		return
+	}
+	log.Printf("UploadChunk: successfully saved chunk %d, written=%d", chunkIndex, written)
+
+	// 检查是否所有分片都已上传
+	allChunksUploaded := true
+	for i := 0; i < totalChunks; i++ {
+		chunkPath := fmt.Sprintf("%s/chunk_%d", tmpDir, i)
+		if _, err := os.Stat(chunkPath); os.IsNotExist(err) {
+			allChunksUploaded = false
+			break
+		}
+	}
+
+	if allChunksUploaded {
+		// 合并所有分片
+		outputPath := fmt.Sprintf("/tmp/upload/%s/%s", fileId, fileId)
+		outputFile, err := os.Create(outputPath)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("创建输出文件失败: %v", err)})
+			return
+		}
+		defer outputFile.Close()
+
+		for i := 0; i < totalChunks; i++ {
+			chunkPath := fmt.Sprintf("%s/chunk_%d", tmpDir, i)
+			chunkFile, err := os.Open(chunkPath)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("打开分片文件失败: %v", err)})
+				return
+			}
+			defer chunkFile.Close()
+
+			_, err = io.Copy(outputFile, chunkFile)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("合并分片失败: %v", err)})
+				return
+			}
+		}
+
+		// 上传合并后的文件到MinIO
+		// 注意：文件上传到MinIO在CompleteUpload中处理，这里只合并不分发
+
+		// 不清理临时文件，由CompleteUpload处理
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "分片上传成功"})
+}
+
+// CompleteUpload 完成分片上传并转码为HLS
+func (h *VideoHandler) CompleteUpload(c *gin.Context) {
+	var req struct {
+		FileId string `json:"fileId"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("CompleteUpload: 参数错误: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		return
+	}
+
+	log.Printf("CompleteUpload: fileId=%s", req.FileId)
+
+	// 检查合并后的文件是否存在
+	outputPath := fmt.Sprintf("/tmp/upload/%s/%s", req.FileId, req.FileId)
+	var videoURL string
+	var uploadToMinIO bool = false
+
+	if _, err := os.Stat(outputPath); err == nil {
+		// 文件存在，上传到MinIO
+		log.Printf("CompleteUpload: 本地文件存在: %s", outputPath)
+		uploadToMinIO = true
+	} else {
+		log.Printf("CompleteUpload: 本地文件不存在: %s", outputPath)
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("CompleteUpload: Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "视频服务暂时不可用"})
+		return
+	}
+
+	// 获取原始token（传递给video_service进行二次验证）
+	authHeader := c.GetHeader("Authorization")
+	token := ""
+	if authHeader != "" {
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+			token = strings.TrimSpace(parts[1])
+		}
+	}
+
+	// 如果本地文件存在，先上传到MinIO
+	var videoData []byte
+	if uploadToMinIO && h.minioClient != nil {
+		log.Printf("CompleteUpload: 上传文件到MinIO...")
+		objectName := fmt.Sprintf("videos/%s.mp4", req.FileId)
+		minioURL, err := h.minioClient.UploadFile(context.Background(), objectName, outputPath, "video/mp4")
+		if err != nil {
+			log.Printf("CompleteUpload: 上传到MinIO失败: %v", err)
+			// 上传失败仍继续，让视频服务使用默认URL
+		} else {
+			videoURL = minioURL
+			log.Printf("CompleteUpload: 上传MinIO成功: %s", videoURL)
+
+			// 从MinIO下载文件内容，传递给video_service进行转码
+			log.Printf("CompleteUpload: 从MinIO下载文件用于转码...")
+			reader, err := h.minioClient.GetFile(context.Background(), objectName)
+			if err != nil {
+				log.Printf("CompleteUpload: 从MinIO下载文件失败: %v", err)
+				err = nil // Clear error since we have a fallback URL
+			} else {
+				defer reader.Close()
+				videoData, err = io.ReadAll(reader)
+				if err != nil {
+					log.Printf("CompleteUpload: 读取文件内容失败: %v", err)
+					videoData = []byte{}
+				} else {
+					log.Printf("CompleteUpload: 文件下载成功, size=%d", len(videoData))
+				}
+			}
+
+			// 清理临时文件
+			os.RemoveAll(fmt.Sprintf("/tmp/upload/%s", req.FileId))
+		}
+	}
+
+	// 调用视频服务的UploadVideo方法
+	resp, err := videoClient.UploadVideo(context.Background(), &pb.UploadVideoRequest{
+		Token:     token,
+		FileName:  fmt.Sprintf("%s.mp4", req.FileId),
+		Title:     "待编辑的视频",
+		VideoData: videoData,
+	})
+
+	if err != nil {
+		log.Printf("CompleteUpload: Failed to call UploadVideo: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":      fmt.Sprintf("创建视频记录失败: %v", err),
+			"file_id":    req.FileId,
+			"need_retry": true,
+		})
+		return
+	}
+
+	if resp.StatusCode != 0 {
+		log.Printf("CompleteUpload: UploadVideo failed with status code %d: %s", resp.StatusCode, resp.StatusMsg)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": resp.StatusMsg,
+			"code":  resp.StatusCode,
+		})
+		return
+	}
+
+	log.Printf("CompleteUpload: Video created successfully, video_id=%d, video_url=%s", resp.VideoId, resp.VideoUrl)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "上传完成",
+		"video_id":  resp.VideoId,
+		"video_url": resp.VideoUrl,
+		"file_id":   req.FileId,
+		"playURL":   fmt.Sprintf("/api/play/%s", resp.VideoId),
+	})
+}
+
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
 func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandler) {
+	// 分片上传路由组 - 需要认证
+	uploadGroup := router.Group("/api/upload")
+	uploadGroup.Use(middleware.RequireAuthMiddleware())
+	{
+		uploadGroup.GET("/check", videoHandler.CheckUploadStatus)
+		uploadGroup.POST("/chunk", videoHandler.UploadChunk)
+		uploadGroup.POST("/complete", videoHandler.CompleteUpload)
+	}
+
 	// 视频相关路由组
 	videoGroup := router.Group("/api/video")
 	{

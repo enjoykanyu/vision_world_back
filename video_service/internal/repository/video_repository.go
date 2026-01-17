@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -19,10 +20,10 @@ type VideoRepository interface {
 	GetVideoByID(ctx context.Context, videoID string) (*model.RecommendationVideo, error)
 	GetVideoDetailByID(ctx context.Context, videoID string) (*model.VideoDetail, error)
 	GetVideosByIDs(ctx context.Context, videoIDs []string) ([]*model.RecommendationVideo, error)
-	UpdateVideoStatus(ctx context.Context, videoID uint32, status string) error
+	UpdateVideoStatus(ctx context.Context, videoID string, status string) error
 	UpdateVideoURL(ctx context.Context, videoID uint32, videoURL string) error
 	UpdateVideoTranscodeStatus(ctx context.Context, videoID uint32, status string, playlistURL string) error
-	UpdateVideoMetadata(ctx context.Context, videoID uint32, title, description, coverURL, category string, tags []string) error
+	UpdateVideoMetadata(ctx context.Context, videoID string, title, description, coverURL, category string, tags []string) error
 	GetVideoTranscodeStatus(ctx context.Context, videoID uint32) (string, string, error)
 
 	// 视频列表查询
@@ -65,7 +66,7 @@ func (r *videoRepository) CreateVideo(ctx context.Context, video *model.Video) e
 	return nil
 }
 
-// GetVideoByID 根据ID获取视频详情
+// GetVideoByID 根据ID或UUID获取视频详情
 func (r *videoRepository) GetVideoByID(ctx context.Context, videoID string) (*model.RecommendationVideo, error) {
 	// 先从缓存获取
 	if r.redis != nil {
@@ -78,62 +79,71 @@ func (r *videoRepository) GetVideoByID(ctx context.Context, videoID string) (*mo
 			}
 		}
 	}
-	fmt.Printf("video: %s\n", videoID)
+
 	// 缓存未命中，从数据库获取
 	var video model.Video
-	id, err := strconv.ParseUint(videoID, 10, 32)
-	fmt.Printf("video: %s\n", videoID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid video ID format: %s, error: %w", videoID, err)
+	var query *gorm.DB
+
+	// 判断是UUID格式还是数字格式
+	if strings.Contains(videoID, "-") {
+		// UUID格式，通过UUID字段查询
+		query = r.db.WithContext(ctx).Where("uuid = ?", videoID)
+	} else {
+		// 数字格式，通过ID字段查询
+		id, err := strconv.ParseUint(videoID, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid video ID format: %s, error: %w", videoID, err)
+		}
+		query = r.db.WithContext(ctx).Where("id = ?", id)
 	}
 
-	// 从数据库获取视频，不限制状态，以便可以更新任意状态的视频
-	query := r.db.WithContext(ctx).Where("id = ?", id)
 	if err := query.First(&video).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			// 检查是否是请求视频ID=3，如果是且不存在，创建测试数据
-			if id == 3 {
-				// 创建测试视频数据
-				testVideo := model.Video{
-					ID:           3,
-					UserID:       1,
-					Title:        "测试视频",
-					Description:  "这是一个测试视频，用于验证视频详情页的作者信息展示",
-					CoverURL:     "https://picsum.photos/seed/video123/800/450.jpg",
-					VideoURL:     "/videos/sample.mp4",
-					Duration:     30,
-					Resolution:   "1080p",
-					Size:         100000000,
-					Tags:         "动画,测试,视频",
-					Location:     "北京",
-					Category:     "动画",
-					PlayCount:    1200,
-					LikeCount:    856,
-					CommentCount: 234,
-					ShareCount:   123,
-					IsPublic:     true,
-					Status:       "normal",
-					CreatedAt:    time.Now(),
-					UpdatedAt:    time.Now(),
+			// 如果是数字格式且ID=3，创建测试数据
+			if !strings.Contains(videoID, "-") {
+				id, _ := strconv.ParseUint(videoID, 10, 32)
+				if id == 3 {
+					testVideo := model.Video{
+						ID:           3,
+						UserID:       1,
+						Title:        "测试视频",
+						Description:  "这是一个测试视频，用于验证视频详情页的作者信息展示",
+						CoverURL:     "https://picsum.photos/seed/video123/800/450.jpg",
+						VideoURL:     "/videos/sample.mp4",
+						Duration:     30,
+						Resolution:   "1080p",
+						Size:         100000000,
+						Tags:         "动画,测试,视频",
+						Location:     "北京",
+						Category:     "动画",
+						PlayCount:    1200,
+						LikeCount:    856,
+						CommentCount: 234,
+						ShareCount:   123,
+						IsPublic:     true,
+						Status:       "normal",
+						CreatedAt:    time.Now(),
+						UpdatedAt:    time.Now(),
+					}
+					if err := r.db.Create(&testVideo).Error; err != nil {
+						return nil, fmt.Errorf("failed to create test video: %w", err)
+					}
+					video = testVideo
+				} else {
+					return nil, fmt.Errorf("video not found in database: %s", videoID)
 				}
-				// 保存到数据库
-				if err := r.db.Create(&testVideo).Error; err != nil {
-					return nil, fmt.Errorf("failed to create test video: %w", err)
-				}
-				video = testVideo
 			} else {
-				return nil, fmt.Errorf("video not found in database: %s, parsed_id: %d", videoID, id)
+				return nil, fmt.Errorf("video not found in database: %s", videoID)
 			}
 		} else {
 			return nil, fmt.Errorf("failed to query video from database: %s, error: %w", videoID, err)
 		}
 	}
 
-	// 转换为RecommendationVideo模型
 	recVideo := r.convertToRecommendationVideo(&video)
 
 	// 为测试视频ID=3设置正确的作者信息
-	if id == 3 {
+	if video.ID == 3 {
 		recVideo.Author = "测试下作者"
 	}
 
@@ -219,15 +229,28 @@ func (r *videoRepository) GetVideoDetailByID(ctx context.Context, videoID string
 }
 
 // UpdateVideoStatus 更新视频状态
-func (r *videoRepository) UpdateVideoStatus(ctx context.Context, videoID uint32, status string) error {
-	// 更新数据库中的视频状态
-	if err := r.db.WithContext(ctx).Model(&model.Video{}).Where("id = ?", videoID).Update("status", status).Error; err != nil {
+func (r *videoRepository) UpdateVideoStatus(ctx context.Context, videoID string, status string) error {
+	// 判断是UUID格式还是数字格式
+	var query *gorm.DB
+	if strings.Contains(videoID, "-") {
+		// UUID格式，通过UUID字段更新
+		query = r.db.WithContext(ctx).Model(&model.Video{}).Where("uuid = ?", videoID)
+	} else {
+		// 数字格式，通过ID字段更新
+		id, err := strconv.ParseUint(videoID, 10, 32)
+		if err != nil {
+			return fmt.Errorf("invalid video ID format: %s, error: %w", videoID, err)
+		}
+		query = r.db.WithContext(ctx).Model(&model.Video{}).Where("id = ?", id)
+	}
+
+	if err := query.Update("status", status).Error; err != nil {
 		return fmt.Errorf("failed to update video status: %w", err)
 	}
 
 	// 清除相关缓存
 	if r.redis != nil {
-		cacheKey := fmt.Sprintf("%s%d", model.CacheKeyVideo, videoID)
+		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoID)
 		r.redis.Del(ctx, cacheKey)
 	}
 
@@ -567,7 +590,7 @@ func (r *videoRepository) GetVideoTranscodeStatus(ctx context.Context, videoID u
 }
 
 // UpdateVideoMetadata 更新视频元数据
-func (r *videoRepository) UpdateVideoMetadata(ctx context.Context, videoID uint32, title, description, coverURL, category string, tags []string) error {
+func (r *videoRepository) UpdateVideoMetadata(ctx context.Context, videoID string, title, description, coverURL, category string, tags []string) error {
 	// 构建更新字段
 	updates := make(map[string]interface{})
 	if title != "" {
@@ -587,8 +610,20 @@ func (r *videoRepository) UpdateVideoMetadata(ctx context.Context, videoID uint3
 	}
 	updates["updated_at"] = time.Now()
 
+	// 判断是UUID格式还是数字格式
+	var query *gorm.DB
+	if strings.Contains(videoID, "-") {
+		query = r.db.WithContext(ctx).Model(&model.Video{}).Where("uuid = ?", videoID)
+	} else {
+		id, err := strconv.ParseUint(videoID, 10, 32)
+		if err != nil {
+			return fmt.Errorf("invalid video ID format: %s, error: %w", videoID, err)
+		}
+		query = r.db.WithContext(ctx).Model(&model.Video{}).Where("id = ?", id)
+	}
+
 	// 更新数据库
-	if err := r.db.WithContext(ctx).Model(&model.Video{}).Where("id = ?", videoID).Updates(updates).Error; err != nil {
+	if err := query.Updates(updates).Error; err != nil {
 		return fmt.Errorf("failed to update video metadata: %w", err)
 	}
 

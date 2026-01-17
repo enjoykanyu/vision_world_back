@@ -9,6 +9,7 @@ import (
 // Video 视频信息表
 type Video struct {
 	ID              uint32         `gorm:"primaryKey;autoIncrement" json:"id"`
+	UUID            string         `gorm:"size:36;uniqueIndex;comment:视频UUID，用于前端关联" json:"uuid"`
 	UserID          uint32         `gorm:"index;not null;comment:用户ID" json:"user_id"`
 	Title           string         `gorm:"size:200;not null;comment:视频标题" json:"title"`
 	Description     string         `gorm:"size:1000;comment:视频描述" json:"description"`

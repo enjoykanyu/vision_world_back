@@ -13,14 +13,12 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-// Client MinIO客户端
 type Client struct {
-	client     *minio.Client
+	client     *minio.Core
 	bucketName string
 	location   string
 }
 
-// Config MinIO配置
 type Config struct {
 	Endpoint        string
 	AccessKeyID     string
@@ -30,9 +28,7 @@ type Config struct {
 	Location        string
 }
 
-// NewClient 创建新的MinIO客户端
 func NewClient(cfg Config) (*Client, error) {
-	// 初始化MinIO客户端
 	minioClient, err := minio.New(cfg.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.AccessKeyID, cfg.SecretAccessKey, ""),
 		Secure: cfg.UseSSL,
@@ -42,12 +38,11 @@ func NewClient(cfg Config) (*Client, error) {
 	}
 
 	client := &Client{
-		client:     minioClient,
+		client:     &minio.Core{Client: minioClient},
 		bucketName: cfg.BucketName,
 		location:   cfg.Location,
 	}
 
-	// 检查并创建bucket
 	if err := client.ensureBucketExists(); err != nil {
 		return nil, fmt.Errorf("failed to ensure bucket exists: %w", err)
 	}
@@ -55,17 +50,14 @@ func NewClient(cfg Config) (*Client, error) {
 	return client, nil
 }
 
-// ensureBucketExists 确保bucket存在
 func (c *Client) ensureBucketExists() error {
 	ctx := context.Background()
 
-	// 检查bucket是否存在
 	exists, err := c.client.BucketExists(ctx, c.bucketName)
 	if err != nil {
 		return fmt.Errorf("failed to check bucket existence: %w", err)
 	}
 
-	// 如果bucket不存在，创建它
 	if !exists {
 		err = c.client.MakeBucket(ctx, c.bucketName, minio.MakeBucketOptions{
 			Region: c.location,
@@ -79,9 +71,7 @@ func (c *Client) ensureBucketExists() error {
 	return nil
 }
 
-// UploadFile 上传文件到MinIO
 func (c *Client) UploadFile(ctx context.Context, objectName string, filePath string, contentType string) (string, error) {
-	// 如果未指定content type，尝试自动检测
 	if contentType == "" {
 		ext := filepath.Ext(filePath)
 		contentType = mime.TypeByExtension(ext)
@@ -90,7 +80,6 @@ func (c *Client) UploadFile(ctx context.Context, objectName string, filePath str
 		}
 	}
 
-	// 上传文件
 	info, err := c.client.FPutObject(ctx, c.bucketName, objectName, filePath, minio.PutObjectOptions{
 		ContentType: contentType,
 	})
@@ -100,15 +89,12 @@ func (c *Client) UploadFile(ctx context.Context, objectName string, filePath str
 
 	log.Printf("Successfully uploaded %s of size %d\n", objectName, info.Size)
 
-	// 返回文件URL
 	fileURL := fmt.Sprintf("%s/%s/%s", c.client.EndpointURL(), c.bucketName, objectName)
 	return fileURL, nil
 }
 
-// UploadFileFromReader 从reader上传文件到MinIO
 func (c *Client) UploadFileFromReader(ctx context.Context, objectName string, reader io.Reader, size int64, contentType string) (string, error) {
-	// 上传文件
-	info, err := c.client.PutObject(ctx, c.bucketName, objectName, reader, size, minio.PutObjectOptions{
+	info, err := c.client.PutObject(ctx, c.bucketName, objectName, reader, size, "", "", minio.PutObjectOptions{
 		ContentType: contentType,
 	})
 	if err != nil {
@@ -117,14 +103,11 @@ func (c *Client) UploadFileFromReader(ctx context.Context, objectName string, re
 
 	log.Printf("Successfully uploaded %s of size %d\n", objectName, info.Size)
 
-	// 返回文件URL
 	fileURL := fmt.Sprintf("%s/%s/%s", c.client.EndpointURL(), c.bucketName, objectName)
 	return fileURL, nil
 }
 
-// GeneratePresignedURL 生成预签名URL
 func (c *Client) GeneratePresignedURL(ctx context.Context, objectName string, expiry time.Duration) (string, error) {
-	// 生成预签名URL
 	presignedURL, err := c.client.PresignedGetObject(ctx, c.bucketName, objectName, expiry, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate presigned URL: %w", err)
@@ -133,7 +116,6 @@ func (c *Client) GeneratePresignedURL(ctx context.Context, objectName string, ex
 	return presignedURL.String(), nil
 }
 
-// DeleteFile 删除文件
 func (c *Client) DeleteFile(ctx context.Context, objectName string) error {
 	err := c.client.RemoveObject(ctx, c.bucketName, objectName, minio.RemoveObjectOptions{})
 	if err != nil {
@@ -144,7 +126,6 @@ func (c *Client) DeleteFile(ctx context.Context, objectName string) error {
 	return nil
 }
 
-// GetFileInfo 获取文件信息
 func (c *Client) GetFileInfo(ctx context.Context, objectName string) (*minio.ObjectInfo, error) {
 	info, err := c.client.StatObject(ctx, c.bucketName, objectName, minio.StatObjectOptions{})
 	if err != nil {
@@ -154,13 +135,74 @@ func (c *Client) GetFileInfo(ctx context.Context, objectName string) (*minio.Obj
 	return &info, nil
 }
 
-// GetClient 获取底层的 MinIO 客户端
-func (c *Client) GetClient() *minio.Client {
+func (c *Client) GetClient() *minio.Core {
 	return c.client
 }
 
-// Close 关闭客户端连接
-func (c *Client) Close() error {
-	// MinIO客户端没有显式的关闭方法
+func (c *Client) NewMultipartUpload(ctx context.Context, objectName string, opts minio.PutObjectOptions) (string, error) {
+	uploadID, err := c.client.NewMultipartUpload(ctx, c.bucketName, objectName, opts)
+	if err != nil {
+		return "", fmt.Errorf("failed to create multipart upload: %w", err)
+	}
+
+	return uploadID, nil
+}
+
+func (c *Client) PutObjectPart(ctx context.Context, objectName, uploadID string, partNumber int, reader io.Reader, size int64, opts minio.PutObjectPartOptions) (minio.CompletePart, error) {
+	part, err := c.client.PutObjectPart(ctx, c.bucketName, objectName, uploadID, partNumber, reader, size, opts)
+	if err != nil {
+		return minio.CompletePart{}, fmt.Errorf("failed to put object part: %w", err)
+	}
+
+	return minio.CompletePart{
+		PartNumber: part.PartNumber,
+		ETag:       part.ETag,
+	}, nil
+}
+
+func (c *Client) ListParts(ctx context.Context, objectName, uploadID string, maxParts int, partNumberMarker int) ([]minio.CompletePart, error) {
+	result, err := c.client.ListObjectParts(ctx, c.bucketName, objectName, uploadID, partNumberMarker, maxParts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list parts: %w", err)
+	}
+
+	parts := make([]minio.CompletePart, len(result.ObjectParts))
+	for i, part := range result.ObjectParts {
+		parts[i] = minio.CompletePart{
+			PartNumber: part.PartNumber,
+			ETag:       part.ETag,
+		}
+	}
+
+	return parts, nil
+}
+
+func (c *Client) CompleteMultipartUpload(ctx context.Context, objectName, uploadID string, parts []minio.CompletePart) (*minio.UploadInfo, error) {
+	uploadInfo, err := c.client.CompleteMultipartUpload(ctx, c.bucketName, objectName, uploadID, parts, minio.PutObjectOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to complete multipart upload: %w", err)
+	}
+
+	return &uploadInfo, nil
+}
+
+func (c *Client) AbortMultipartUpload(ctx context.Context, objectName, uploadID string) error {
+	err := c.client.AbortMultipartUpload(ctx, c.bucketName, objectName, uploadID)
+	if err != nil {
+		return fmt.Errorf("failed to abort multipart upload: %w", err)
+	}
+
 	return nil
+}
+
+func (c *Client) Close() error {
+	return nil
+}
+
+func (c *Client) GetFile(ctx context.Context, objectName string) (io.ReadCloser, error) {
+	object, _, _, err := c.client.GetObject(ctx, c.bucketName, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get object: %w", err)
+	}
+	return object, nil
 }

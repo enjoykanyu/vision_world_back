@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 
-	livepb "api_gateway/proto_gen/live"
+	livepb "api_gateway/proto/proto_gen/live"
 )
 
 // LiveServiceClient 直播服务客户端封装
