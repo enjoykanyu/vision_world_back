@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package danmaku;
+
+option go_package = "./proto_gen/danmaku";
+
+// 弹幕服务
+service DanmakuService {
+    // 发送弹幕
+    rpc SendDanmaku (SendDanmakuRequest) returns (SendDanmakuResponse);
+    // 获取视频弹幕列表
+    rpc GetDanmakus (GetDanmakusRequest) returns (GetDanmakusResponse);
+}
+
+// 发送弹幕请求
+message SendDanmakuRequest {
+    uint32 video_id = 1;     // 视频ID
+    string text = 2;         // 弹幕内容
+    string color = 3;        // 弹幕颜色，默认为白色
+    float video_timestamp = 4; // 视频时间戳（秒）
+    string speed = 5;        // 弹幕速度：slow, normal, fast
+}
+
+// 发送弹幕响应
+message SendDanmakuResponse {
+    bool success = 1;        // 是否成功
+    string message = 2;      // 响应消息
+    Danmaku danmaku = 3;     // 发送的弹幕信息
+}
+
+// 获取弹幕列表请求
+message GetDanmakusRequest {
+    uint32 video_id = 1;     // 视频ID
+    int32 page = 2;          // 页码，默认1
+    int32 page_size = 3;     // 每页数量，默认20
+}
+
+// 获取弹幕列表响应
+message GetDanmakusResponse {
+    repeated Danmaku danmakus = 1; // 弹幕列表
+    int32 total = 2;              // 总数量
+}
+
+// 弹幕信息
+message Danmaku {
+    uint32 id = 1;                  // 弹幕ID
+    uint32 user_id = 2;             // 用户ID
+    uint32 video_id = 3;            // 视频ID
+    string text = 4;                // 弹幕内容
+    string color = 5;               // 弹幕颜色
+    float video_timestamp = 6;      // 视频时间戳（秒）
+    string speed = 7;               // 弹幕速度
+    int64 created_at = 8;           // 创建时间戳（秒）
+}
