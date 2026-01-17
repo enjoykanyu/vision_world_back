@@ -1040,7 +1040,7 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 		filePath = "hls/" + filePath
 	}
 
-	// 构建MinIO对象路径 - 添加videos/前缀以匹配实际存储路径
+	// 构建MinIO对象路径
 	objectName := fmt.Sprintf("%s/%s", videoID, filePath)
 
 	log.Printf("Proxying HLS stream for video %s, file: %s, object: %s", videoID, filePath, objectName)
@@ -1160,7 +1160,7 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 
 	// 如果请求的是m3u8文件，但返回的不是M3U8类型，说明HLS文件不存在
 	if strings.HasSuffix(filePath, ".m3u8") {
-		if !strings.Contains(contentType, "mpegurl") && !strings.Contains(contentType, "m3u8") && !strings.Contains(contentType, "text/plain") {
+		if !strings.Contains(contentType, "mpegurl") && !strings.Contains(contentType, "m3u8") && !strings.Contains(contentType, "text/plain") && !strings.Contains(contentType, "x-mpegurl") {
 			log.Printf("Invalid Content-Type %s for M3U8 file, HLS file may not exist", contentType)
 
 			// 获取转码状态
@@ -1188,6 +1188,14 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 
 						log.Printf("HLS file not found (invalid content type) for video %s, transcode status: %s", videoID, transcodeStatus)
 
+						// 如果转码已完成，但Content-Type不正确，仍返回文件内容（可能是Content-Type设置问题）
+						if transcodeStatus == "completed" {
+							log.Printf("Transcode completed but invalid content type %s, serving file anyway", contentType)
+							io.Copy(c.Writer, respMinio.Body)
+							return
+						}
+
+						// 转码未完成，返回错误提示
 						errorPlaylist := fmt.Sprintf("#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-ERROR: %s\n#EXT-X-FALLBACK-URL: /api/video/%s/original\n", transcodeStatus, videoID)
 						c.Header("Content-Type", "application/vnd.apple.mpegurl")
 						c.Header("Access-Control-Allow-Origin", "*")

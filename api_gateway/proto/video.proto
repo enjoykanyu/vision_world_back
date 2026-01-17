@@ -2,7 +2,7 @@ syntax = "proto3";
 package rpc.video;
 option go_package = "api_gateway/proto_gen/video";
 
-import "user.proto";
+import "proto/user.proto";
 
 // ==================== 基础请求响应结构 ====================
 
@@ -106,6 +106,13 @@ message RetryTranscodeResponse {
 message GetVideoInfoRequest {
   uint32 video_id = 1; // 视频ID
   string token = 2; // 用户token (可选)
+}
+
+// 获取单个视频信息响应
+message GetVideoInfoResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  Video video = 3; // 视频信息
 }
 
 // 批量获取视频信息请求

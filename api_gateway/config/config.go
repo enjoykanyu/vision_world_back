@@ -81,7 +81,7 @@ func LoadConfig(configPath string) (*Config, error) {
 	v.SetDefault("minio.access_key_id", "minioadmin")
 	v.SetDefault("minio.secret_access_key", "minioadmin")
 	v.SetDefault("minio.use_ssl", false)
-	v.SetDefault("minio.bucket_name", "videos")
+	v.SetDefault("minio.bucket_name", "vision-world")
 	v.SetDefault("minio.location", "us-east-1")
 	v.SetDefault("redis.addr", "localhost:6379")
 	v.SetDefault("redis.password", "")

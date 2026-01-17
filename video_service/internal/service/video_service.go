@@ -620,6 +620,20 @@ func (s *VideoService) uploadTranscodeResult(ctx context.Context, videoID uint32
 	// 定义HLS主播放列表URL
 	playlistURL := fmt.Sprintf("%d/hls/index.m3u8", videoID)
 
+	// 查找并上传主playlist (index.m3u8)
+	for _, entry := range entries {
+		if entry.Name() == "index.m3u8" && !entry.IsDir() {
+			filePath := filepath.Join(outputPath, entry.Name())
+			objectName := fmt.Sprintf("%d/hls/index.m3u8", videoID)
+			if err := s.uploadFileToMinIO(ctx, filePath, objectName); err != nil {
+				s.logger.Warn("Failed to upload master playlist", "file_path", filePath, "object_name", objectName, "error", err)
+			} else {
+				s.logger.Info("Master playlist uploaded successfully", "file_path", filePath, "object_name", objectName)
+			}
+			break
+		}
+	}
+
 	// 上传所有转码文件
 	for _, entry := range entries {
 		if entry.IsDir() {
@@ -642,14 +656,16 @@ func (s *VideoService) uploadTranscodeResult(ctx context.Context, videoID uint32
 				s.logger.Info("File uploaded successfully", "file_path", filePath, "object_name", objectName)
 			}
 		} else {
-			// 上传单个文件
-			filePath := filepath.Join(outputPath, entry.Name())
-			objectName := fmt.Sprintf("%d/hls/%s", videoID, entry.Name())
-			if err := s.uploadFileToMinIO(ctx, filePath, objectName); err != nil {
-				s.logger.Warn("Failed to upload file", "file_path", filePath, "object_name", objectName, "error", err)
-				continue
+			// 上传单个文件（排除主playlist）
+			if entry.Name() != "index.m3u8" {
+				filePath := filepath.Join(outputPath, entry.Name())
+				objectName := fmt.Sprintf("%d/hls/%s", videoID, entry.Name())
+				if err := s.uploadFileToMinIO(ctx, filePath, objectName); err != nil {
+					s.logger.Warn("Failed to upload file", "file_path", filePath, "object_name", objectName, "error", err)
+					continue
+				}
+				s.logger.Info("File uploaded successfully", "file_path", filePath, "object_name", objectName)
 			}
-			s.logger.Info("File uploaded successfully", "file_path", filePath, "object_name", objectName)
 		}
 	}
 
