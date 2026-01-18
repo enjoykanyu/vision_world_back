@@ -10,8 +10,10 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	// auditpb "github.com/vision_world/video_service/github.com/vision_world/audit_service/proto/proto_gen/audit/v1"
 	"github.com/vision_world/video_service/internal/config"
 	"github.com/vision_world/video_service/internal/discovery"
 	"github.com/vision_world/video_service/internal/model"
@@ -22,7 +24,6 @@ import (
 	auditpb "github.com/vision_world/video_service/proto/proto_gen/audit"
 	userpb "github.com/vision_world/video_service/proto/proto_gen/user"
 	pb "github.com/vision_world/video_service/proto/proto_gen/video"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -38,6 +39,9 @@ type VideoHandler struct {
 	discoveryClient discovery.ServiceDiscovery
 	serviceID       string
 	logger          logger.Logger
+	db              *gorm.DB
+	userClient      userpb.UserServiceClient
+	userConn        *grpc.ClientConn
 	// 添加互斥锁保护audit连接
 	auditMutex sync.RWMutex
 }
@@ -156,6 +160,22 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 
 	serviceID := fmt.Sprintf("%s-%s-%d", cfg.Server.Name, host, port)
 
+	// 创建user_service客户端连接
+	var userClient userpb.UserServiceClient
+	var userConn *grpc.ClientConn
+	userConn, err = grpc.Dial(cfg.Services.UserService.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Warn("Failed to connect to user service, token verification will fail",
+			"address", cfg.Services.UserService.Address,
+			"error", err)
+		userClient = nil
+		userConn = nil
+	} else {
+		userClient = userpb.NewUserServiceClient(userConn)
+		log.Info("Connected to user service",
+			"address", cfg.Services.UserService.Address)
+	}
+
 	return &VideoHandler{
 		config:          cfg,
 		videoService:    videoService,
@@ -165,6 +185,8 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 		discoveryClient: discoveryClient,
 		serviceID:       serviceID,
 		logger:          log,
+		userClient:      userClient,
+		userConn:        userConn,
 	}, nil
 }
 
@@ -442,30 +464,77 @@ func (h *VideoHandler) isAuditServiceAvailable() bool {
 	return h.auditClient != nil
 }
 
+// verifyTokenAndGetUserID 验证用户token并返回用户ID
+func (h *VideoHandler) verifyTokenAndGetUserID(ctx context.Context, token string) (string, error) {
+	if token == "" {
+		return "", fmt.Errorf("token is empty")
+	}
+
+	if h.userClient == nil {
+		h.logger.Warn("User service client not available, using default user ID")
+		return "1", nil
+	}
+
+	resp, err := h.userClient.VerifyToken(ctx, &userpb.VerifyTokenRequest{Token: token})
+	if err != nil {
+		h.logger.Error("Failed to verify token", "error", err)
+		return "", fmt.Errorf("failed to verify token: %w", err)
+	}
+
+	if resp.StatusCode != 0 {
+		h.logger.Error("Token verification failed", "status_code", resp.StatusCode, "status_msg", resp.StatusMsg)
+		return "", fmt.Errorf("token verification failed: %s", resp.StatusMsg)
+	}
+
+	return strconv.FormatUint(uint64(resp.UserId), 10), nil
+}
+
 // ==================== 视频发布相关接口 ====================
 
 // UploadVideo 上传视频
 func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoRequest) (*pb.UploadVideoResponse, error) {
 	h.logger.Info("UploadVideo called", "token", req.Token, "file_name", req.FileName)
 
-	// TODO: 验证用户token
-	// TODO: 从token中解析用户ID
-	userID := "333" // 临时用户ID
+	// 验证用户token并获取用户ID
+	userID, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+	if err != nil {
+		h.logger.Error("Failed to verify token", "error", err)
+		return &pb.UploadVideoResponse{
+			StatusCode: 401,
+			StatusMsg:  "用户认证失败: " + err.Error(),
+			VideoId:    0,
+		}, nil
+	}
+
+	h.logger.Info("User authenticated successfully", "user_id", userID)
+
+	h.logger.Info("Calling videoService.UploadVideo",
+		zap.String("user_id", userID),
+		zap.String("file_name", req.FileName),
+		zap.String("title", req.Title),
+		zap.String("description", req.Description),
+		zap.String("category", req.Category),
+		zap.Strings("tags", req.Tags),
+		zap.Int("video_data_size", len(req.VideoData)))
 
 	// 调用service层的UploadVideo方法
 	videoID, videoURL, video, err := h.videoService.UploadVideo(ctx, userID, req.FileName, req.Title, req.Description, req.Category, req.Tags, req.VideoData)
 	if err != nil {
-		h.logger.Error("Failed to upload video", "error", err)
+		h.logger.Error("Failed to upload video",
+			zap.Error(err),
+			zap.String("user_id", userID),
+			zap.String("file_name", req.FileName),
+			zap.String("title", req.Title))
 		return &pb.UploadVideoResponse{
 			StatusCode: 500,
-			StatusMsg:  "视频上传失败",
+			StatusMsg:  "视频上传失败: " + err.Error(),
 			VideoId:    0,
 		}, nil
 	}
-	h.logger.Info("video", video, "videoUrl", videoURL)
+	h.logger.Info("video", zap.Any("video", video), zap.String("videoUrl", videoURL))
 	h.logger.Info("Video uploaded successfully",
-		"video_id", videoID,
-		"video_url", videoURL)
+		zap.Uint32("video_id", videoID),
+		zap.String("video_url", videoURL))
 
 	// 视频上传成功，状态为uploading
 	statusCode := int32(0)
@@ -479,6 +548,59 @@ func (h *VideoHandler) UploadVideo(ctx context.Context, req *pb.UploadVideoReque
 	}, nil
 }
 
+// CreateVideoRecord 创建视频记录（用于分片上传完成后）
+func (h *VideoHandler) CreateVideoRecord(ctx context.Context, req *pb.CreateVideoRecordRequest) (*pb.CreateVideoRecordResponse, error) {
+	h.logger.Info("CreateVideoRecord called",
+		zap.String("token", req.Token),
+		zap.String("file_name", req.FileName),
+		zap.String("video_url", req.VideoUrl),
+		zap.String("uuid", req.Uuid))
+
+	// 验证用户token并获取用户ID
+	userID, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+	if err != nil {
+		h.logger.Error("Failed to verify token", zap.Error(err))
+		return &pb.CreateVideoRecordResponse{
+			StatusCode: 401,
+			StatusMsg:  "用户认证失败: " + err.Error(),
+			VideoId:    0,
+		}, nil
+	}
+
+	h.logger.Info("User authenticated successfully", zap.String("user_id", userID))
+
+	videoID, videoURL, err := h.videoService.CreateVideoRecord(
+		ctx,
+		userID,
+		req.FileName,
+		req.Title,
+		req.Description,
+		req.Category,
+		req.Tags,
+		req.VideoUrl,
+		req.Uuid,
+	)
+	if err != nil {
+		h.logger.Error("Failed to create video record", zap.Error(err))
+		return &pb.CreateVideoRecordResponse{
+			StatusCode: 500,
+			StatusMsg:  "创建视频记录失败",
+			VideoId:    0,
+		}, nil
+	}
+
+	h.logger.Info("Video record created successfully",
+		zap.Uint32("video_id", videoID),
+		zap.String("video_url", videoURL))
+
+	return &pb.CreateVideoRecordResponse{
+		StatusCode: 0,
+		StatusMsg:  "视频记录创建成功",
+		VideoId:    videoID,
+		VideoUrl:   videoURL,
+	}, nil
+}
+
 // PublishVideo 发布视频
 func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoRequest) (*pb.PublishVideoResponse, error) {
 	h.logger.Info("PublishVideo called",
@@ -486,31 +608,36 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 		zap.String("token", req.Token),
 		zap.String("video_id", req.VideoId))
 
-	// TODO: 验证用户token
-
-	// 使用service层处理发布逻辑
-	// 这里需要先从token中获取userID，简化处理使用固定值
-	userID := "1" // TODO: 从用户token中解析用户ID
-
-	// 使用从请求中获取的视频ID，而不是重新生成
-	videoID, err := strconv.ParseUint(req.VideoId, 10, 32)
+	// 验证用户token并获取用户ID
+	userID, err := h.verifyTokenAndGetUserID(ctx, req.Token)
 	if err != nil {
-		h.logger.Error("Invalid video ID format",
-			zap.String("video_id", req.VideoId),
-			zap.Error(err))
+		h.logger.Error("Failed to verify token", zap.Error(err))
+		return &pb.PublishVideoResponse{
+			StatusCode: 401,
+			StatusMsg:  "用户认证失败: " + err.Error(),
+			VideoId:    0,
+		}, nil
+	}
+
+	h.logger.Info("User authenticated successfully", zap.String("user_id", userID))
+
+	// 直接使用前端传来的video_id（UUID格式）
+	videoID := req.VideoId
+	if videoID == "" {
+		h.logger.Error("Video ID is empty")
 		return &pb.PublishVideoResponse{
 			StatusCode: 400,
-			StatusMsg:  fmt.Sprintf("无效的视频ID: %s", req.VideoId),
+			StatusMsg:  "视频ID不能为空",
 			VideoId:    0,
 		}, nil
 	}
 
 	// 调用service层的发布方法
-	err = h.videoService.PublishVideo(ctx, userID, uint32(videoID), req.Title, req.Description)
+	err = h.videoService.PublishVideo(ctx, userID, videoID, req.Title, req.Description)
 	if err != nil {
 		h.logger.Error("Failed to publish video",
-			zap.Uint32("video_id", uint32(videoID)),
-			zap.Error(err))
+			"video_id", videoID,
+			"error", err)
 		return &pb.PublishVideoResponse{
 			StatusCode: 500,
 			StatusMsg:  fmt.Sprintf("发布失败: %s", err.Error()),
@@ -525,7 +652,7 @@ func (h *VideoHandler) PublishVideo(ctx context.Context, req *pb.PublishVideoReq
 	return &pb.PublishVideoResponse{
 		StatusCode: statusCode,
 		StatusMsg:  statusMsg,
-		VideoId:    uint32(videoID),
+		VideoId:    0, // UUID格式无法返回数字ID
 	}, nil
 }
 
@@ -542,6 +669,28 @@ func (h *VideoHandler) DeleteVideo(ctx context.Context, req *pb.DeleteVideoReque
 	}, nil
 }
 
+// RetryTranscode 重试转码
+func (h *VideoHandler) RetryTranscode(ctx context.Context, req *pb.RetryTranscodeRequest) (*pb.RetryTranscodeResponse, error) {
+	h.logger.Info("RetryTranscode called", zap.Uint32("video_id", req.VideoId))
+
+	// TODO: 验证用户token和权限
+
+	// 调用service层的重试转码方法
+	err := h.videoService.RetryTranscode(ctx, req.VideoId)
+	if err != nil {
+		h.logger.Error("Failed to retry transcode", zap.Uint32("video_id", req.VideoId), zap.Error(err))
+		return &pb.RetryTranscodeResponse{
+			StatusCode: 500,
+			StatusMsg:  fmt.Sprintf("转码失败: %s", err.Error()),
+		}, nil
+	}
+
+	return &pb.RetryTranscodeResponse{
+		StatusCode: 0,
+		StatusMsg:  "转码任务已提交",
+	}, nil
+}
+
 // ==================== 视频信息获取接口 ====================
 
 // GetVideoInfo 获取单个视频信息
@@ -550,7 +699,7 @@ func (h *VideoHandler) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoReq
 
 	// 调用service层获取视频信息
 	videoID := strconv.FormatUint(uint64(req.VideoId), 10)
-	video, err := h.videoService.GetVideoByID(ctx, videoID)
+	videoDetail, err := h.videoService.GetVideoDetail(ctx, videoID)
 	if err != nil {
 		h.logger.Error("Failed to get video info", zap.Error(err))
 		return &pb.VideoResponse{
@@ -559,7 +708,7 @@ func (h *VideoHandler) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoReq
 		}, nil
 	}
 
-	if video == nil {
+	if videoDetail == nil {
 		return &pb.VideoResponse{
 			StatusCode: 404,
 			StatusMsg:  "视频不存在",
@@ -574,7 +723,29 @@ func (h *VideoHandler) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoReq
 	}
 
 	// 转换为protobuf格式
-	pbVideo := h.convertToProtoVideo(video)
+	pbVideo := h.convertToProtoVideoDetail(videoDetail)
+
+	// 如果有token，判断用户是否点赞和收藏
+	if req.Token != "" {
+		// 验证token并获取用户ID
+		userIDStr, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+		if err == nil {
+			userID, err := strconv.ParseUint(userIDStr, 10, 32)
+			if err == nil {
+				// 判断是否点赞
+				isLiked, err := h.videoService.IsVideoLiked(ctx, uint32(userID), req.VideoId)
+				if err == nil {
+					pbVideo.IsLiked = isLiked
+				}
+
+				// 判断是否收藏
+				isFavorite, err := h.videoService.IsVideoFavorited(ctx, uint32(userID), req.VideoId)
+				if err == nil {
+					pbVideo.IsFavorite = isFavorite
+				}
+			}
+		}
+	}
 
 	return &pb.VideoResponse{
 		StatusCode: 0,
@@ -860,23 +1031,34 @@ func (h *VideoHandler) LikeVideo(ctx context.Context, req *pb.LikeVideoRequest) 
 	}
 	h.logger.Info("LikeVideo called", zap.Uint32("video_id", req.VideoId), zap.String("action_type", actionType))
 
-	// TODO: 验证用户token
-
-	// 调用service层更新点赞数
-	videoID := strconv.FormatUint(uint64(req.VideoId), 10)
-	var increment int32
-	if req.ActionType {
-		increment = 1
-	} else {
-		increment = -1
+	// 验证用户token并获取用户ID
+	userIDStr, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+	if err != nil {
+		h.logger.Error("Failed to verify token", zap.Error(err))
+		return &pb.LikeVideoResponse{
+			StatusCode: 401,
+			StatusMsg:  "用户认证失败",
+			LikeCount:  0,
+		}, nil
 	}
 
-	likeCount, err := h.videoService.UpdateVideoLikeCount(ctx, videoID, increment)
+	userID, err := strconv.ParseUint(userIDStr, 10, 32)
 	if err != nil {
-		h.logger.Error("Failed to update like count", zap.Error(err))
+		h.logger.Error("Failed to parse user ID", zap.Error(err))
 		return &pb.LikeVideoResponse{
 			StatusCode: 500,
-			StatusMsg:  "更新点赞数失败",
+			StatusMsg:  "用户ID解析失败",
+			LikeCount:  0,
+		}, nil
+	}
+
+	// 调用service层处理点赞逻辑
+	likeCount, err := h.videoService.LikeVideo(ctx, uint32(userID), req.VideoId, req.ActionType)
+	if err != nil {
+		h.logger.Error("Failed to like video", zap.Error(err))
+		return &pb.LikeVideoResponse{
+			StatusCode: 500,
+			StatusMsg:  "点赞失败",
 			LikeCount:  0,
 		}, nil
 	}
@@ -920,13 +1102,92 @@ func (h *VideoHandler) GetUserLikedVideos(ctx context.Context, req *pb.GetUserLi
 func (h *VideoHandler) ShareVideo(ctx context.Context, req *pb.ShareVideoRequest) (*pb.ShareVideoResponse, error) {
 	h.logger.Info("ShareVideo called", zap.Uint32("video_id", req.VideoId), zap.String("share_type", req.ShareType))
 
-	// TODO: 验证用户token
-	// TODO: 实现分享逻辑
+	// 验证用户token并获取用户ID
+	userIDStr, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+	if err != nil {
+		h.logger.Error("Failed to verify token", zap.Error(err))
+		return &pb.ShareVideoResponse{
+			StatusCode: 401,
+			StatusMsg:  "用户认证失败",
+			ShareUrl:   "",
+		}, nil
+	}
+
+	userID, err := strconv.ParseUint(userIDStr, 10, 32)
+	if err != nil {
+		h.logger.Error("Failed to parse user ID", zap.Error(err))
+		return &pb.ShareVideoResponse{
+			StatusCode: 500,
+			StatusMsg:  "用户ID解析失败",
+			ShareUrl:   "",
+		}, nil
+	}
+
+	// 调用service层处理分享逻辑
+	_, err = h.videoService.ShareVideo(ctx, uint32(userID), req.VideoId, req.ShareType)
+	if err != nil {
+		h.logger.Error("Failed to share video", zap.Error(err))
+		return &pb.ShareVideoResponse{
+			StatusCode: 500,
+			StatusMsg:  "分享失败",
+			ShareUrl:   "",
+		}, nil
+	}
+
+	// 生成分享链接
+	shareUrl := fmt.Sprintf("/video/%d", req.VideoId)
 
 	return &pb.ShareVideoResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		ShareUrl:   "TODO: Generated share URL",
+		ShareUrl:   shareUrl,
+	}, nil
+}
+
+// FavoriteVideo 收藏/取消收藏视频
+func (h *VideoHandler) FavoriteVideo(ctx context.Context, req *pb.FavoriteVideoRequest) (*pb.FavoriteVideoResponse, error) {
+	actionType := "favorite"
+	if !req.ActionType {
+		actionType = "unfavorite"
+	}
+	h.logger.Info("FavoriteVideo called", zap.Uint32("video_id", req.VideoId), zap.String("action_type", actionType))
+
+	// 验证用户token并获取用户ID
+	userIDStr, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+	if err != nil {
+		h.logger.Error("Failed to verify token", zap.Error(err))
+		return &pb.FavoriteVideoResponse{
+			StatusCode:    401,
+			StatusMsg:     "用户认证失败",
+			FavoriteCount: 0,
+		}, nil
+	}
+
+	userID, err := strconv.ParseUint(userIDStr, 10, 32)
+	if err != nil {
+		h.logger.Error("Failed to parse user ID", zap.Error(err))
+		return &pb.FavoriteVideoResponse{
+			StatusCode:    500,
+			StatusMsg:     "用户ID解析失败",
+			FavoriteCount: 0,
+		}, nil
+	}
+
+	// 调用service层处理收藏逻辑
+	favoriteCount, err := h.videoService.FavoriteVideo(ctx, uint32(userID), req.VideoId, req.ActionType)
+	if err != nil {
+		h.logger.Error("Failed to favorite video", zap.Error(err))
+		return &pb.FavoriteVideoResponse{
+			StatusCode:    500,
+			StatusMsg:     "收藏失败",
+			FavoriteCount: 0,
+		}, nil
+	}
+
+	return &pb.FavoriteVideoResponse{
+		StatusCode:    0,
+		StatusMsg:     "success",
+		FavoriteCount: uint32(favoriteCount),
 	}, nil
 }
 
@@ -1009,5 +1270,91 @@ func (h *VideoHandler) convertToProtoVideo(video *model.RecommendationVideo) *pb
 		Category:     video.Category,
 		Author:       author,
 		Tags:         tags,
+	}
+}
+
+// convertToProtoVideoDetail 将 VideoDetail 转换为 protobuf 格式
+func (h *VideoHandler) convertToProtoVideoDetail(videoDetail *model.VideoDetail) *pb.Video {
+	if videoDetail == nil {
+		return nil
+	}
+
+	// 解析视频ID
+	videoID, err := strconv.ParseUint(videoDetail.VideoID, 10, 32)
+	if err != nil {
+		h.logger.Error("Failed to parse video ID", zap.String("video_id", videoDetail.VideoID), zap.Error(err))
+		videoID = 0
+	}
+
+	// 解析标签
+	tags := make([]string, 0)
+	if videoDetail.Tags != "" {
+		// 处理特殊情况：如果标签是"[]"（空数组字符串），则返回空数组
+		if strings.TrimSpace(videoDetail.Tags) == "[]" {
+			tags = []string{}
+		} else {
+			tags = strings.Split(videoDetail.Tags, ",")
+			// 过滤掉空标签和无效标签
+			validTags := make([]string, 0, len(tags))
+			for i := range tags {
+				tag := strings.TrimSpace(tags[i])
+				if tag != "" && tag != "[]" {
+					validTags = append(validTags, tag)
+				}
+			}
+			tags = validTags
+		}
+	}
+
+	// 创建作者信息，包含ID、名称、头像和粉丝量
+	followerCount := uint32(videoDetail.UserInfo.FollowersCount)
+	author := &userpb.User{
+		Id:            videoDetail.UserInfo.UserID,
+		Name:          videoDetail.UserInfo.Username,
+		Avatar:        &videoDetail.UserInfo.AvatarURL,
+		FollowerCount: &followerCount,
+	}
+
+	// 设置默认视频类型为原创
+	videoType := "original"
+	// 如果有来源信息，则设置为转载
+	if videoDetail.Source != "" {
+		videoType = "repost"
+	}
+
+	// 处理Location字段，转换为*string
+	var location *string
+	if videoDetail.Location != "" {
+		location = &videoDetail.Location
+	}
+
+	return &pb.Video{
+		Id:            uint32(videoID),
+		Title:         videoDetail.Title,
+		Description:   videoDetail.Description,
+		CoverUrl:      videoDetail.CoverURL,
+		VideoUrl:      videoDetail.PlayURL,     // API Gateway HLS 代理 URL
+		PlaylistUrl:   videoDetail.PlaylistURL, // HLS播放列表URL
+		PlayCount:     uint32(videoDetail.PlayCount),
+		LikeCount:     uint32(videoDetail.LikeCount),
+		CommentCount:  uint32(videoDetail.CommentCount),
+		ShareCount:    uint32(videoDetail.ShareCount),
+		FavoriteCount: uint32(videoDetail.FavoriteCount),
+		// 默认未点赞和未收藏
+		IsLiked:    false,
+		IsFavorite: false,
+		Tags:       tags,
+		Location:   location,
+		Category:   videoDetail.Category,
+		CreateTime: videoDetail.CreatedAt.Unix(),
+		UpdateTime: videoDetail.UpdatedAt.Unix(),
+		Duration:   uint32(videoDetail.Duration),
+		// 分辨率在VideoDetail中没有，使用默认值
+		Resolution: "1080p",
+		Status:     "normal",
+		IsPublic:   true,
+		Author:     author,
+		Type:       &videoType,
+		Source:     &videoDetail.Source,
 	}
 }
