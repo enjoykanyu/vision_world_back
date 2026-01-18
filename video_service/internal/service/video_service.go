@@ -37,6 +37,7 @@ type VideoService struct {
 	userClient       user.UserServiceClient
 	authService      auth.Service
 	transcodeService transcode.Service
+	db               *gorm.DB
 }
 
 // NewVideoService 创建视频服务
@@ -74,6 +75,7 @@ func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client, minio
 			Timeout:         cfg.Transcode.Timeout,
 			LogLevel:        cfg.Transcode.LogLevel,
 		}, log),
+		db: db,
 	}, nil
 }
 
@@ -237,6 +239,209 @@ func (s *VideoService) UpdateVideoLikeCount(ctx context.Context, videoID string,
 	}
 
 	return int64(video.LikeCount), nil
+}
+
+// LikeVideo 点赞/取消点赞视频
+func (s *VideoService) LikeVideo(ctx context.Context, userID uint32, videoID uint32, actionType bool) (int64, error) {
+	// 转换为字符串ID
+	videoIDStr := strconv.FormatUint(uint64(videoID), 10)
+
+	// 开启数据库事务保证操作一致性
+	tx := s.db.WithContext(ctx).Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if actionType {
+		// 点赞操作
+		var existingLike model.VideoLike
+		result := tx.Where("video_id = ? AND user_id = ?", videoID, userID).First(&existingLike)
+
+		if result.Error == gorm.ErrRecordNotFound {
+			// 未点赞，添加点赞记录
+			like := model.VideoLike{
+				VideoID: videoID,
+				UserID:  userID,
+			}
+			if err := tx.Create(&like).Error; err != nil {
+				tx.Rollback()
+				return 0, err
+			}
+
+			// 点赞数+1
+			if err := s.repo.IncrementLikeCount(ctx, videoIDStr); err != nil {
+				tx.Rollback()
+				return 0, err
+			}
+		} else if result.Error != nil {
+			tx.Rollback()
+			// 数据库错误
+			return 0, result.Error
+		}
+		// 已点赞，不做处理
+	} else {
+		// 取消点赞操作
+		var existingLike model.VideoLike
+		result := tx.Where("video_id = ? AND user_id = ?", videoID, userID).First(&existingLike)
+
+		if result.Error == nil {
+			// 已点赞，删除点赞记录
+			if err := tx.Delete(&existingLike).Error; err != nil {
+				tx.Rollback()
+				return 0, err
+			}
+
+			// 点赞数-1
+			if err := s.repo.DecrementLikeCount(ctx, videoIDStr); err != nil {
+				tx.Rollback()
+				return 0, err
+			}
+		} else if result.Error != gorm.ErrRecordNotFound {
+			tx.Rollback()
+			// 数据库错误
+			return 0, result.Error
+		}
+		// 未点赞，不做处理
+	}
+
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
+		return 0, err
+	}
+
+	// 获取更新后的点赞数
+	videoDetail, err := s.repo.GetVideoDetailByID(ctx, videoIDStr)
+	if err != nil {
+		return 0, err
+	}
+
+	return videoDetail.LikeCount, nil
+}
+
+// FavoriteVideo 收藏/取消收藏视频
+func (s *VideoService) FavoriteVideo(ctx context.Context, userID uint32, videoID uint32, actionType bool) (int64, error) {
+	// 转换为字符串ID
+	videoIDStr := strconv.FormatUint(uint64(videoID), 10)
+
+	// 开启数据库事务保证操作一致性
+	tx := s.db.WithContext(ctx).Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if actionType {
+		// 收藏操作
+		var existingFavorite model.VideoFavorite
+		result := tx.Where("video_id = ? AND user_id = ?", videoID, userID).First(&existingFavorite)
+
+		if result.Error == gorm.ErrRecordNotFound {
+			// 未收藏，添加收藏记录
+			favorite := model.VideoFavorite{
+				VideoID: videoID,
+				UserID:  userID,
+			}
+			if err := tx.Create(&favorite).Error; err != nil {
+				tx.Rollback()
+				return 0, err
+			}
+
+			// 收藏数+1
+			if err := s.repo.IncrementFavoriteCount(ctx, videoIDStr); err != nil {
+				tx.Rollback()
+				return 0, err
+			}
+		} else if result.Error != nil {
+			tx.Rollback()
+			// 数据库错误
+			return 0, result.Error
+		}
+		// 已收藏，不做处理
+	} else {
+		// 取消收藏操作
+		var existingFavorite model.VideoFavorite
+		result := tx.Where("video_id = ? AND user_id = ?", videoID, userID).First(&existingFavorite)
+
+		if result.Error == nil {
+			// 已收藏，删除收藏记录
+			if err := tx.Delete(&existingFavorite).Error; err != nil {
+				tx.Rollback()
+				return 0, err
+			}
+
+			// 收藏数-1
+			if err := s.repo.DecrementFavoriteCount(ctx, videoIDStr); err != nil {
+				tx.Rollback()
+				return 0, err
+			}
+		} else if result.Error != gorm.ErrRecordNotFound {
+			tx.Rollback()
+			// 数据库错误
+			return 0, result.Error
+		}
+		// 未收藏，不做处理
+	}
+
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
+		return 0, err
+	}
+
+	// 获取更新后的收藏数
+	videoDetail, err := s.repo.GetVideoDetailByID(ctx, videoIDStr)
+	if err != nil {
+		return 0, err
+	}
+
+	return videoDetail.FavoriteCount, nil
+}
+
+// ShareVideo 分享视频
+func (s *VideoService) ShareVideo(ctx context.Context, userID uint32, videoID uint32, shareType string) (int64, error) {
+	// 转换为字符串ID
+	videoIDStr := strconv.FormatUint(uint64(videoID), 10)
+
+	// 开启数据库事务保证操作一致性
+	tx := s.db.WithContext(ctx).Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 添加分享记录
+	share := model.VideoShare{
+		VideoID:   videoID,
+		UserID:    userID,
+		ShareType: shareType,
+		ShareURL:  fmt.Sprintf("/video/%d", videoID), // 生成分享链接
+	}
+	if err := tx.Create(&share).Error; err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	// 分享数+1
+	if err := s.repo.IncrementShareCount(ctx, videoIDStr); err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
+		return 0, err
+	}
+
+	// 获取更新后的分享数
+	videoDetail, err := s.repo.GetVideoDetailByID(ctx, videoIDStr)
+	if err != nil {
+		return 0, err
+	}
+
+	return videoDetail.ShareCount, nil
 }
 
 // GetVideosByAuthor 根据作者获取视频

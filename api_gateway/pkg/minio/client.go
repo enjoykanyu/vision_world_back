@@ -206,3 +206,22 @@ func (c *Client) GetFile(ctx context.Context, objectName string) (io.ReadCloser,
 	}
 	return object, nil
 }
+
+//
+//// GetSeekableFile 获取支持Seek的文件
+//func (c *Client) GetSeekableFile(ctx context.Context, objectName string) (io.ReadSeekCloser, error) {
+//	// 使用标准minio客户端获取支持Seek的文件
+//	minioClient, err := minio.New(c.client.EndpointURL().Host, &minio.Options{
+//		Creds:  c.client.Creds,
+//		Secure: c.client.Secure,
+//	})
+//	if err != nil {
+//		return nil, fmt.Errorf("failed to create minio client: %w", err)
+//	}
+//
+//	object, err := minioClient.GetObject(ctx, c.bucketName, objectName, minio.GetObjectOptions{})
+//	if err != nil {
+//		return nil, fmt.Errorf("failed to get object: %w", err)
+//	}
+//	return object, nil
+//}

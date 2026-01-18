@@ -36,6 +36,9 @@ type VideoRepository interface {
 	IncrementPlayCount(ctx context.Context, videoID string) error
 	IncrementLikeCount(ctx context.Context, videoID string) error
 	DecrementLikeCount(ctx context.Context, videoID string) error
+	IncrementFavoriteCount(ctx context.Context, videoID string) error
+	DecrementFavoriteCount(ctx context.Context, videoID string) error
+	IncrementShareCount(ctx context.Context, videoID string) error
 
 	// 资源清理
 	Close() error
@@ -522,6 +525,78 @@ func (r *videoRepository) DecrementLikeCount(ctx context.Context, videoID string
 		Where("id = ? AND like_count > 0", id).
 		UpdateColumn("like_count", gorm.Expr("like_count - ?", 1)).Error; err != nil {
 		return fmt.Errorf("failed to decrement like count: %w", err)
+	}
+
+	// 更新缓存
+	if r.redis != nil {
+		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoID)
+		// 简单处理，直接删除缓存，下次访问时重新加载
+		r.redis.Del(ctx, cacheKey)
+	}
+
+	return nil
+}
+
+// IncrementFavoriteCount 增加视频收藏数
+func (r *videoRepository) IncrementFavoriteCount(ctx context.Context, videoID string) error {
+	id, err := strconv.ParseUint(videoID, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid video ID: %s", videoID)
+	}
+
+	// 更新数据库
+	if err := r.db.WithContext(ctx).Model(&model.Video{}).
+		Where("id = ?", id).
+		UpdateColumn("favorite_count", gorm.Expr("favorite_count + ?", 1)).Error; err != nil {
+		return fmt.Errorf("failed to increment favorite count: %w", err)
+	}
+
+	// 更新缓存
+	if r.redis != nil {
+		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoID)
+		// 简单处理，直接删除缓存，下次访问时重新加载
+		r.redis.Del(ctx, cacheKey)
+	}
+
+	return nil
+}
+
+// DecrementFavoriteCount 减少视频收藏数
+func (r *videoRepository) DecrementFavoriteCount(ctx context.Context, videoID string) error {
+	id, err := strconv.ParseUint(videoID, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid video ID: %s", videoID)
+	}
+
+	// 更新数据库
+	if err := r.db.WithContext(ctx).Model(&model.Video{}).
+		Where("id = ? AND favorite_count > 0", id).
+		UpdateColumn("favorite_count", gorm.Expr("favorite_count - ?", 1)).Error; err != nil {
+		return fmt.Errorf("failed to decrement favorite count: %w", err)
+	}
+
+	// 更新缓存
+	if r.redis != nil {
+		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoID)
+		// 简单处理，直接删除缓存，下次访问时重新加载
+		r.redis.Del(ctx, cacheKey)
+	}
+
+	return nil
+}
+
+// IncrementShareCount 增加视频分享数
+func (r *videoRepository) IncrementShareCount(ctx context.Context, videoID string) error {
+	id, err := strconv.ParseUint(videoID, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid video ID: %s", videoID)
+	}
+
+	// 更新数据库
+	if err := r.db.WithContext(ctx).Model(&model.Video{}).
+		Where("id = ?", id).
+		UpdateColumn("share_count", gorm.Expr("share_count + ?", 1)).Error; err != nil {
+		return fmt.Errorf("failed to increment share count: %w", err)
 	}
 
 	// 更新缓存

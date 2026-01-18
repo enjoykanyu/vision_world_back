@@ -919,6 +919,11 @@ func (h *VideoHandler) GetUserPublishedVideos(c *gin.Context) {
 	}
 
 	// 返回成功响应
+	// 处理视频列表，移除video_url字段
+	for i := range resp.Videos {
+		resp.Videos[i].VideoUrl = ""
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status_code": 0,
 		"status_msg":  "Success",
@@ -1248,18 +1253,137 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 		return
 	}
 
-	// 对于ts分片文件，直接流式传输
+	// 对于ts分片文件，支持Range请求和缓存
 	for key, values := range respMinio.Header {
 		for _, value := range values {
 			c.Header(key, value)
 		}
 	}
+
+	// 设置统一的跨域和缓存策略（B站风格）
 	c.Header("Access-Control-Allow-Origin", "*")
-	c.Header("Cache-Control", "max-age=86400")
+	c.Header("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
+	c.Header("Access-Control-Allow-Headers", "Range, Content-Type")
+	c.Header("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges, ETag")
+
+	// 智能缓存策略
+	if strings.HasSuffix(filePath, ".m3u8") {
+		// M3U8播放列表：较短缓存时间（5分钟）
+		c.Header("Cache-Control", "public, max-age=300, s-maxage=300")
+		c.Header("ETag", fmt.Sprintf(`"%s"`, generateETag(videoID, filePath)))
+	} else if strings.HasSuffix(filePath, ".ts") {
+		// TS分片文件：较长缓存时间（24小时）
+		c.Header("Cache-Control", "public, max-age=86400, s-maxage=86400, immutable")
+		c.Header("ETag", fmt.Sprintf(`"%s"`, generateETag(videoID, filePath)))
+	} else {
+		// 其他文件：中等缓存时间（1小时）
+		c.Header("Cache-Control", "public, max-age=3600, s-maxage=3600")
+	}
+
+	c.Header("Accept-Ranges", "bytes") // 支持Range请求
+
+	// 处理Range请求 - 直接通过MinIO预签名URL支持
+	if rangeHeader := c.Request.Header.Get("Range"); rangeHeader != "" {
+		// 重新生成带Range的预签名URL
+		req, err := http.NewRequest("GET", presignedURL, nil)
+		if err != nil {
+			log.Printf("Failed to create request: %v", err)
+			c.Status(respMinio.StatusCode)
+			io.Copy(c.Writer, respMinio.Body)
+			return
+		}
+
+		// 添加Range头
+		req.Header.Set("Range", rangeHeader)
+
+		// 发送请求
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			log.Printf("Failed to fetch with range: %v", err)
+			c.Status(respMinio.StatusCode)
+			io.Copy(c.Writer, respMinio.Body)
+			return
+		}
+		defer resp.Body.Close()
+
+		// 复制响应头
+		for key, values := range resp.Header {
+			for _, value := range values {
+				c.Header(key, value)
+			}
+		}
+
+		// 发送部分内容响应
+		c.Status(resp.StatusCode)
+		io.Copy(c.Writer, resp.Body)
+		return
+	}
+
+	// 正常流式传输
 	c.Status(respMinio.StatusCode)
 	io.Copy(c.Writer, respMinio.Body)
 
 	log.Printf("Successfully streamed %s for video %s", filePath, videoID)
+}
+
+// GetVideoSegments 获取视频分片信息
+func (h *VideoHandler) GetVideoSegments(c *gin.Context) {
+	videoID := c.Param("id")
+	if videoID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Video ID is required"})
+		return
+	}
+
+	// 尝试从MinIO获取分片元数据文件
+	segmentsPath := fmt.Sprintf("%s/segments.json", videoID)
+	presignedURL, err := h.minioClient.GeneratePresignedURL(context.Background(), segmentsPath, 5*time.Minute)
+	if err != nil {
+		log.Printf("Failed to generate presigned URL for segments.json: %v", err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Segment metadata not found"})
+		return
+	}
+
+	// 获取分片元数据
+	resp, err := http.Get(presignedURL)
+	if err != nil {
+		log.Printf("Failed to fetch segment metadata: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch segment metadata"})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Segment metadata not found, status: %d", resp.StatusCode)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Segment metadata not found"})
+		return
+	}
+
+	// 读取并解析JSON
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Failed to read segment metadata: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read segment metadata"})
+		return
+	}
+
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(body, &metadata); err != nil {
+		log.Printf("Failed to parse segment metadata: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse segment metadata"})
+		return
+	}
+
+	// 返回分片信息
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   metadata,
+	})
+}
+
+// generateETag 生成ETag用于缓存验证
+func generateETag(videoID, filePath string) string {
+	// 使用视频ID和文件路径生成唯一的ETag
+	return fmt.Sprintf("%s-%s", videoID, filePath)
 }
 
 // CheckUploadStatus 检查上传进度
@@ -1523,6 +1647,8 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 		videoGroup.GET("/hot", videoHandler.GetHotVideos)
 		// 公开视频详情路由
 		videoGroup.GET("/:id", videoHandler.GetVideoDetail)
+		// 分片信息接口
+		videoGroup.GET("/:id/segments", videoHandler.GetVideoSegments)
 		// HLS视频流代理路由（支持分片传输）
 		videoGroup.GET("/:id/stream/*filepath", videoHandler.ProxyHLSStream)
 		// 需要认证的路由

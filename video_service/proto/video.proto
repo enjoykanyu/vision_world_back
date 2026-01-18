@@ -182,6 +182,19 @@ message LikeVideoResponse {
   uint32 like_count = 3; // 视频点赞数
 }
 
+// 收藏/取消收藏视频请求
+message FavoriteVideoRequest {
+  string token = 1; // 用户token
+  uint32 video_id = 2; // 视频ID
+  bool action_type = 3; // true-收藏，false-取消收藏
+}
+
+message FavoriteVideoResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  uint32 favorite_count = 3; // 视频收藏数
+}
+
 // 获取用户点赞的视频列表请求
 message GetUserLikedVideosRequest {
   uint32 user_id = 1; // 目标用户ID
@@ -327,6 +340,7 @@ service VideoService {
   
   // 视频互动相关
   rpc LikeVideo(LikeVideoRequest) returns(LikeVideoResponse);
+  rpc FavoriteVideo(FavoriteVideoRequest) returns(FavoriteVideoResponse);
   rpc GetUserLikedVideos(GetUserLikedVideosRequest) returns(GetUserLikedVideosResponse);
   rpc ShareVideo(ShareVideoRequest) returns(ShareVideoResponse);
   
