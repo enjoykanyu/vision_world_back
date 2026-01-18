@@ -1628,6 +1628,195 @@ func (h *VideoHandler) CompleteUpload(c *gin.Context) {
 	})
 }
 
+// LikeVideo 点赞/取消点赞视频
+func (h *VideoHandler) LikeVideo(c *gin.Context) {
+	// 获取视频ID
+	videoIDStr := c.Param("id")
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		return
+	}
+
+	// 获取请求体
+	var req struct {
+		ActionType bool `json:"action_type"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务点赞接口
+	resp, err := videoClient.LikeVideo(ctx, &pb.LikeVideoRequest{
+		Token:      getTokenFromHeader(c),
+		VideoId:    uint32(videoID),
+		ActionType: req.ActionType,
+	})
+	if err != nil {
+		log.Printf("Failed to like video: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like video"})
+		return
+	}
+
+	// 返回成功响应
+	c.JSON(http.StatusOK, resp)
+}
+
+// FavoriteVideo 收藏/取消收藏视频
+func (h *VideoHandler) FavoriteVideo(c *gin.Context) {
+	// 获取视频ID
+	videoIDStr := c.Param("id")
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		return
+	}
+
+	// 获取请求体
+	var req struct {
+		ActionType bool `json:"action_type"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务收藏接口
+	resp, err := videoClient.FavoriteVideo(ctx, &pb.FavoriteVideoRequest{
+		Token:      getTokenFromHeader(c),
+		VideoId:    uint32(videoID),
+		ActionType: req.ActionType,
+	})
+	if err != nil {
+		log.Printf("Failed to favorite video: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to favorite video"})
+		return
+	}
+
+	// 返回成功响应
+	c.JSON(http.StatusOK, resp)
+}
+
+// ShareVideo 分享视频
+func (h *VideoHandler) ShareVideo(c *gin.Context) {
+	// 获取视频ID
+	videoIDStr := c.Param("id")
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		return
+	}
+
+	// 获取请求体
+	var req struct {
+		ShareType string `json:"share_type"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务分享接口
+	resp, err := videoClient.ShareVideo(ctx, &pb.ShareVideoRequest{
+		Token:     getTokenFromHeader(c),
+		VideoId:   uint32(videoID),
+		ShareType: req.ShareType,
+	})
+	if err != nil {
+		log.Printf("Failed to share video: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to share video"})
+		return
+	}
+
+	// 返回成功响应
+	c.JSON(http.StatusOK, resp)
+}
+
+// GetVideoStats 获取视频互动数据（点赞、收藏、转发数量）
+func (h *VideoHandler) GetVideoStats(c *gin.Context) {
+	// 获取视频ID
+	videoIDStr := c.Param("id")
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务获取视频信息
+	resp, err := videoClient.GetVideoInfo(ctx, &pb.GetVideoInfoRequest{
+		VideoId: uint32(videoID),
+		Token:   getTokenFromHeader(c),
+	})
+	if err != nil {
+		log.Printf("Failed to get video info: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get video stats"})
+		return
+	}
+
+	// 提取互动数据
+	if resp.StatusCode != 0 || resp.Video == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get video stats"})
+		return
+	}
+
+	// 返回互动数据
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data": gin.H{
+			"like_count":     resp.Video.LikeCount,
+			"favorite_count": resp.Video.FavoriteCount,
+			"share_count":    resp.Video.ShareCount,
+			"is_liked":       resp.Video.IsLiked,
+			"is_favorite":    resp.Video.IsFavorite,
+		},
+	})
+}
+
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
 func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandler) {
 	// 分片上传路由组 - 需要认证
@@ -1651,6 +1840,8 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 		videoGroup.GET("/:id/segments", videoHandler.GetVideoSegments)
 		// HLS视频流代理路由（支持分片传输）
 		videoGroup.GET("/:id/stream/*filepath", videoHandler.ProxyHLSStream)
+		// 视频互动数据接口
+		videoGroup.GET("/:id/stats", videoHandler.GetVideoStats)
 		// 需要认证的路由
 		authGroup := videoGroup.Group("/")
 		authGroup.Use(middleware.RequireAuthMiddleware())
@@ -1661,6 +1852,9 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 			authGroup.POST("/publish", videoHandler.HandleVideoPublish)
 			authGroup.POST("/upload", videoHandler.HandleVideoUpload)
 			authGroup.POST("/retry-transcode", videoHandler.RetryTranscode)
+			authGroup.POST("/:id/like", videoHandler.LikeVideo)
+			authGroup.POST("/:id/favorite", videoHandler.FavoriteVideo)
+			authGroup.POST("/:id/share", videoHandler.ShareVideo)
 
 		}
 	}

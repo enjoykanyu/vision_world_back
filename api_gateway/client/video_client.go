@@ -168,3 +168,27 @@ func (c *VideoServiceClient) GetUserVideos(ctx context.Context, req *videopb.Get
 	}
 	return c.client.GetUserVideos(ctx, req)
 }
+
+// LikeVideo 点赞/取消点赞视频
+func (c *VideoServiceClient) LikeVideo(ctx context.Context, req *videopb.LikeVideoRequest) (*videopb.LikeVideoResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.LikeVideo(ctx, req)
+}
+
+// FavoriteVideo 收藏/取消收藏视频
+func (c *VideoServiceClient) FavoriteVideo(ctx context.Context, req *videopb.FavoriteVideoRequest) (*videopb.FavoriteVideoResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.FavoriteVideo(ctx, req)
+}
+
+// ShareVideo 分享视频
+func (c *VideoServiceClient) ShareVideo(ctx context.Context, req *videopb.ShareVideoRequest) (*videopb.ShareVideoResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.ShareVideo(ctx, req)
+}

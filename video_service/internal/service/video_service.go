@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -38,6 +39,7 @@ type VideoService struct {
 	authService      auth.Service
 	transcodeService transcode.Service
 	db               *gorm.DB
+	redis            *redis.Client
 }
 
 // NewVideoService 创建视频服务
@@ -75,7 +77,8 @@ func NewVideoService(cfg *config.Config, db *gorm.DB, redis *redis.Client, minio
 			Timeout:         cfg.Transcode.Timeout,
 			LogLevel:        cfg.Transcode.LogLevel,
 		}, log),
-		db: db,
+		db:    db,
+		redis: redis,
 	}, nil
 }
 
@@ -241,6 +244,39 @@ func (s *VideoService) UpdateVideoLikeCount(ctx context.Context, videoID string,
 	return int64(video.LikeCount), nil
 }
 
+// IsVideoLiked 判断用户是否点赞了视频
+func (s *VideoService) IsVideoLiked(ctx context.Context, userID uint32, videoID uint32) (bool, error) {
+	var existingLike model.VideoLike
+	result := s.db.WithContext(ctx).Where("video_id = ? AND user_id = ?", videoID, userID).First(&existingLike)
+
+	if result.Error == gorm.ErrRecordNotFound {
+		// 未点赞
+		return false, nil
+	} else if result.Error != nil {
+		// 数据库错误
+		return false, result.Error
+	}
+
+	// 已点赞
+	return true, nil
+}
+
+// IsVideoFavorited 判断用户是否收藏了视频
+func (s *VideoService) IsVideoFavorited(ctx context.Context, userID uint32, videoID uint32) (bool, error) {
+	var existingFavorite model.VideoFavorite
+	result := s.db.WithContext(ctx).Where("video_id = ? AND user_id = ?", videoID, userID).First(&existingFavorite)
+	if result.Error == gorm.ErrRecordNotFound {
+		// 未收藏
+		return false, nil
+	} else if result.Error != nil {
+		// 数据库错误
+		return false, result.Error
+	}
+
+	// 已收藏
+	return true, nil
+}
+
 // LikeVideo 点赞/取消点赞视频
 func (s *VideoService) LikeVideo(ctx context.Context, userID uint32, videoID uint32, actionType bool) (int64, error) {
 	// 转换为字符串ID
@@ -255,11 +291,12 @@ func (s *VideoService) LikeVideo(ctx context.Context, userID uint32, videoID uin
 	}()
 
 	if actionType {
-		// 点赞操作
 		var existingLike model.VideoLike
 		result := tx.Where("video_id = ? AND user_id = ?", videoID, userID).First(&existingLike)
+		log.Printf("Like operation result - video_id: %d, user_id: %d, error: %v", videoID, userID, result.Error)
 
 		if result.Error == gorm.ErrRecordNotFound {
+			log.Printf("没有点过赞。需要插入数据")
 			// 未点赞，添加点赞记录
 			like := model.VideoLike{
 				VideoID: videoID,
@@ -270,8 +307,10 @@ func (s *VideoService) LikeVideo(ctx context.Context, userID uint32, videoID uin
 				return 0, err
 			}
 
-			// 点赞数+1
-			if err := s.repo.IncrementLikeCount(ctx, videoIDStr); err != nil {
+			// 点赞数+1 - 在同一事务中更新
+			if err := tx.Model(&model.Video{}).
+				Where("id = ?", videoID).
+				UpdateColumn("like_count", gorm.Expr("like_count + ?", 1)).Error; err != nil {
 				tx.Rollback()
 				return 0, err
 			}
@@ -282,19 +321,22 @@ func (s *VideoService) LikeVideo(ctx context.Context, userID uint32, videoID uin
 		}
 		// 已点赞，不做处理
 	} else {
-		// 取消点赞操作
 		var existingLike model.VideoLike
 		result := tx.Where("video_id = ? AND user_id = ?", videoID, userID).First(&existingLike)
+		log.Printf("Unlike operation result - video_id: %d, user_id: %d, error: %v", videoID, userID, result.Error)
 
 		if result.Error == nil {
 			// 已点赞，删除点赞记录
+			log.Printf("已点赞，删除点赞记录")
 			if err := tx.Delete(&existingLike).Error; err != nil {
 				tx.Rollback()
 				return 0, err
 			}
 
-			// 点赞数-1
-			if err := s.repo.DecrementLikeCount(ctx, videoIDStr); err != nil {
+			// 点赞数-1 - 在同一事务中更新
+			if err := tx.Model(&model.Video{}).
+				Where("id = ?", videoID).
+				UpdateColumn("like_count", gorm.Expr("GREATEST(like_count - ?, 0)", 1)).Error; err != nil {
 				tx.Rollback()
 				return 0, err
 			}
@@ -309,6 +351,14 @@ func (s *VideoService) LikeVideo(ctx context.Context, userID uint32, videoID uin
 	// 提交事务
 	if err := tx.Commit().Error; err != nil {
 		return 0, err
+	}
+
+	// 清除缓存
+	if s.redis != nil {
+		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoIDStr)
+		cacheKeyDetail := fmt.Sprintf("%s%s_detail", model.CacheKeyVideo, videoIDStr)
+		s.redis.Del(ctx, cacheKey)
+		s.redis.Del(ctx, cacheKeyDetail)
 	}
 
 	// 获取更新后的点赞数
@@ -332,6 +382,8 @@ func (s *VideoService) FavoriteVideo(ctx context.Context, userID uint32, videoID
 			tx.Rollback()
 		}
 	}()
+	log.Printf("video_favorites - video_id: %d, user_id: %d, actionType: %v", videoID, userID, actionType)
+	log.Printf("点赞操作")
 
 	if actionType {
 		// 收藏操作
@@ -349,8 +401,10 @@ func (s *VideoService) FavoriteVideo(ctx context.Context, userID uint32, videoID
 				return 0, err
 			}
 
-			// 收藏数+1
-			if err := s.repo.IncrementFavoriteCount(ctx, videoIDStr); err != nil {
+			// 收藏数+1 - 在同一事务中更新
+			if err := tx.Model(&model.Video{}).
+				Where("id = ?", videoID).
+				UpdateColumn("favorite_count", gorm.Expr("favorite_count + ?", 1)).Error; err != nil {
 				tx.Rollback()
 				return 0, err
 			}
@@ -372,8 +426,10 @@ func (s *VideoService) FavoriteVideo(ctx context.Context, userID uint32, videoID
 				return 0, err
 			}
 
-			// 收藏数-1
-			if err := s.repo.DecrementFavoriteCount(ctx, videoIDStr); err != nil {
+			// 收藏数-1 - 在同一事务中更新
+			if err := tx.Model(&model.Video{}).
+				Where("id = ?", videoID).
+				UpdateColumn("favorite_count", gorm.Expr("GREATEST(favorite_count - ?, 0)", 1)).Error; err != nil {
 				tx.Rollback()
 				return 0, err
 			}
@@ -388,6 +444,14 @@ func (s *VideoService) FavoriteVideo(ctx context.Context, userID uint32, videoID
 	// 提交事务
 	if err := tx.Commit().Error; err != nil {
 		return 0, err
+	}
+
+	// 清除缓存
+	if s.redis != nil {
+		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoIDStr)
+		cacheKeyDetail := fmt.Sprintf("%s%s_detail", model.CacheKeyVideo, videoIDStr)
+		s.redis.Del(ctx, cacheKey)
+		s.redis.Del(ctx, cacheKeyDetail)
 	}
 
 	// 获取更新后的收藏数
@@ -424,8 +488,10 @@ func (s *VideoService) ShareVideo(ctx context.Context, userID uint32, videoID ui
 		return 0, err
 	}
 
-	// 分享数+1
-	if err := s.repo.IncrementShareCount(ctx, videoIDStr); err != nil {
+	// 分享数+1 - 在同一事务中更新
+	if err := tx.Model(&model.Video{}).
+		Where("id = ?", videoID).
+		UpdateColumn("share_count", gorm.Expr("share_count + ?", 1)).Error; err != nil {
 		tx.Rollback()
 		return 0, err
 	}
@@ -433,6 +499,14 @@ func (s *VideoService) ShareVideo(ctx context.Context, userID uint32, videoID ui
 	// 提交事务
 	if err := tx.Commit().Error; err != nil {
 		return 0, err
+	}
+
+	// 清除缓存
+	if s.redis != nil {
+		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoIDStr)
+		cacheKeyDetail := fmt.Sprintf("%s%s_detail", model.CacheKeyVideo, videoIDStr)
+		s.redis.Del(ctx, cacheKey)
+		s.redis.Del(ctx, cacheKeyDetail)
 	}
 
 	// 获取更新后的分享数

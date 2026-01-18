@@ -33,6 +33,7 @@ const (
 	VideoService_GetCategoryVideos_FullMethodName  = "/rpc.video.VideoService/GetCategoryVideos"
 	VideoService_SearchVideos_FullMethodName       = "/rpc.video.VideoService/SearchVideos"
 	VideoService_LikeVideo_FullMethodName          = "/rpc.video.VideoService/LikeVideo"
+	VideoService_FavoriteVideo_FullMethodName      = "/rpc.video.VideoService/FavoriteVideo"
 	VideoService_GetUserLikedVideos_FullMethodName = "/rpc.video.VideoService/GetUserLikedVideos"
 	VideoService_ShareVideo_FullMethodName         = "/rpc.video.VideoService/ShareVideo"
 	VideoService_CommentVideo_FullMethodName       = "/rpc.video.VideoService/CommentVideo"
@@ -62,6 +63,7 @@ type VideoServiceClient interface {
 	SearchVideos(ctx context.Context, in *SearchVideosRequest, opts ...grpc.CallOption) (*SearchVideosResponse, error)
 	// 视频互动相关
 	LikeVideo(ctx context.Context, in *LikeVideoRequest, opts ...grpc.CallOption) (*LikeVideoResponse, error)
+	FavoriteVideo(ctx context.Context, in *FavoriteVideoRequest, opts ...grpc.CallOption) (*FavoriteVideoResponse, error)
 	GetUserLikedVideos(ctx context.Context, in *GetUserLikedVideosRequest, opts ...grpc.CallOption) (*GetUserLikedVideosResponse, error)
 	ShareVideo(ctx context.Context, in *ShareVideoRequest, opts ...grpc.CallOption) (*ShareVideoResponse, error)
 	// 视频评论相关
@@ -204,6 +206,15 @@ func (c *videoServiceClient) LikeVideo(ctx context.Context, in *LikeVideoRequest
 	return out, nil
 }
 
+func (c *videoServiceClient) FavoriteVideo(ctx context.Context, in *FavoriteVideoRequest, opts ...grpc.CallOption) (*FavoriteVideoResponse, error) {
+	out := new(FavoriteVideoResponse)
+	err := c.cc.Invoke(ctx, VideoService_FavoriteVideo_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *videoServiceClient) GetUserLikedVideos(ctx context.Context, in *GetUserLikedVideosRequest, opts ...grpc.CallOption) (*GetUserLikedVideosResponse, error) {
 	out := new(GetUserLikedVideosResponse)
 	err := c.cc.Invoke(ctx, VideoService_GetUserLikedVideos_FullMethodName, in, out, opts...)
@@ -271,6 +282,7 @@ type VideoServiceServer interface {
 	SearchVideos(context.Context, *SearchVideosRequest) (*SearchVideosResponse, error)
 	// 视频互动相关
 	LikeVideo(context.Context, *LikeVideoRequest) (*LikeVideoResponse, error)
+	FavoriteVideo(context.Context, *FavoriteVideoRequest) (*FavoriteVideoResponse, error)
 	GetUserLikedVideos(context.Context, *GetUserLikedVideosRequest) (*GetUserLikedVideosResponse, error)
 	ShareVideo(context.Context, *ShareVideoRequest) (*ShareVideoResponse, error)
 	// 视频评论相关
@@ -325,6 +337,9 @@ func (UnimplementedVideoServiceServer) SearchVideos(context.Context, *SearchVide
 }
 func (UnimplementedVideoServiceServer) LikeVideo(context.Context, *LikeVideoRequest) (*LikeVideoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LikeVideo not implemented")
+}
+func (UnimplementedVideoServiceServer) FavoriteVideo(context.Context, *FavoriteVideoRequest) (*FavoriteVideoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FavoriteVideo not implemented")
 }
 func (UnimplementedVideoServiceServer) GetUserLikedVideos(context.Context, *GetUserLikedVideosRequest) (*GetUserLikedVideosResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserLikedVideos not implemented")
@@ -606,6 +621,24 @@ func _VideoService_LikeVideo_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VideoService_FavoriteVideo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FavoriteVideoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).FavoriteVideo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_FavoriteVideo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).FavoriteVideo(ctx, req.(*FavoriteVideoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _VideoService_GetUserLikedVideos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetUserLikedVideosRequest)
 	if err := dec(in); err != nil {
@@ -758,6 +791,10 @@ var VideoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LikeVideo",
 			Handler:    _VideoService_LikeVideo_Handler,
+		},
+		{
+			MethodName: "FavoriteVideo",
+			Handler:    _VideoService_FavoriteVideo_Handler,
 		},
 		{
 			MethodName: "GetUserLikedVideos",
