@@ -192,3 +192,27 @@ func (c *VideoServiceClient) ShareVideo(ctx context.Context, req *videopb.ShareV
 	}
 	return c.client.ShareVideo(ctx, req)
 }
+
+// CommentVideo 发表评论
+func (c *VideoServiceClient) CommentVideo(ctx context.Context, req *videopb.CommentRequest) (*videopb.CommentResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.CommentVideo(ctx, req)
+}
+
+// DeleteComment 删除评论
+func (c *VideoServiceClient) DeleteComment(ctx context.Context, req *videopb.DeleteCommentRequest) (*videopb.DeleteCommentResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.DeleteComment(ctx, req)
+}
+
+// GetVideoComments 获取视频评论列表
+func (c *VideoServiceClient) GetVideoComments(ctx context.Context, req *videopb.GetVideoCommentsRequest) (*videopb.GetVideoCommentsResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.GetVideoComments(ctx, req)
+}

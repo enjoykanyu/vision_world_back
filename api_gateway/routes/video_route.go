@@ -1817,6 +1817,293 @@ func (h *VideoHandler) GetVideoStats(c *gin.Context) {
 	})
 }
 
+// GetVideoComments 获取视频评论列表
+func (h *VideoHandler) GetVideoComments(c *gin.Context) {
+	// 获取查询参数
+	videoIDStr := c.Query("video_id")
+	if videoIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "video_id is required"})
+		return
+	}
+
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video_id"})
+		return
+	}
+
+	pageStr := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	pageSizeStr := c.DefaultQuery("page_size", "10")
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil || pageSize < 1 || pageSize > 50 {
+		pageSize = 10
+	}
+
+	sortOrder := c.DefaultQuery("sort_order", "hot")
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务获取评论列表
+	resp, err := videoClient.GetVideoComments(ctx, &pb.GetVideoCommentsRequest{
+		VideoId:   uint32(videoID),
+		Token:     getTokenFromHeader(c),
+		Page:      uint32(page),
+		PageSize:  uint32(pageSize),
+		SortOrder: sortOrder,
+	})
+	if err != nil {
+		log.Printf("Failed to get video comments: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get video comments"})
+		return
+	}
+
+	// 返回评论列表
+	c.JSON(http.StatusOK, gin.H{
+		"status_code": resp.StatusCode,
+		"status_msg":  resp.StatusMsg,
+		"comments":    resp.Comments,
+		"total":       resp.Total,
+		"has_more":    resp.HasMore,
+	})
+}
+
+// CommentVideo 发布评论
+func (h *VideoHandler) CommentVideo(c *gin.Context) {
+	// 解析请求体
+	var req struct {
+		VideoID  string  `json:"video_id" binding:"required"`
+		Content  string  `json:"content" binding:"required"`
+		ParentID *uint32 `json:"parent_id"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 验证必填字段
+	if req.Content == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "content is required"})
+		return
+	}
+
+	// 解析视频ID
+	videoID, err := strconv.ParseUint(req.VideoID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video_id"})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务发表评论
+	resp, err := videoClient.CommentVideo(ctx, &pb.CommentRequest{
+		Token:    getTokenFromHeader(c),
+		VideoId:  uint32(videoID),
+		Content:  req.Content,
+		ParentId: req.ParentID,
+	})
+	if err != nil {
+		log.Printf("Failed to comment video: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to comment video"})
+		return
+	}
+
+	// 返回评论结果
+	c.JSON(http.StatusOK, gin.H{
+		"status_code": resp.StatusCode,
+		"status_msg":  resp.StatusMsg,
+		"comment":     resp.Comment,
+	})
+}
+
+// LikeComment 点赞/取消点赞评论
+func (h *VideoHandler) LikeComment(c *gin.Context) {
+	// 解析请求体
+	var req struct {
+		CommentID  uint32 `json:"comment_id" binding:"required"`
+		ActionType bool   `json:"action_type" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务点赞评论
+	resp, err := videoClient.LikeVideo(ctx, &pb.LikeVideoRequest{
+		Token:      getTokenFromHeader(c),
+		VideoId:    req.CommentID,
+		ActionType: req.ActionType,
+	})
+	if err != nil {
+		log.Printf("Failed to like comment: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like comment"})
+		return
+	}
+
+	// 返回点赞结果
+	c.JSON(http.StatusOK, gin.H{
+		"status_code": resp.StatusCode,
+		"status_msg":  resp.StatusMsg,
+		"like_count":  resp.LikeCount,
+		"is_liked":    req.ActionType,
+	})
+}
+
+// ReplyComment 回复评论
+func (h *VideoHandler) ReplyComment(c *gin.Context) {
+	// 解析请求体
+	var req struct {
+		CommentID uint32 `json:"comment_id" binding:"required"`
+		Content   string `json:"content" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 验证必填字段
+	if req.Content == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "content is required"})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务回复评论
+	resp, err := videoClient.CommentVideo(ctx, &pb.CommentRequest{
+		Token:    getTokenFromHeader(c),
+		VideoId:  0,
+		Content:  req.Content,
+		ParentId: &req.CommentID,
+	})
+	if err != nil {
+		log.Printf("Failed to reply comment: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reply comment"})
+		return
+	}
+
+	// 返回回复结果
+	c.JSON(http.StatusOK, gin.H{
+		"status_code": resp.StatusCode,
+		"status_msg":  resp.StatusMsg,
+		"comment":     resp.Comment,
+	})
+}
+
+// GetCommentReplies 获取评论回复列表
+func (h *VideoHandler) GetCommentReplies(c *gin.Context) {
+	// 获取评论ID
+	commentIDStr := c.Param("comment_id")
+	commentID, err := strconv.ParseUint(commentIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid comment_id"})
+		return
+	}
+
+	// 获取分页参数
+	pageStr := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	pageSizeStr := c.DefaultQuery("page_size", "10")
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil || pageSize < 1 || pageSize > 50 {
+		pageSize = 10
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务获取评论回复
+	// 注意：由于当前proto没有专门的GetCommentReplies接口，我们使用GetVideoComments
+	// 并过滤出指定评论的回复
+	resp, err := videoClient.GetVideoComments(ctx, &pb.GetVideoCommentsRequest{
+		VideoId:   0,
+		Token:     getTokenFromHeader(c),
+		Page:      uint32(page),
+		PageSize:  uint32(pageSize),
+		SortOrder: "time_desc",
+	})
+	if err != nil {
+		log.Printf("Failed to get comment replies: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get comment replies"})
+		return
+	}
+
+	// 过滤出指定评论的回复
+	var replies []*pb.Comment
+	for _, comment := range resp.Comments {
+		if comment.ParentId != nil && *comment.ParentId == uint32(commentID) {
+			replies = append(replies, comment)
+		}
+	}
+
+	// 返回回复列表
+	c.JSON(http.StatusOK, gin.H{
+		"status_code": resp.StatusCode,
+		"status_msg":  resp.StatusMsg,
+		"replies":     replies,
+		"total":       uint32(len(replies)),
+		"has_more":    false,
+	})
+}
+
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
 func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandler) {
 	// 分片上传路由组 - 需要认证
@@ -1842,6 +2129,9 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 		videoGroup.GET("/:id/stream/*filepath", videoHandler.ProxyHLSStream)
 		// 视频互动数据接口
 		videoGroup.GET("/:id/stats", videoHandler.GetVideoStats)
+		// 视频评论相关接口
+		videoGroup.GET("/comments", videoHandler.GetVideoComments)
+		videoGroup.GET("/comment/:comment_id/replies", videoHandler.GetCommentReplies)
 		// 需要认证的路由
 		authGroup := videoGroup.Group("/")
 		authGroup.Use(middleware.RequireAuthMiddleware())
@@ -1855,7 +2145,10 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 			authGroup.POST("/:id/like", videoHandler.LikeVideo)
 			authGroup.POST("/:id/favorite", videoHandler.FavoriteVideo)
 			authGroup.POST("/:id/share", videoHandler.ShareVideo)
-
+			// 评论相关接口（需要认证）
+			authGroup.POST("/comment", videoHandler.CommentVideo)
+			authGroup.POST("/comment/like", videoHandler.LikeComment)
+			authGroup.POST("/comment/reply", videoHandler.ReplyComment)
 		}
 	}
 }
