@@ -19,6 +19,7 @@ import (
 	"api_gateway/middleware"
 	"api_gateway/pkg/minio"
 	recpb "api_gateway/proto/proto_gen/recommendation"
+	userpb "api_gateway/proto/proto_gen/user"
 	pb "api_gateway/proto/proto_gen/video"
 
 	"github.com/gin-gonic/gin"
@@ -27,6 +28,7 @@ import (
 // VideoHandler 视频处理器
 type VideoHandler struct {
 	videoClient          *client.VideoServiceClient
+	userClient           *client.UserServiceClient
 	recommendClient      *client.RecommendationServiceClient
 	discovery            *discovery.EtcdServiceDiscovery
 	recommendDiscovery   *discovery.EtcdServiceDiscovery
@@ -61,6 +63,16 @@ func NewVideoHandler(etcdEndpoints []string, minioClient *minio.Client, bucketNa
 		minioClient:        minioClient,
 		bucketName:         bucketName,
 		circuitBreaker:     NewCircuitBreaker(),
+	}
+
+	// 创建用户服务客户端
+	userClient, err := client.NewUserServiceClient(etcdEndpoints[0])
+	if err != nil {
+		log.Printf("Failed to create user service client: %v", err)
+		// 用户服务连接失败不影响视频服务启动，只记录错误
+	} else {
+		handler.userClient = userClient
+		log.Printf("Successfully connected to user service")
 	}
 
 	// 监听视频服务变化
@@ -1871,11 +1883,85 @@ func (h *VideoHandler) GetVideoComments(c *gin.Context) {
 		return
 	}
 
+	// 收集所有用户ID
+	userIDs := make(map[uint32]bool)
+	for _, comment := range resp.Comments {
+		userIDs[comment.UserId] = true
+		for _, reply := range comment.Replies {
+			userIDs[reply.UserId] = true
+			if reply.ReplyToUserId != nil {
+				userIDs[*reply.ReplyToUserId] = true
+			}
+		}
+	}
+
+	// 批量获取用户信息
+	userMap := make(map[uint32]map[string]interface{})
+	if h.userClient != nil && len(userIDs) > 0 {
+		userIDList := make([]uint32, 0, len(userIDs))
+		for id := range userIDs {
+			userIDList = append(userIDList, id)
+		}
+
+		userResp, err := h.userClient.GetUserInfos(ctx, &userpb.GetUserInfosRequest{
+			UserIds: userIDList,
+			Token:   getTokenFromHeader(c),
+		})
+		if err == nil && userResp.StatusCode == 0 {
+			for _, user := range userResp.Users {
+				userMap[user.Id] = map[string]interface{}{
+					"id":       user.Id,
+					"username": user.Name,
+					"avatar":   user.Avatar,
+				}
+			}
+		} else {
+			log.Printf("Failed to get user infos: %v", err)
+		}
+	}
+
+	// 为评论添加用户信息
+	type CommentWithUser struct {
+		*pb.Comment
+		User map[string]interface{} `json:"user"`
+	}
+
+	commentsWithUser := make([]CommentWithUser, 0, len(resp.Comments))
+	for _, comment := range resp.Comments {
+		commentWithUser := CommentWithUser{
+			Comment: comment,
+			User:    userMap[comment.UserId],
+		}
+
+		// 为回复添加用户信息
+		if len(comment.Replies) > 0 {
+			repliesWithUser := make([]*pb.Comment, 0, len(comment.Replies))
+			for _, reply := range comment.Replies {
+				replyCopy := *reply
+				repliesWithUser = append(repliesWithUser, &replyCopy)
+			}
+			commentWithUser.Comment = &pb.Comment{
+				Id:            comment.Id,
+				UserId:        comment.UserId,
+				VideoId:       comment.VideoId,
+				Content:       comment.Content,
+				ParentId:      comment.ParentId,
+				ReplyToUserId: comment.ReplyToUserId,
+				LikeCount:     comment.LikeCount,
+				IsLiked:       comment.IsLiked,
+				CreateTime:    comment.CreateTime,
+				Replies:       repliesWithUser,
+			}
+		}
+
+		commentsWithUser = append(commentsWithUser, commentWithUser)
+	}
+
 	// 返回评论列表
 	c.JSON(http.StatusOK, gin.H{
 		"status_code": resp.StatusCode,
 		"status_msg":  resp.StatusMsg,
-		"comments":    resp.Comments,
+		"comments":    commentsWithUser,
 		"total":       resp.Total,
 		"has_more":    resp.HasMore,
 	})
@@ -1885,9 +1971,9 @@ func (h *VideoHandler) GetVideoComments(c *gin.Context) {
 func (h *VideoHandler) CommentVideo(c *gin.Context) {
 	// 解析请求体
 	var req struct {
-		VideoID  string  `json:"video_id" binding:"required"`
-		Content  string  `json:"content" binding:"required"`
-		ParentID *uint32 `json:"parent_id"`
+		VideoID  interface{} `json:"video_id" binding:"required"`
+		Content  string      `json:"content" binding:"required"`
+		ParentID *uint32     `json:"parent_id"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -1901,10 +1987,22 @@ func (h *VideoHandler) CommentVideo(c *gin.Context) {
 		return
 	}
 
-	// 解析视频ID
-	videoID, err := strconv.ParseUint(req.VideoID, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video_id"})
+	// 解析视频ID（支持字符串和数字类型）
+	var videoID uint32
+	switch v := req.VideoID.(type) {
+	case string:
+		parsedID, err := strconv.ParseUint(v, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video_id"})
+			return
+		}
+		videoID = uint32(parsedID)
+	case float64:
+		videoID = uint32(v)
+	case int:
+		videoID = uint32(v)
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video_id type"})
 		return
 	}
 
@@ -1922,7 +2020,7 @@ func (h *VideoHandler) CommentVideo(c *gin.Context) {
 	// 调用视频服务发表评论
 	resp, err := videoClient.CommentVideo(ctx, &pb.CommentRequest{
 		Token:    getTokenFromHeader(c),
-		VideoId:  uint32(videoID),
+		VideoId:  videoID,
 		Content:  req.Content,
 		ParentId: req.ParentID,
 	})
