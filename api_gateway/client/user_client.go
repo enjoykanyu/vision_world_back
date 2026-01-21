@@ -144,3 +144,11 @@ func (c *UserServiceClient) LogOut(ctx context.Context, req *userpb.LogoutReques
 	}
 	return c.client.Logout(ctx, req)
 }
+
+// GetUserInfos 批量获取用户信息
+func (c *UserServiceClient) GetUserInfos(ctx context.Context, req *userpb.GetUserInfosRequest) (*userpb.GetUserInfosResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.GetUserInfos(ctx, req)
+}
