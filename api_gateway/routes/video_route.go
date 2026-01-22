@@ -2063,9 +2063,9 @@ func (h *VideoHandler) LikeComment(c *gin.Context) {
 	defer cancel()
 
 	// 调用视频服务点赞评论
-	resp, err := videoClient.LikeVideo(ctx, &pb.LikeVideoRequest{
+	resp, err := videoClient.LikeComment(ctx, &pb.LikeCommentRequest{
 		Token:      getTokenFromHeader(c),
-		VideoId:    req.CommentID,
+		CommentId:  req.CommentID,
 		ActionType: req.ActionType,
 	})
 	if err != nil {
@@ -2079,7 +2079,7 @@ func (h *VideoHandler) LikeComment(c *gin.Context) {
 		"status_code": resp.StatusCode,
 		"status_msg":  resp.StatusMsg,
 		"like_count":  resp.LikeCount,
-		"is_liked":    req.ActionType,
+		"is_liked":    resp.IsLiked,
 	})
 }
 

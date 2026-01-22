@@ -209,6 +209,14 @@ func (c *VideoServiceClient) DeleteComment(ctx context.Context, req *videopb.Del
 	return c.client.DeleteComment(ctx, req)
 }
 
+// LikeComment 点赞评论
+func (c *VideoServiceClient) LikeComment(ctx context.Context, req *videopb.LikeCommentRequest) (*videopb.LikeCommentResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.LikeComment(ctx, req)
+}
+
 // GetVideoComments 获取视频评论列表
 func (c *VideoServiceClient) GetVideoComments(ctx context.Context, req *videopb.GetVideoCommentsRequest) (*videopb.GetVideoCommentsResponse, error) {
 	if !c.IsConnected() {

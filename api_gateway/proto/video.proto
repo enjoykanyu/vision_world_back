@@ -245,6 +245,20 @@ message DeleteCommentResponse {
   string status_msg = 2; // 返回状态描述
 }
 
+// 点赞评论请求
+message LikeCommentRequest {
+  string token = 1; // 用户token
+  uint32 comment_id = 2; // 评论ID
+  bool action_type = 3; // true-点赞，false-取消点赞
+}
+
+message LikeCommentResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  uint32 like_count = 3; // 点赞数
+  bool is_liked = 4; // 是否已点赞
+}
+
 // 获取视频评论列表请求
 message GetVideoCommentsRequest {
   uint32 video_id = 1; // 视频ID
@@ -340,6 +354,7 @@ service VideoService {
   // 视频评论相关
   rpc CommentVideo(CommentRequest) returns(CommentResponse);
   rpc DeleteComment(DeleteCommentRequest) returns(DeleteCommentResponse);
+  rpc LikeComment(LikeCommentRequest) returns(LikeCommentResponse);
   rpc GetVideoComments(GetVideoCommentsRequest) returns(GetVideoCommentsResponse);
 }
 

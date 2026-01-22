@@ -1214,6 +1214,13 @@ func (h *VideoHandler) GetVideoComments(ctx context.Context, req *pb.GetVideoCom
 	return h.commentService.GetVideoComments(ctx, req)
 }
 
+// LikeComment 点赞评论
+func (h *VideoHandler) LikeComment(ctx context.Context, req *pb.LikeCommentRequest) (*pb.LikeCommentResponse, error) {
+	h.logger.Info("LikeComment called", zap.Uint32("comment_id", req.CommentId), zap.Bool("action_type", req.ActionType))
+
+	return h.commentService.LikeComment(ctx, req)
+}
+
 // ==================== 辅助方法 ====================
 
 // convertToProtoVideo 将模型转换为protobuf格式
