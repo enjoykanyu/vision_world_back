@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	videopb "api_gateway/proto/proto_gen/video"
+	videopb "api_gateway/proto_gen/video"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"

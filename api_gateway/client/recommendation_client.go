@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 
-	recommendationpb "api_gateway/proto/proto_gen/recommendation"
+	recommendationpb "api_gateway/proto_gen/recommendation"
 )
 
 // RecommendationServiceClient 推荐服务客户端封装

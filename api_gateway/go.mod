@@ -2,9 +2,10 @@ module api_gateway
 
 go 1.25.0
 
-//replace api_gateway/proto_gen => ./proto/proto_gen
+replace api_gateway/proto_gen => ./proto/proto_gen
 
 require (
+	api_gateway/proto_gen v0.0.0-00010101000000-000000000000
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-redis/redis/v8 v8.11.5
