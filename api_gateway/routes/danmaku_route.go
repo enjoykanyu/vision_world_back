@@ -163,6 +163,7 @@ func (h *DanmakuHandler) SendDanmaku(c *gin.Context) {
 	}
 
 	resp, err := danmakuClient.SendDanmaku(ctx, grpcReq)
+
 	if err != nil {
 		log.Printf("Failed to send danmaku: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send danmaku"})
