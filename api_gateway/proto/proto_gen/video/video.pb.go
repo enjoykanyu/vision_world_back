@@ -2807,16 +2807,16 @@ func (x *Video) GetTranscodeStatus() string {
 
 type Comment struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                                      // 评论id
-	UserId        uint32                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                                // 评论用户ID
-	Content       string                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`                                             // 评论内容
-	VideoId       uint32                 `protobuf:"varint,4,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"`                             // 视频ID
-	ParentId      *uint32                `protobuf:"varint,5,opt,name=parent_id,json=parentId,proto3,oneof" json:"parent_id,omitempty"`                    // 回复的评论ID
-	ReplyToUserId *uint32                `protobuf:"varint,6,opt,name=reply_to_user_id,json=replyToUserId,proto3,oneof" json:"reply_to_user_id,omitempty"` // 回复的用户ID
-	LikeCount     uint32                 `protobuf:"varint,7,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`                       // 点赞数
-	IsLiked       bool                   `protobuf:"varint,8,opt,name=is_liked,json=isLiked,proto3" json:"is_liked,omitempty"`                             // 是否已点赞 (需要token)
-	CreateTime    int64                  `protobuf:"varint,9,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`                    // 发布时间戳
-	Replies       []*Comment             `protobuf:"bytes,10,rep,name=replies,proto3" json:"replies,omitempty"`                                            // 回复列表 (可选，用于嵌套显示)
+	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                             // 评论id
+	User          *user.User             `protobuf:"bytes,2,opt,name=user,proto3" json:"user,omitempty"`                                          // 评论用户信息
+	Content       string                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`                                    // 评论内容
+	VideoId       uint32                 `protobuf:"varint,4,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"`                    // 视频ID
+	ParentId      *uint32                `protobuf:"varint,5,opt,name=parent_id,json=parentId,proto3,oneof" json:"parent_id,omitempty"`           // 回复的评论ID
+	ReplyToUser   *user.User             `protobuf:"bytes,6,opt,name=reply_to_user,json=replyToUser,proto3,oneof" json:"reply_to_user,omitempty"` // 回复的用户信息
+	LikeCount     uint32                 `protobuf:"varint,7,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`              // 点赞数
+	IsLiked       bool                   `protobuf:"varint,8,opt,name=is_liked,json=isLiked,proto3" json:"is_liked,omitempty"`                    // 是否已点赞 (需要token)
+	CreateTime    int64                  `protobuf:"varint,9,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`           // 发布时间戳
+	Replies       []*Comment             `protobuf:"bytes,10,rep,name=replies,proto3" json:"replies,omitempty"`                                   // 回复列表 (可选，用于嵌套显示)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2858,11 +2858,11 @@ func (x *Comment) GetId() uint32 {
 	return 0
 }
 
-func (x *Comment) GetUserId() uint32 {
+func (x *Comment) GetUser() *user.User {
 	if x != nil {
-		return x.UserId
+		return x.User
 	}
-	return 0
+	return nil
 }
 
 func (x *Comment) GetContent() string {
@@ -2886,11 +2886,11 @@ func (x *Comment) GetParentId() uint32 {
 	return 0
 }
 
-func (x *Comment) GetReplyToUserId() uint32 {
-	if x != nil && x.ReplyToUserId != nil {
-		return *x.ReplyToUserId
+func (x *Comment) GetReplyToUser() *user.User {
+	if x != nil {
+		return x.ReplyToUser
 	}
-	return 0
+	return nil
 }
 
 func (x *Comment) GetLikeCount() uint32 {
@@ -3632,14 +3632,14 @@ const file_video_proto_rawDesc = "" +
 	"\v_extra_dataB\a\n" +
 	"\x05_typeB\t\n" +
 	"\a_sourceB\x13\n" +
-	"\x11_transcode_status\"\xe3\x02\n" +
+	"\x11_transcode_status\"\xf6\x02\n" +
 	"\aComment\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\rR\x02id\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\rR\x06userId\x12\x18\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12\"\n" +
+	"\x04user\x18\x02 \x01(\v2\x0e.rpc.user.UserR\x04user\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\tR\acontent\x12\x19\n" +
 	"\bvideo_id\x18\x04 \x01(\rR\avideoId\x12 \n" +
-	"\tparent_id\x18\x05 \x01(\rH\x00R\bparentId\x88\x01\x01\x12,\n" +
-	"\x10reply_to_user_id\x18\x06 \x01(\rH\x01R\rreplyToUserId\x88\x01\x01\x12\x1d\n" +
+	"\tparent_id\x18\x05 \x01(\rH\x00R\bparentId\x88\x01\x01\x127\n" +
+	"\rreply_to_user\x18\x06 \x01(\v2\x0e.rpc.user.UserH\x01R\vreplyToUser\x88\x01\x01\x12\x1d\n" +
 	"\n" +
 	"like_count\x18\a \x01(\rR\tlikeCount\x12\x19\n" +
 	"\bis_liked\x18\b \x01(\bR\aisLiked\x12\x1f\n" +
@@ -3648,8 +3648,8 @@ const file_video_proto_rawDesc = "" +
 	"\areplies\x18\n" +
 	" \x03(\v2\x12.rpc.video.CommentR\arepliesB\f\n" +
 	"\n" +
-	"_parent_idB\x13\n" +
-	"\x11_reply_to_user_id\"\x8a\x01\n" +
+	"_parent_idB\x10\n" +
+	"\x0e_reply_to_user\"\x8a\x01\n" +
 	"\x13GetHotVideosRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\rR\x04page\x12\x1b\n" +
@@ -3711,7 +3711,7 @@ const file_video_proto_rawDesc = "" +
 	"\fCommentVideo\x12\x19.rpc.video.CommentRequest\x1a\x1a.rpc.video.CommentResponse\x12R\n" +
 	"\rDeleteComment\x12\x1f.rpc.video.DeleteCommentRequest\x1a .rpc.video.DeleteCommentResponse\x12L\n" +
 	"\vLikeComment\x12\x1d.rpc.video.LikeCommentRequest\x1a\x1e.rpc.video.LikeCommentResponse\x12[\n" +
-	"\x10GetVideoComments\x12\".rpc.video.GetVideoCommentsRequest\x1a#.rpc.video.GetVideoCommentsResponseB\x1dZ\x1bapi_gateway/proto_gen/videob\x06proto3"
+	"\x10GetVideoComments\x12\".rpc.video.GetVideoCommentsRequest\x1a#.rpc.video.GetVideoCommentsResponseB#Z!api_gateway/proto/proto_gen/videob\x06proto3"
 
 var (
 	file_video_proto_rawDescOnce sync.Once
@@ -3786,57 +3786,59 @@ var file_video_proto_depIdxs = []int32{
 	39, // 7: rpc.video.CommentResponse.comment:type_name -> rpc.video.Comment
 	39, // 8: rpc.video.GetVideoCommentsResponse.comments:type_name -> rpc.video.Comment
 	46, // 9: rpc.video.Video.author:type_name -> rpc.user.User
-	39, // 10: rpc.video.Comment.replies:type_name -> rpc.video.Comment
-	38, // 11: rpc.video.GetHotVideosResponse.videos:type_name -> rpc.video.Video
-	38, // 12: rpc.video.GetCategoryVideosResponse.videos:type_name -> rpc.video.Video
-	38, // 13: rpc.video.SearchVideosResponse.videos:type_name -> rpc.video.Video
-	2,  // 14: rpc.video.VideoService.UploadVideo:input_type -> rpc.video.UploadVideoRequest
-	4,  // 15: rpc.video.VideoService.CreateVideoRecord:input_type -> rpc.video.CreateVideoRecordRequest
-	6,  // 16: rpc.video.VideoService.PublishVideo:input_type -> rpc.video.PublishVideoRequest
-	8,  // 17: rpc.video.VideoService.DeleteVideo:input_type -> rpc.video.DeleteVideoRequest
-	10, // 18: rpc.video.VideoService.RetryTranscode:input_type -> rpc.video.RetryTranscodeRequest
-	12, // 19: rpc.video.VideoService.GetVideoInfo:input_type -> rpc.video.GetVideoInfoRequest
-	14, // 20: rpc.video.VideoService.GetVideoInfos:input_type -> rpc.video.GetVideoInfosRequest
-	16, // 21: rpc.video.VideoService.GetUserVideos:input_type -> rpc.video.GetUserVideosRequest
-	18, // 22: rpc.video.VideoService.GetRecommendVideos:input_type -> rpc.video.GetRecommendVideosRequest
-	20, // 23: rpc.video.VideoService.GetFollowVideos:input_type -> rpc.video.GetFollowVideosRequest
-	40, // 24: rpc.video.VideoService.GetHotVideos:input_type -> rpc.video.GetHotVideosRequest
-	42, // 25: rpc.video.VideoService.GetCategoryVideos:input_type -> rpc.video.GetCategoryVideosRequest
-	44, // 26: rpc.video.VideoService.SearchVideos:input_type -> rpc.video.SearchVideosRequest
-	22, // 27: rpc.video.VideoService.LikeVideo:input_type -> rpc.video.LikeVideoRequest
-	24, // 28: rpc.video.VideoService.FavoriteVideo:input_type -> rpc.video.FavoriteVideoRequest
-	26, // 29: rpc.video.VideoService.GetUserLikedVideos:input_type -> rpc.video.GetUserLikedVideosRequest
-	28, // 30: rpc.video.VideoService.ShareVideo:input_type -> rpc.video.ShareVideoRequest
-	30, // 31: rpc.video.VideoService.CommentVideo:input_type -> rpc.video.CommentRequest
-	32, // 32: rpc.video.VideoService.DeleteComment:input_type -> rpc.video.DeleteCommentRequest
-	34, // 33: rpc.video.VideoService.LikeComment:input_type -> rpc.video.LikeCommentRequest
-	36, // 34: rpc.video.VideoService.GetVideoComments:input_type -> rpc.video.GetVideoCommentsRequest
-	3,  // 35: rpc.video.VideoService.UploadVideo:output_type -> rpc.video.UploadVideoResponse
-	5,  // 36: rpc.video.VideoService.CreateVideoRecord:output_type -> rpc.video.CreateVideoRecordResponse
-	7,  // 37: rpc.video.VideoService.PublishVideo:output_type -> rpc.video.PublishVideoResponse
-	9,  // 38: rpc.video.VideoService.DeleteVideo:output_type -> rpc.video.DeleteVideoResponse
-	11, // 39: rpc.video.VideoService.RetryTranscode:output_type -> rpc.video.RetryTranscodeResponse
-	1,  // 40: rpc.video.VideoService.GetVideoInfo:output_type -> rpc.video.VideoResponse
-	15, // 41: rpc.video.VideoService.GetVideoInfos:output_type -> rpc.video.GetVideoInfosResponse
-	17, // 42: rpc.video.VideoService.GetUserVideos:output_type -> rpc.video.GetUserVideosResponse
-	19, // 43: rpc.video.VideoService.GetRecommendVideos:output_type -> rpc.video.GetRecommendVideosResponse
-	21, // 44: rpc.video.VideoService.GetFollowVideos:output_type -> rpc.video.GetFollowVideosResponse
-	41, // 45: rpc.video.VideoService.GetHotVideos:output_type -> rpc.video.GetHotVideosResponse
-	43, // 46: rpc.video.VideoService.GetCategoryVideos:output_type -> rpc.video.GetCategoryVideosResponse
-	45, // 47: rpc.video.VideoService.SearchVideos:output_type -> rpc.video.SearchVideosResponse
-	23, // 48: rpc.video.VideoService.LikeVideo:output_type -> rpc.video.LikeVideoResponse
-	25, // 49: rpc.video.VideoService.FavoriteVideo:output_type -> rpc.video.FavoriteVideoResponse
-	27, // 50: rpc.video.VideoService.GetUserLikedVideos:output_type -> rpc.video.GetUserLikedVideosResponse
-	29, // 51: rpc.video.VideoService.ShareVideo:output_type -> rpc.video.ShareVideoResponse
-	31, // 52: rpc.video.VideoService.CommentVideo:output_type -> rpc.video.CommentResponse
-	33, // 53: rpc.video.VideoService.DeleteComment:output_type -> rpc.video.DeleteCommentResponse
-	35, // 54: rpc.video.VideoService.LikeComment:output_type -> rpc.video.LikeCommentResponse
-	37, // 55: rpc.video.VideoService.GetVideoComments:output_type -> rpc.video.GetVideoCommentsResponse
-	35, // [35:56] is the sub-list for method output_type
-	14, // [14:35] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	46, // 10: rpc.video.Comment.user:type_name -> rpc.user.User
+	46, // 11: rpc.video.Comment.reply_to_user:type_name -> rpc.user.User
+	39, // 12: rpc.video.Comment.replies:type_name -> rpc.video.Comment
+	38, // 13: rpc.video.GetHotVideosResponse.videos:type_name -> rpc.video.Video
+	38, // 14: rpc.video.GetCategoryVideosResponse.videos:type_name -> rpc.video.Video
+	38, // 15: rpc.video.SearchVideosResponse.videos:type_name -> rpc.video.Video
+	2,  // 16: rpc.video.VideoService.UploadVideo:input_type -> rpc.video.UploadVideoRequest
+	4,  // 17: rpc.video.VideoService.CreateVideoRecord:input_type -> rpc.video.CreateVideoRecordRequest
+	6,  // 18: rpc.video.VideoService.PublishVideo:input_type -> rpc.video.PublishVideoRequest
+	8,  // 19: rpc.video.VideoService.DeleteVideo:input_type -> rpc.video.DeleteVideoRequest
+	10, // 20: rpc.video.VideoService.RetryTranscode:input_type -> rpc.video.RetryTranscodeRequest
+	12, // 21: rpc.video.VideoService.GetVideoInfo:input_type -> rpc.video.GetVideoInfoRequest
+	14, // 22: rpc.video.VideoService.GetVideoInfos:input_type -> rpc.video.GetVideoInfosRequest
+	16, // 23: rpc.video.VideoService.GetUserVideos:input_type -> rpc.video.GetUserVideosRequest
+	18, // 24: rpc.video.VideoService.GetRecommendVideos:input_type -> rpc.video.GetRecommendVideosRequest
+	20, // 25: rpc.video.VideoService.GetFollowVideos:input_type -> rpc.video.GetFollowVideosRequest
+	40, // 26: rpc.video.VideoService.GetHotVideos:input_type -> rpc.video.GetHotVideosRequest
+	42, // 27: rpc.video.VideoService.GetCategoryVideos:input_type -> rpc.video.GetCategoryVideosRequest
+	44, // 28: rpc.video.VideoService.SearchVideos:input_type -> rpc.video.SearchVideosRequest
+	22, // 29: rpc.video.VideoService.LikeVideo:input_type -> rpc.video.LikeVideoRequest
+	24, // 30: rpc.video.VideoService.FavoriteVideo:input_type -> rpc.video.FavoriteVideoRequest
+	26, // 31: rpc.video.VideoService.GetUserLikedVideos:input_type -> rpc.video.GetUserLikedVideosRequest
+	28, // 32: rpc.video.VideoService.ShareVideo:input_type -> rpc.video.ShareVideoRequest
+	30, // 33: rpc.video.VideoService.CommentVideo:input_type -> rpc.video.CommentRequest
+	32, // 34: rpc.video.VideoService.DeleteComment:input_type -> rpc.video.DeleteCommentRequest
+	34, // 35: rpc.video.VideoService.LikeComment:input_type -> rpc.video.LikeCommentRequest
+	36, // 36: rpc.video.VideoService.GetVideoComments:input_type -> rpc.video.GetVideoCommentsRequest
+	3,  // 37: rpc.video.VideoService.UploadVideo:output_type -> rpc.video.UploadVideoResponse
+	5,  // 38: rpc.video.VideoService.CreateVideoRecord:output_type -> rpc.video.CreateVideoRecordResponse
+	7,  // 39: rpc.video.VideoService.PublishVideo:output_type -> rpc.video.PublishVideoResponse
+	9,  // 40: rpc.video.VideoService.DeleteVideo:output_type -> rpc.video.DeleteVideoResponse
+	11, // 41: rpc.video.VideoService.RetryTranscode:output_type -> rpc.video.RetryTranscodeResponse
+	1,  // 42: rpc.video.VideoService.GetVideoInfo:output_type -> rpc.video.VideoResponse
+	15, // 43: rpc.video.VideoService.GetVideoInfos:output_type -> rpc.video.GetVideoInfosResponse
+	17, // 44: rpc.video.VideoService.GetUserVideos:output_type -> rpc.video.GetUserVideosResponse
+	19, // 45: rpc.video.VideoService.GetRecommendVideos:output_type -> rpc.video.GetRecommendVideosResponse
+	21, // 46: rpc.video.VideoService.GetFollowVideos:output_type -> rpc.video.GetFollowVideosResponse
+	41, // 47: rpc.video.VideoService.GetHotVideos:output_type -> rpc.video.GetHotVideosResponse
+	43, // 48: rpc.video.VideoService.GetCategoryVideos:output_type -> rpc.video.GetCategoryVideosResponse
+	45, // 49: rpc.video.VideoService.SearchVideos:output_type -> rpc.video.SearchVideosResponse
+	23, // 50: rpc.video.VideoService.LikeVideo:output_type -> rpc.video.LikeVideoResponse
+	25, // 51: rpc.video.VideoService.FavoriteVideo:output_type -> rpc.video.FavoriteVideoResponse
+	27, // 52: rpc.video.VideoService.GetUserLikedVideos:output_type -> rpc.video.GetUserLikedVideosResponse
+	29, // 53: rpc.video.VideoService.ShareVideo:output_type -> rpc.video.ShareVideoResponse
+	31, // 54: rpc.video.VideoService.CommentVideo:output_type -> rpc.video.CommentResponse
+	33, // 55: rpc.video.VideoService.DeleteComment:output_type -> rpc.video.DeleteCommentResponse
+	35, // 56: rpc.video.VideoService.LikeComment:output_type -> rpc.video.LikeCommentResponse
+	37, // 57: rpc.video.VideoService.GetVideoComments:output_type -> rpc.video.GetVideoCommentsResponse
+	37, // [37:58] is the sub-list for method output_type
+	16, // [16:37] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_video_proto_init() }

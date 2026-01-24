@@ -23,6 +23,7 @@ import (
 	pb "api_gateway/proto/proto_gen/video"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc/status"
 )
 
 // VideoHandler 视频处理器
@@ -1877,81 +1878,63 @@ func (h *VideoHandler) GetVideoComments(c *gin.Context) {
 		PageSize:  uint32(pageSize),
 		SortOrder: sortOrder,
 	})
+
 	if err != nil {
-		log.Printf("Failed to get video comments: %v", err)
+		log.Printf("[GetVideoComments] gRPC调用失败: %v", err)
+		// 尝试打印更详细的错误信息
+		if st, ok := status.FromError(err); ok {
+			log.Printf("[GetVideoComments] gRPC状态码: %d, 错误描述: %s", st.Code(), st.Message())
+			for _, detail := range st.Details() {
+				log.Printf("[GetVideoComments] 错误详情: %v", detail)
+			}
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get video comments"})
 		return
 	}
 
-	// 收集所有用户ID
-	userIDs := make(map[uint32]bool)
-	for _, comment := range resp.Comments {
-		userIDs[comment.UserId] = true
-		for _, reply := range comment.Replies {
-			userIDs[reply.UserId] = true
-			if reply.ReplyToUserId != nil {
-				userIDs[*reply.ReplyToUserId] = true
-			}
-		}
-	}
-
-	// 批量获取用户信息
-	userMap := make(map[uint32]map[string]interface{})
-	if h.userClient != nil && len(userIDs) > 0 {
-		userIDList := make([]uint32, 0, len(userIDs))
-		for id := range userIDs {
-			userIDList = append(userIDList, id)
-		}
-
-		userResp, err := h.userClient.GetUserInfos(ctx, &userpb.GetUserInfosRequest{
-			UserIds: userIDList,
-			Token:   getTokenFromHeader(c),
-		})
-		if err == nil && userResp.StatusCode == 0 {
-			for _, user := range userResp.Users {
-				userMap[user.Id] = map[string]interface{}{
-					"id":       user.Id,
-					"username": user.Name,
-					"avatar":   user.Avatar,
-				}
-			}
-		} else {
-			log.Printf("Failed to get user infos: %v", err)
-		}
-	}
-
 	// 为评论添加用户信息
+	// 创建完整的评论结构体，包含用户信息
 	type CommentWithUser struct {
-		*pb.Comment
-		User map[string]interface{} `json:"user"`
+		Id          uint32            `json:"id"`
+		User        *userpb.User      `json:"user"`
+		Content     string            `json:"content"`
+		VideoId     uint32            `json:"video_id"`
+		ParentId    *uint32           `json:"parent_id,omitempty"`
+		ReplyToUser *userpb.User      `json:"reply_to_user,omitempty"`
+		LikeCount   uint32            `json:"like_count"`
+		IsLiked     bool              `json:"is_liked"`
+		CreateTime  int64             `json:"create_time"`
+		Replies     []CommentWithUser `json:"replies,omitempty"`
 	}
 
 	commentsWithUser := make([]CommentWithUser, 0, len(resp.Comments))
 	for _, comment := range resp.Comments {
-		commentWithUser := CommentWithUser{
-			Comment: comment,
-			User:    userMap[comment.UserId],
+		repliesWithUser := make([]CommentWithUser, 0, len(comment.Replies))
+		for _, reply := range comment.Replies {
+			repliesWithUser = append(repliesWithUser, CommentWithUser{
+				Id:          reply.Id,
+				User:        reply.User,
+				Content:     reply.Content,
+				VideoId:     reply.VideoId,
+				ParentId:    reply.ParentId,
+				ReplyToUser: reply.ReplyToUser,
+				LikeCount:   reply.LikeCount,
+				IsLiked:     reply.IsLiked,
+				CreateTime:  reply.CreateTime,
+			})
 		}
 
-		// 为回复添加用户信息
-		if len(comment.Replies) > 0 {
-			repliesWithUser := make([]*pb.Comment, 0, len(comment.Replies))
-			for _, reply := range comment.Replies {
-				replyCopy := *reply
-				repliesWithUser = append(repliesWithUser, &replyCopy)
-			}
-			commentWithUser.Comment = &pb.Comment{
-				Id:            comment.Id,
-				UserId:        comment.UserId,
-				VideoId:       comment.VideoId,
-				Content:       comment.Content,
-				ParentId:      comment.ParentId,
-				ReplyToUserId: comment.ReplyToUserId,
-				LikeCount:     comment.LikeCount,
-				IsLiked:       comment.IsLiked,
-				CreateTime:    comment.CreateTime,
-				Replies:       repliesWithUser,
-			}
+		commentWithUser := CommentWithUser{
+			Id:          comment.Id,
+			User:        comment.User,
+			Content:     comment.Content,
+			VideoId:     comment.VideoId,
+			ParentId:    comment.ParentId,
+			ReplyToUser: comment.ReplyToUser,
+			LikeCount:   comment.LikeCount,
+			IsLiked:     comment.IsLiked,
+			CreateTime:  comment.CreateTime,
+			Replies:     repliesWithUser,
 		}
 
 		commentsWithUser = append(commentsWithUser, commentWithUser)

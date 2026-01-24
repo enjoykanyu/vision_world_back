@@ -319,11 +319,11 @@ message Video {
 
 message Comment {
   uint32 id = 1; // 评论id
-  uint32 user_id = 2; // 评论用户ID
+  rpc.user.User user = 2; // 评论用户信息
   string content = 3; // 评论内容
   uint32 video_id = 4; // 视频ID
   optional uint32 parent_id = 5; // 回复的评论ID
-  optional uint32 reply_to_user_id = 6; // 回复的用户ID
+  optional rpc.user.User reply_to_user = 6; // 回复的用户信息
   uint32 like_count = 7; // 点赞数
   bool is_liked = 8; // 是否已点赞 (需要token)
   int64 create_time = 9; // 发布时间戳

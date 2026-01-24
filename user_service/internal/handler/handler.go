@@ -212,28 +212,23 @@ func (h *UserServiceHandler) GetUserInfo(ctx context.Context, req *proto_gen.Get
 // GetUserInfos 批量获取用户信息
 func (h *UserServiceHandler) GetUserInfos(ctx context.Context, req *proto_gen.GetUserInfosRequest) (*proto_gen.GetUserInfosResponse, error) {
 	h.logger.Info("GetUserInfos called", "user_ids", req.UserIds)
+	converter := converter.NewUserConverter()
 
 	// 调用用户服务批量获取用户信息
-	_, err := h.userService.GetUserInfos(ctx, req.UserIds)
+	userList, err := h.userService.GetUserInfos(ctx, req.UserIds)
 	if err != nil {
 		h.logger.Error("GetUserInfos failed", "error", err)
 		return &proto_gen.GetUserInfosResponse{
 			StatusCode: 400,
 			StatusMsg:  err.Error(),
-			Users:      nil,
+			Users:      converter.ModelListToProtoList(userList),
 		}, nil
 	}
-
-	// 转换用户列表到protobuf格式
-	//protoUsers := make([]*proto_gen.User, len(users))
-	//for i, user := range users {
-	//	//protoUsers[i] = user.ToProto()
-	//}
 
 	return &proto_gen.GetUserInfosResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		//Users:      protoUsers,
+		Users:      converter.ModelListToProtoList(userList),
 	}, nil
 }
 

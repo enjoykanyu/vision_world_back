@@ -74,10 +74,6 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 
 	// 创建model.DB实例
 	modelDB := model.NewDB(db)
-
-	// 创建CommentService实例
-	commentService := service.NewCommentService(modelDB)
-
 	// 创建服务发现客户端 - 参考api_gateway的实现方式
 	var discoveryClient discovery.ServiceDiscovery
 	if cfg.Discovery.Type != "" && cfg.Discovery.Type == "etcd" && cfg.Discovery.Address != "" {
@@ -175,6 +171,10 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 		log.Info("Connected to user service",
 			"address", cfg.Services.UserService.Address)
 	}
+	// 创建CommentService实例
+	commentService := service.NewCommentService(modelDB, userClient)
+	// 更新CommentService的userClient
+	//commentService.SetUserClient(userClient)
 
 	return &VideoHandler{
 		config:          cfg,

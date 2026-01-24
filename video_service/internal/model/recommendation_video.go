@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -43,10 +44,10 @@ func (r *RecommendationVideo) ToVideoModel() *Video {
 		Category:    r.Category,
 		PlayCount:   uint32(r.ViewCount),
 		LikeCount:   uint32(r.LikeCount),
-		Type:        r.Type,
-		Source:      r.Source,
-		IsPublic:    true,
-		Status:      "normal",
+		//Type:        r.Type,
+		Source:   r.Source,
+		IsPublic: true,
+		Status:   "normal",
 	}
 }
 
@@ -57,7 +58,7 @@ func FromVideoModel(video *Video, author string) *RecommendationVideo {
 	}
 
 	return &RecommendationVideo{
-		VideoID:     string(rune(video.ID)), // 简化处理，实际应该使用更合适的ID
+		VideoID:     fmt.Sprintf("%d", video.ID), // 将uint32转换为字符串
 		Title:       video.Title,
 		Description: video.Description,
 		Author:      author,
@@ -69,9 +70,9 @@ func FromVideoModel(video *Video, author string) *RecommendationVideo {
 		ViewCount:   int64(video.PlayCount),
 		LikeCount:   int64(video.LikeCount),
 		Score:       0, // 需要计算
-		Type:        video.Type,
-		Source:      video.Source,
-		CreatedAt:   video.CreatedAt,
-		UpdatedAt:   video.UpdatedAt,
+		//Type:        video.Type,
+		Source:    video.Source,
+		CreatedAt: video.CreatedAt,
+		UpdatedAt: video.UpdatedAt,
 	}
 }
