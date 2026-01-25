@@ -152,3 +152,13 @@ func (c *UserServiceClient) GetUserInfos(ctx context.Context, req *userpb.GetUse
 	}
 	return c.client.GetUserInfos(ctx, req)
 }
+
+// UpdateUserInfo 更新用户信息
+func (c *UserServiceClient) UpdateUserInfo(ctx context.Context, req *userpb.UpdateUserRequest) (*userpb.UpdateUserResponse, error) {
+	log.Println(req)
+	log.Println("UpdateUserInfo")
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.UpdateUserInfo(ctx, req)
+}

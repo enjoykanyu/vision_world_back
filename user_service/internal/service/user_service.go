@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -490,7 +491,8 @@ func (s *userService) GetUserInfo(ctx context.Context, userID uint32) (*model.Us
 		s.logger.Error("Failed to get user", "error", err)
 		return nil, errors.New("database error")
 	}
-
+	log.Printf("ttt user: %+v", user)
+	log.Printf("db AvatarURL: %s", user.AvatarURL)
 	return user, nil
 }
 
@@ -515,7 +517,7 @@ func (s *userService) GetUserInfos(ctx context.Context, userIDs []uint32) ([]*mo
 
 // UpdateUserInfo 更新用户信息
 func (s *userService) UpdateUserInfo(ctx context.Context, userID uint32, updates map[string]interface{}) error {
-	s.logger.Info("UpdateUserInfo service called", "userID", userID)
+	s.logger.Info("UpdateUserInfo service called", "userID", userID, "updates", updates)
 
 	// 验证用户是否存在
 	_, err := s.userRepo.GetByID(ctx, userID)

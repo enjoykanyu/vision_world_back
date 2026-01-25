@@ -15,6 +15,8 @@ import (
 	pb "api_gateway/proto/proto_gen/user"
 
 	"github.com/gin-gonic/gin"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
 // CircuitBreaker 熔断器
@@ -334,6 +336,180 @@ func (h *UserHandler) SendSmsCode(c *gin.Context) {
 	})
 }
 
+// UpdateUserInfo 更新用户信息
+func (h *UserHandler) UpdateUserInfo(c *gin.Context) {
+	var req pb.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing authorization token"})
+		return
+	}
+
+	if strings.HasPrefix(token, "Bearer ") {
+		token = token[7:]
+	}
+	req.Token = token
+
+	userClient, err := h.getUserClient()
+	if err != nil {
+		log.Printf("Failed to get user service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "User service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := userClient.UpdateUserInfo(ctx, &req)
+	if err != nil {
+		log.Printf("UpdateUserInfo error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Update user info failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status_code": resp.StatusCode,
+		"status_msg":  resp.StatusMsg,
+	})
+}
+
+// UploadAvatar 上传用户头像
+func (h *UserHandler) UploadAvatar(c *gin.Context) {
+	// 从请求头获取token
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing authorization token"})
+		return
+	}
+
+	if strings.HasPrefix(token, "Bearer ") {
+		token = token[7:]
+	}
+
+	// 验证token并获取用户ID
+	verifyReq := &pb.VerifyTokenRequest{
+		Token: token,
+	}
+
+	userClient, err := h.getUserClient()
+	if err != nil {
+		log.Printf("Failed to get user service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "User service temporarily unavailable"})
+		return
+	}
+
+	verifyResp, err := userClient.VerifyToken(context.Background(), verifyReq)
+	log.Println(verifyResp)
+	log.Println(err)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	userId := verifyResp.UserId
+
+	// 解析multipart表单
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid form data"})
+		return
+	}
+
+	files := form.File["file"]
+	if len(files) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
+		return
+	}
+
+	file := files[0]
+	if !strings.HasPrefix(file.Header.Get("Content-Type"), "image/") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File must be an image"})
+		return
+	}
+
+	// 打开文件
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
+		return
+	}
+	defer src.Close()
+
+	// 生成唯一文件名
+	filename := fmt.Sprintf("user_%d_%s", userId, file.Filename)
+
+	// 调用minio客户端上传文件
+	// 初始化minio客户端
+	minioClient, err := minio.New("localhost:9000", &minio.Options{
+		Creds:  credentials.NewStaticV4("minioadmin", "minioadmin", ""),
+		Secure: false,
+	})
+	if err != nil {
+		log.Printf("Failed to initialize minio client: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize minio client"})
+		return
+	}
+
+	// 检查存储桶是否存在
+	exists, err := minioClient.BucketExists(context.Background(), "vision-world")
+	if err != nil {
+		log.Printf("Failed to check bucket existence: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check bucket existence"})
+		return
+	}
+
+	// 如果存储桶不存在则创建
+	if !exists {
+		err = minioClient.MakeBucket(context.Background(), "vision-world", minio.MakeBucketOptions{Region: "us-east-1"})
+		if err != nil {
+			log.Printf("Failed to create bucket: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create bucket"})
+			return
+		}
+	}
+
+	// 上传文件到minio
+	_, err = minioClient.PutObject(context.Background(), "vision-world", "avatars/"+filename, src, file.Size, minio.PutObjectOptions{
+		ContentType: file.Header.Get("Content-Type"),
+	})
+	if err != nil {
+		log.Printf("Failed to upload file to minio: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file to minio"})
+		return
+	}
+
+	// 设置文件公共访问权限
+	err = minioClient.SetBucketPolicy(context.Background(), "vision-world", fmt.Sprintf(`{
+		"Version": "2012-10-17",
+		"Statement": [{
+			"Effect": "Allow",
+			"Principal": "*",
+			"Action": ["s3:GetObject"],
+			"Resource": ["arn:aws:s3:::vision-world/avatars/*"]
+		}]
+	}`))
+	if err != nil {
+		log.Printf("Failed to set bucket policy: %v", err)
+		// 权限设置失败不影响上传结果
+	}
+
+	// 生成minio访问地址
+	minioUrl := fmt.Sprintf("http://localhost:9000/vision-world/avatars/%s", filename)
+
+	// 不再自动更新用户信息，由前端在保存修改时统一更新
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"msg":  "success",
+		"url":  minioUrl,
+	})
+}
+
 // GetUserInfo 获取用户信息
 func (h *UserHandler) GetUserInfo(c *gin.Context) {
 	var userId uint32
@@ -351,7 +527,6 @@ func (h *UserHandler) GetUserInfo(c *gin.Context) {
 		userId = uint32(id)
 	} else {
 		// 从认证信息获取用户ID（例如从token中解析）
-		// 这里简化处理，实际应该从认证中间件中获取
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization token"})
@@ -363,9 +538,25 @@ func (h *UserHandler) GetUserInfo(c *gin.Context) {
 			authHeader = authHeader[7:]
 		}
 
-		// 这里应该解析token获取用户ID，简化处理使用固定值
-		// 实际项目中应该调用认证服务验证token并获取用户ID
-		userId = 1 // 临时处理，应该从token中解析
+		// 调用认证服务验证token并获取用户ID
+		verifyReq := &pb.VerifyTokenRequest{
+			Token: authHeader,
+		}
+
+		userClient, err := h.getUserClient()
+		if err != nil {
+			log.Printf("Failed to get user service client: %v", err)
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "User service temporarily unavailable"})
+			return
+		}
+
+		verifyResp, err := userClient.VerifyToken(context.Background(), verifyReq)
+		if err != nil || verifyResp.StatusCode != 0 {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			return
+		}
+
+		userId = verifyResp.UserId
 	}
 
 	req := &pb.GetUserInfoRequest{
@@ -389,7 +580,8 @@ func (h *UserHandler) GetUserInfo(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
 		return
 	}
-
+	log.Println(resp)
+	log.Println("用户")
 	// 转换为前端期望的格式
 	userResponse := gin.H{
 		"id":               resp.User.Id,

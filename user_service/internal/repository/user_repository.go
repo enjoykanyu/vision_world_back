@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"user_service/internal/model"
@@ -57,7 +58,7 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 // GetByID 根据ID获取用户
 func (r *userRepository) GetByID(ctx context.Context, userID uint32) (*model.User, error) {
 	var user model.User
-	if err := r.db.WithContext(ctx).Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&user, userID).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -93,6 +94,13 @@ func (r *userRepository) Update(ctx context.Context, userID uint32, updates map[
 	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", userID).Updates(updates).Error; err != nil {
 		return err
 	}
+
+	// 验证更新结果
+	var user model.User
+	if err := r.db.WithContext(ctx).First(&user, userID).Error; err != nil {
+		return err
+	}
+	log.Printf("Updated user avatar_url: %s", user.AvatarURL)
 
 	return nil
 }

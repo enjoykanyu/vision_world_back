@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log"
 	"strings"
 	"user_service/proto/proto_gen"
 
@@ -234,16 +235,55 @@ func (h *UserServiceHandler) GetUserInfos(ctx context.Context, req *proto_gen.Ge
 
 // UpdateUserInfo 更新用户信息
 func (h *UserServiceHandler) UpdateUserInfo(ctx context.Context, req *proto_gen.UpdateUserRequest) (*proto_gen.UpdateUserResponse, error) {
-	//h.logger.Info("UpdateUserInfo called", "user_id", req.UserId)
+	h.logger.Info("UpdateUserInfo called")
+	log.Println(req)
+	log.Println("进入了")
+	if req.Token == "" {
+		return &proto_gen.UpdateUserResponse{
+			StatusCode: 401,
+			StatusMsg:  "token不能为空",
+		}, nil
+	}
 
-	//// 调用用户服务更新用户信息
-	//if err := h.userService.UpdateUserInfo(ctx, req.UserId, req); err != nil {
-	//	h.logger.Error("UpdateUserInfo failed", "error", err, "user_id", req.UserId)
-	//	return &proto_gen.UpdateUserResponse{
-	//		StatusCode: 400,
-	//		StatusMsg:  err.Error(),
-	//	}, nil
-	//}
+	userID, err := h.userService.VerifyToken(ctx, req.Token)
+	if err != nil {
+		h.logger.Error("VerifyToken failed", "error", err)
+		return &proto_gen.UpdateUserResponse{
+			StatusCode: 401,
+			StatusMsg:  "token无效",
+		}, nil
+	}
+
+	updates := make(map[string]interface{})
+	if req.Name != nil {
+		updates["nickname"] = *req.Name
+	}
+	if req.Avatar != nil {
+		updates["avatar_url"] = *req.Avatar
+		log.Printf("Updating avatar_url to: %s", *req.Avatar)
+	}
+	if req.Signature != nil {
+		updates["signature"] = *req.Signature
+	}
+	if req.BackgroundImage != nil {
+		updates["background_image"] = *req.BackgroundImage
+	}
+	log.Println(updates["avatar_url"])
+	log.Println("333")
+	if len(updates) == 0 {
+		return &proto_gen.UpdateUserResponse{
+			StatusCode: 400,
+			StatusMsg:  "没有需要更新的字段",
+		}, nil
+	}
+
+	if err := h.userService.UpdateUserInfo(ctx, userID, updates); err != nil {
+		h.logger.Error("UpdateUserInfo failed", "error", err, "user_id", userID)
+		return &proto_gen.UpdateUserResponse{
+			StatusCode: 400,
+			StatusMsg:  err.Error(),
+		}, nil
+	}
 
 	return &proto_gen.UpdateUserResponse{
 		StatusCode: 0,

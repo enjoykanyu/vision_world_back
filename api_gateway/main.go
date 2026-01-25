@@ -134,6 +134,12 @@ func main() {
 	// 添加认证相关的Token验证路由
 	router.POST("/api/auth/token/verify", userHandler.VerifyToken)
 
+	// 添加用户信息更新路由
+	router.POST("/api/user/profile/update", userHandler.UpdateUserInfo)
+
+	// 添加头像上传路由
+	router.POST("/api/upload/avatar", userHandler.UploadAvatar)
+
 	// 注册直播相关路由
 	router.POST("/api/live/start", liveHandler.StartLive)
 	router.POST("/api/live/stop", liveHandler.StopLive)
