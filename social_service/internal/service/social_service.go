@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"social_service/internal/config"
-	"social_service/internal/model"
-	"social_service/internal/repository"
-	"social_service/pkg/logger"
-) // UserService 用户服务接口
 
+	"github.com/vision_world/social_service/internal/config"
+	"github.com/vision_world/social_service/internal/model"
+	"github.com/vision_world/social_service/internal/repository"
+	"github.com/vision_world/social_service/pkg/logger"
+)
+
+// UserService 用户服务接口
 type UserService interface {
 	// 用户信息相关
 	GetUserInfo(ctx context.Context, userID uint32) (*model.User, error)

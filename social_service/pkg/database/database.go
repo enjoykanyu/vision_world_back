@@ -7,7 +7,8 @@ import (
 	"github.com/go-redis/redis/v8"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"user_service/internal/config"
+
+	"github.com/vision_world/social_service/internal/config"
 )
 
 // NewMySQLConnection 创建MySQL数据库连接

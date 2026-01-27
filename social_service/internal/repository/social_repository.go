@@ -7,7 +7,8 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
-	"social_service/internal/model"
+
+	"github.com/vision_world/social_service/internal/model"
 )
 
 // UserRepository 用户数据访问接口

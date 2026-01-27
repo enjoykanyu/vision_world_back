@@ -3,8 +3,8 @@ package converter
 import (
 	"time"
 
-	"social_service/internal/model"
-	"social_service/proto/proto_gen"
+	"github.com/vision_world/social_service/internal/model"
+	proto_gen "github.com/vision_world/social_service/proto_gen"
 )
 
 // UserConverter 用户模型转换器

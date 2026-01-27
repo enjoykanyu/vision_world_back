@@ -1,4 +1,4 @@
-module social_service
+module github.com/vision_world/social_service
 
 go 1.25.0
 
@@ -58,3 +58,5 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20251002232023-7c0ddcbb5797 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250922171735-9219d122eba9 // indirect
 )
+
+replace github.com/vision_world/social_service/proto_gen => ./proto_gen
