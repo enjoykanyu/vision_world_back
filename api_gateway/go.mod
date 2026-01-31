@@ -12,6 +12,7 @@ require (
 	github.com/zsais/go-gin-prometheus v1.0.2
 	go.etcd.io/etcd/client/v3 v3.5.9
 	google.golang.org/grpc v1.64.0
+	google.golang.org/protobuf v1.36.6
 )
 
 require (
@@ -74,7 +75,6 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
