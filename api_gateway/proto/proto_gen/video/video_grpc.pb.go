@@ -40,6 +40,8 @@ const (
 	VideoService_DeleteComment_FullMethodName      = "/rpc.video.VideoService/DeleteComment"
 	VideoService_LikeComment_FullMethodName        = "/rpc.video.VideoService/LikeComment"
 	VideoService_GetVideoComments_FullMethodName   = "/rpc.video.VideoService/GetVideoComments"
+	VideoService_RecordPlay_FullMethodName         = "/rpc.video.VideoService/RecordPlay"
+	VideoService_ReportProgress_FullMethodName     = "/rpc.video.VideoService/ReportProgress"
 )
 
 // VideoServiceClient is the client API for VideoService service.
@@ -72,6 +74,9 @@ type VideoServiceClient interface {
 	DeleteComment(ctx context.Context, in *DeleteCommentRequest, opts ...grpc.CallOption) (*DeleteCommentResponse, error)
 	LikeComment(ctx context.Context, in *LikeCommentRequest, opts ...grpc.CallOption) (*LikeCommentResponse, error)
 	GetVideoComments(ctx context.Context, in *GetVideoCommentsRequest, opts ...grpc.CallOption) (*GetVideoCommentsResponse, error)
+	// 播放量统计相关
+	RecordPlay(ctx context.Context, in *RecordPlayRequest, opts ...grpc.CallOption) (*RecordPlayResponse, error)
+	ReportProgress(ctx context.Context, in *ReportProgressRequest, opts ...grpc.CallOption) (*ReportProgressResponse, error)
 }
 
 type videoServiceClient struct {
@@ -271,6 +276,24 @@ func (c *videoServiceClient) GetVideoComments(ctx context.Context, in *GetVideoC
 	return out, nil
 }
 
+func (c *videoServiceClient) RecordPlay(ctx context.Context, in *RecordPlayRequest, opts ...grpc.CallOption) (*RecordPlayResponse, error) {
+	out := new(RecordPlayResponse)
+	err := c.cc.Invoke(ctx, VideoService_RecordPlay_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoServiceClient) ReportProgress(ctx context.Context, in *ReportProgressRequest, opts ...grpc.CallOption) (*ReportProgressResponse, error) {
+	out := new(ReportProgressResponse)
+	err := c.cc.Invoke(ctx, VideoService_ReportProgress_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VideoServiceServer is the server API for VideoService service.
 // All implementations must embed UnimplementedVideoServiceServer
 // for forward compatibility
@@ -301,6 +324,9 @@ type VideoServiceServer interface {
 	DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentResponse, error)
 	LikeComment(context.Context, *LikeCommentRequest) (*LikeCommentResponse, error)
 	GetVideoComments(context.Context, *GetVideoCommentsRequest) (*GetVideoCommentsResponse, error)
+	// 播放量统计相关
+	RecordPlay(context.Context, *RecordPlayRequest) (*RecordPlayResponse, error)
+	ReportProgress(context.Context, *ReportProgressRequest) (*ReportProgressResponse, error)
 	mustEmbedUnimplementedVideoServiceServer()
 }
 
@@ -370,6 +396,12 @@ func (UnimplementedVideoServiceServer) LikeComment(context.Context, *LikeComment
 }
 func (UnimplementedVideoServiceServer) GetVideoComments(context.Context, *GetVideoCommentsRequest) (*GetVideoCommentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVideoComments not implemented")
+}
+func (UnimplementedVideoServiceServer) RecordPlay(context.Context, *RecordPlayRequest) (*RecordPlayResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecordPlay not implemented")
+}
+func (UnimplementedVideoServiceServer) ReportProgress(context.Context, *ReportProgressRequest) (*ReportProgressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportProgress not implemented")
 }
 func (UnimplementedVideoServiceServer) mustEmbedUnimplementedVideoServiceServer() {}
 
@@ -762,6 +794,42 @@ func _VideoService_GetVideoComments_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VideoService_RecordPlay_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecordPlayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).RecordPlay(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_RecordPlay_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).RecordPlay(ctx, req.(*RecordPlayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_ReportProgress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportProgressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).ReportProgress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_ReportProgress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).ReportProgress(ctx, req.(*ReportProgressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VideoService_ServiceDesc is the grpc.ServiceDesc for VideoService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -852,6 +920,14 @@ var VideoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVideoComments",
 			Handler:    _VideoService_GetVideoComments_Handler,
+		},
+		{
+			MethodName: "RecordPlay",
+			Handler:    _VideoService_RecordPlay_Handler,
+		},
+		{
+			MethodName: "ReportProgress",
+			Handler:    _VideoService_ReportProgress_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

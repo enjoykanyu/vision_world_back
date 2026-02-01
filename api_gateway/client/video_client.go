@@ -224,3 +224,19 @@ func (c *VideoServiceClient) GetVideoComments(ctx context.Context, req *videopb.
 	}
 	return c.client.GetVideoComments(ctx, req)
 }
+
+// RecordPlay 记录视频播放
+func (c *VideoServiceClient) RecordPlay(ctx context.Context, req *videopb.RecordPlayRequest) (*videopb.RecordPlayResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.RecordPlay(ctx, req)
+}
+
+// ReportProgress 上报视频观看进度
+func (c *VideoServiceClient) ReportProgress(ctx context.Context, req *videopb.ReportProgressRequest) (*videopb.ReportProgressResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.ReportProgress(ctx, req)
+}

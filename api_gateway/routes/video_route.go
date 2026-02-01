@@ -2185,6 +2185,147 @@ func (h *VideoHandler) GetCommentReplies(c *gin.Context) {
 	})
 }
 
+// RecordVideoPlay 记录视频播放
+// POST /api/video/play
+func (h *VideoHandler) RecordVideoPlay(c *gin.Context) {
+	// 解析请求体
+	var req struct {
+		VideoID    uint32 `json:"video_id" binding:"required"`
+		SessionID  string `json:"session_id" binding:"required"`
+		DeviceID   string `json:"device_id" binding:"required"`
+		ViewSource string `json:"view_source"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	// 获取用户ID（如果已登录）
+	userID := uint32(0)
+	if userIDValue, exists := c.Get("user_id"); exists {
+		if id, ok := userIDValue.(uint32); ok {
+			userID = id
+		}
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"code":    503,
+			"message": "Video service temporarily unavailable",
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务的RecordPlay接口
+	resp, err := videoClient.RecordPlay(ctx, &pb.RecordPlayRequest{
+		VideoId:    req.VideoID,
+		UserId:     userID,
+		SessionId:  req.SessionID,
+		DeviceId:   req.DeviceID,
+		ViewSource: req.ViewSource,
+	})
+
+	if err != nil {
+		log.Printf("Failed to record video play: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    500,
+			"message": "Failed to record video play",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "success",
+		"data": gin.H{
+			"play_count":      resp.PlayCount,
+			"is_recorded":     resp.IsRecorded,
+			"real_play_count": resp.RealPlayCount,
+		},
+	})
+}
+
+// ReportVideoProgress 上报视频观看进度
+// POST /api/video/progress
+func (h *VideoHandler) ReportVideoProgress(c *gin.Context) {
+	// 解析请求体
+	var req struct {
+		VideoID     uint32  `json:"video_id" binding:"required"`
+		SessionID   string  `json:"session_id" binding:"required"`
+		CurrentTime float64 `json:"current_time" binding:"required"`
+		Progress    float64 `json:"progress" binding:"required"`
+		Action      string  `json:"action" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid request: " + err.Error(),
+		})
+		return
+	}
+
+	// 获取用户ID（如果已登录）
+	userID := uint32(0)
+	if userIDValue, exists := c.Get("user_id"); exists {
+		if id, ok := userIDValue.(uint32); ok {
+			userID = id
+		}
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"code":    503,
+			"message": "Video service temporarily unavailable",
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 调用视频服务的ReportProgress接口
+	resp, err := videoClient.ReportProgress(ctx, &pb.ReportProgressRequest{
+		VideoId:     req.VideoID,
+		UserId:      userID,
+		SessionId:   req.SessionID,
+		CurrentTime: req.CurrentTime,
+		Progress:    req.Progress,
+		Action:      req.Action,
+	})
+
+	if err != nil {
+		log.Printf("Failed to report video progress: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    500,
+			"message": "Failed to report video progress",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    0,
+		"message": "success",
+		"data": gin.H{
+			"is_complete": resp.IsComplete,
+			"watch_time":  resp.WatchTime,
+		},
+	})
+}
+
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
 func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandler) {
 	// 分片上传路由组 - 需要认证
@@ -2230,6 +2371,9 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 			authGroup.POST("/comment", videoHandler.CommentVideo)
 			authGroup.POST("/comment/like", videoHandler.LikeComment)
 			authGroup.POST("/comment/reply", videoHandler.ReplyComment)
+			// 播放量统计相关接口
+			authGroup.POST("/play", videoHandler.RecordVideoPlay)
+			authGroup.POST("/progress", videoHandler.ReportVideoProgress)
 		}
 	}
 }
