@@ -1800,20 +1800,20 @@ func (h *VideoHandler) GetVideoStats(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// 调用视频服务获取视频信息
-	resp, err := videoClient.GetVideoInfo(ctx, &pb.GetVideoInfoRequest{
+	// 调用视频服务获取视频互动统计数据
+	resp, err := videoClient.GetVideoInteractionStats(ctx, &pb.GetVideoInteractionStatsRequest{
 		VideoId: uint32(videoID),
 		Token:   getTokenFromHeader(c),
 	})
 	if err != nil {
-		log.Printf("Failed to get video info: %v", err)
+		log.Printf("Failed to get video interaction stats: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get video stats"})
 		return
 	}
 
-	// 提取互动数据
-	if resp.StatusCode != 0 || resp.Video == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get video stats"})
+	// 检查响应状态
+	if resp.StatusCode != 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": resp.StatusMsg})
 		return
 	}
 
@@ -1821,11 +1821,17 @@ func (h *VideoHandler) GetVideoStats(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"like_count":     resp.Video.LikeCount,
-			"favorite_count": resp.Video.FavoriteCount,
-			"share_count":    resp.Video.ShareCount,
-			"is_liked":       resp.Video.IsLiked,
-			"is_favorite":    resp.Video.IsFavorite,
+			"video_id":       resp.VideoId,
+			"like_count":     resp.LikeCount,
+			"favorite_count": resp.FavoriteCount,
+			"coin_count":     resp.CoinCount,
+			"share_count":    resp.ShareCount,
+			"play_count":     resp.PlayCount,
+			"danmaku_count":  resp.DanmakuCount,
+			"comment_count":  resp.CommentCount,
+			"is_liked":       resp.IsLiked,
+			"is_favorite":    resp.IsFavorited,
+			"is_coined":      resp.IsCoined,
 		},
 	})
 }

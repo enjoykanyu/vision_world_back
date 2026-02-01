@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -1213,36 +1214,43 @@ func (s *VideoService) RecordPlay(ctx context.Context, videoID uint32, userID ui
 	exists = 0 //临时调试用
 	isRecorded := false
 	log.Println("计算下播放量")
-	if exists == 0 {
-		log.Println("增加下播放量")
-		// 未记录过，设置记录 redis保存
-		err = s.redis.Set(ctx, deviceKey, "1", 24*time.Hour).Err()
-		//db存储下 video表
-		// 增加播放量
-		_, err = s.UpdateVideoViewCount(ctx, string(videoID), 1)
-		if err != nil {
-			s.logger.Error("Failed to update view count", zap.Error(err))
-			// 不影响主流程，只记录错误
-		}
-		if err != nil {
-			s.logger.Error("Failed to set device play record", "error", err)
-		}
-		isRecorded = true
-	}
+	var playCount uint32
+	var realPlayCount uint32
+	var wg sync.WaitGroup
+	wg.Add(1) // 增加等待计数
+	go func() {
+		defer wg.Done() // 确保结束时减少计数
 
-	// 获取当前播放量
-	playCount, err := s.repo.GetVideoPlayCount(ctx, videoID)
-	if err != nil {
-		s.logger.Error("Failed to get video play count", "error", err)
-		playCount = 0
-	}
+		if exists == 0 {
+			log.Println("增加下播放量")
+			// Redis 设置
+			if err = s.redis.Set(ctx, deviceKey, "1", 24*time.Hour).Err(); err != nil {
+				s.logger.Error("Failed to set device play record", "error", err)
+			}
 
-	// 获取真实播放量（去重后的）
-	realPlayCount, err := s.repo.GetVideoRealPlayCount(ctx, videoID)
-	if err != nil {
-		s.logger.Error("Failed to get video real play count", "error", err)
-		realPlayCount = 0
-	}
+			// 更新播放量
+			videoIDStr := strconv.FormatUint(uint64(videoID), 10) // 高效转换 uint32 为 string
+			if _, err = s.UpdateVideoViewCount(ctx, videoIDStr, 1); err != nil {
+				s.logger.Error("Failed to update view count", zap.Error(err))
+			}
+			isRecorded = true
+		}
+
+		// 获取当前播放量
+		var err error
+		if playCount, err = s.repo.GetVideoPlayCount(ctx, videoID); err != nil {
+			s.logger.Error("Failed to get video play count", "error", err)
+			playCount = 0
+		}
+
+		// 获取真实播放量
+		if realPlayCount, err = s.repo.GetVideoRealPlayCount(ctx, videoID); err != nil {
+			s.logger.Error("Failed to get video real play count", "error", err)
+			realPlayCount = 0
+		}
+	}()
+
+	wg.Wait() // 阻塞等待 goroutine 完成
 
 	return playCount, isRecorded, realPlayCount, nil
 }

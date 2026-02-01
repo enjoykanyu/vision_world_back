@@ -19,29 +19,30 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	VideoService_UploadVideo_FullMethodName        = "/rpc.video.VideoService/UploadVideo"
-	VideoService_CreateVideoRecord_FullMethodName  = "/rpc.video.VideoService/CreateVideoRecord"
-	VideoService_PublishVideo_FullMethodName       = "/rpc.video.VideoService/PublishVideo"
-	VideoService_DeleteVideo_FullMethodName        = "/rpc.video.VideoService/DeleteVideo"
-	VideoService_RetryTranscode_FullMethodName     = "/rpc.video.VideoService/RetryTranscode"
-	VideoService_GetVideoInfo_FullMethodName       = "/rpc.video.VideoService/GetVideoInfo"
-	VideoService_GetVideoInfos_FullMethodName      = "/rpc.video.VideoService/GetVideoInfos"
-	VideoService_GetUserVideos_FullMethodName      = "/rpc.video.VideoService/GetUserVideos"
-	VideoService_GetRecommendVideos_FullMethodName = "/rpc.video.VideoService/GetRecommendVideos"
-	VideoService_GetFollowVideos_FullMethodName    = "/rpc.video.VideoService/GetFollowVideos"
-	VideoService_GetHotVideos_FullMethodName       = "/rpc.video.VideoService/GetHotVideos"
-	VideoService_GetCategoryVideos_FullMethodName  = "/rpc.video.VideoService/GetCategoryVideos"
-	VideoService_SearchVideos_FullMethodName       = "/rpc.video.VideoService/SearchVideos"
-	VideoService_LikeVideo_FullMethodName          = "/rpc.video.VideoService/LikeVideo"
-	VideoService_FavoriteVideo_FullMethodName      = "/rpc.video.VideoService/FavoriteVideo"
-	VideoService_GetUserLikedVideos_FullMethodName = "/rpc.video.VideoService/GetUserLikedVideos"
-	VideoService_ShareVideo_FullMethodName         = "/rpc.video.VideoService/ShareVideo"
-	VideoService_CommentVideo_FullMethodName       = "/rpc.video.VideoService/CommentVideo"
-	VideoService_DeleteComment_FullMethodName      = "/rpc.video.VideoService/DeleteComment"
-	VideoService_LikeComment_FullMethodName        = "/rpc.video.VideoService/LikeComment"
-	VideoService_GetVideoComments_FullMethodName   = "/rpc.video.VideoService/GetVideoComments"
-	VideoService_RecordPlay_FullMethodName         = "/rpc.video.VideoService/RecordPlay"
-	VideoService_ReportProgress_FullMethodName     = "/rpc.video.VideoService/ReportProgress"
+	VideoService_UploadVideo_FullMethodName              = "/rpc.video.VideoService/UploadVideo"
+	VideoService_CreateVideoRecord_FullMethodName        = "/rpc.video.VideoService/CreateVideoRecord"
+	VideoService_PublishVideo_FullMethodName             = "/rpc.video.VideoService/PublishVideo"
+	VideoService_DeleteVideo_FullMethodName              = "/rpc.video.VideoService/DeleteVideo"
+	VideoService_RetryTranscode_FullMethodName           = "/rpc.video.VideoService/RetryTranscode"
+	VideoService_GetVideoInfo_FullMethodName             = "/rpc.video.VideoService/GetVideoInfo"
+	VideoService_GetVideoInfos_FullMethodName            = "/rpc.video.VideoService/GetVideoInfos"
+	VideoService_GetUserVideos_FullMethodName            = "/rpc.video.VideoService/GetUserVideos"
+	VideoService_GetRecommendVideos_FullMethodName       = "/rpc.video.VideoService/GetRecommendVideos"
+	VideoService_GetFollowVideos_FullMethodName          = "/rpc.video.VideoService/GetFollowVideos"
+	VideoService_GetHotVideos_FullMethodName             = "/rpc.video.VideoService/GetHotVideos"
+	VideoService_GetCategoryVideos_FullMethodName        = "/rpc.video.VideoService/GetCategoryVideos"
+	VideoService_SearchVideos_FullMethodName             = "/rpc.video.VideoService/SearchVideos"
+	VideoService_LikeVideo_FullMethodName                = "/rpc.video.VideoService/LikeVideo"
+	VideoService_FavoriteVideo_FullMethodName            = "/rpc.video.VideoService/FavoriteVideo"
+	VideoService_GetUserLikedVideos_FullMethodName       = "/rpc.video.VideoService/GetUserLikedVideos"
+	VideoService_ShareVideo_FullMethodName               = "/rpc.video.VideoService/ShareVideo"
+	VideoService_GetVideoInteractionStats_FullMethodName = "/rpc.video.VideoService/GetVideoInteractionStats"
+	VideoService_CommentVideo_FullMethodName             = "/rpc.video.VideoService/CommentVideo"
+	VideoService_DeleteComment_FullMethodName            = "/rpc.video.VideoService/DeleteComment"
+	VideoService_LikeComment_FullMethodName              = "/rpc.video.VideoService/LikeComment"
+	VideoService_GetVideoComments_FullMethodName         = "/rpc.video.VideoService/GetVideoComments"
+	VideoService_RecordPlay_FullMethodName               = "/rpc.video.VideoService/RecordPlay"
+	VideoService_ReportProgress_FullMethodName           = "/rpc.video.VideoService/ReportProgress"
 )
 
 // VideoServiceClient is the client API for VideoService service.
@@ -69,6 +70,7 @@ type VideoServiceClient interface {
 	FavoriteVideo(ctx context.Context, in *FavoriteVideoRequest, opts ...grpc.CallOption) (*FavoriteVideoResponse, error)
 	GetUserLikedVideos(ctx context.Context, in *GetUserLikedVideosRequest, opts ...grpc.CallOption) (*GetUserLikedVideosResponse, error)
 	ShareVideo(ctx context.Context, in *ShareVideoRequest, opts ...grpc.CallOption) (*ShareVideoResponse, error)
+	GetVideoInteractionStats(ctx context.Context, in *GetVideoInteractionStatsRequest, opts ...grpc.CallOption) (*GetVideoInteractionStatsResponse, error)
 	// 视频评论相关
 	CommentVideo(ctx context.Context, in *CommentRequest, opts ...grpc.CallOption) (*CommentResponse, error)
 	DeleteComment(ctx context.Context, in *DeleteCommentRequest, opts ...grpc.CallOption) (*DeleteCommentResponse, error)
@@ -240,6 +242,15 @@ func (c *videoServiceClient) ShareVideo(ctx context.Context, in *ShareVideoReque
 	return out, nil
 }
 
+func (c *videoServiceClient) GetVideoInteractionStats(ctx context.Context, in *GetVideoInteractionStatsRequest, opts ...grpc.CallOption) (*GetVideoInteractionStatsResponse, error) {
+	out := new(GetVideoInteractionStatsResponse)
+	err := c.cc.Invoke(ctx, VideoService_GetVideoInteractionStats_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *videoServiceClient) CommentVideo(ctx context.Context, in *CommentRequest, opts ...grpc.CallOption) (*CommentResponse, error) {
 	out := new(CommentResponse)
 	err := c.cc.Invoke(ctx, VideoService_CommentVideo_FullMethodName, in, out, opts...)
@@ -319,6 +330,7 @@ type VideoServiceServer interface {
 	FavoriteVideo(context.Context, *FavoriteVideoRequest) (*FavoriteVideoResponse, error)
 	GetUserLikedVideos(context.Context, *GetUserLikedVideosRequest) (*GetUserLikedVideosResponse, error)
 	ShareVideo(context.Context, *ShareVideoRequest) (*ShareVideoResponse, error)
+	GetVideoInteractionStats(context.Context, *GetVideoInteractionStatsRequest) (*GetVideoInteractionStatsResponse, error)
 	// 视频评论相关
 	CommentVideo(context.Context, *CommentRequest) (*CommentResponse, error)
 	DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentResponse, error)
@@ -384,6 +396,9 @@ func (UnimplementedVideoServiceServer) GetUserLikedVideos(context.Context, *GetU
 }
 func (UnimplementedVideoServiceServer) ShareVideo(context.Context, *ShareVideoRequest) (*ShareVideoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShareVideo not implemented")
+}
+func (UnimplementedVideoServiceServer) GetVideoInteractionStats(context.Context, *GetVideoInteractionStatsRequest) (*GetVideoInteractionStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVideoInteractionStats not implemented")
 }
 func (UnimplementedVideoServiceServer) CommentVideo(context.Context, *CommentRequest) (*CommentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CommentVideo not implemented")
@@ -722,6 +737,24 @@ func _VideoService_ShareVideo_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VideoService_GetVideoInteractionStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVideoInteractionStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).GetVideoInteractionStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_GetVideoInteractionStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).GetVideoInteractionStats(ctx, req.(*GetVideoInteractionStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _VideoService_CommentVideo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CommentRequest)
 	if err := dec(in); err != nil {
@@ -904,6 +937,10 @@ var VideoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ShareVideo",
 			Handler:    _VideoService_ShareVideo_Handler,
+		},
+		{
+			MethodName: "GetVideoInteractionStats",
+			Handler:    _VideoService_GetVideoInteractionStats_Handler,
 		},
 		{
 			MethodName: "CommentVideo",

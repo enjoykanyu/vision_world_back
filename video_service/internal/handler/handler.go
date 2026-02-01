@@ -1270,6 +1270,61 @@ func (h *VideoHandler) ReportProgress(ctx context.Context, req *pb.ReportProgres
 	}, nil
 }
 
+// GetVideoInteractionStats 获取视频互动数据统计
+func (h *VideoHandler) GetVideoInteractionStats(ctx context.Context, req *pb.GetVideoInteractionStatsRequest) (*pb.GetVideoInteractionStatsResponse, error) {
+	h.logger.Info("GetVideoInteractionStats called", zap.Uint32("video_id", req.VideoId))
+
+	// 获取视频详情
+	videoID := strconv.FormatUint(uint64(req.VideoId), 10)
+	videoDetail, err := h.videoService.GetVideoDetail(ctx, videoID)
+	if err != nil {
+		h.logger.Error("Failed to get video detail", zap.Error(err))
+		return &pb.GetVideoInteractionStatsResponse{
+			StatusCode: 404,
+			StatusMsg:  "视频不存在",
+		}, nil
+	}
+
+	// 初始化响应
+	resp := &pb.GetVideoInteractionStatsResponse{
+		StatusCode:    0,
+		StatusMsg:     "success",
+		VideoId:       req.VideoId,
+		LikeCount:     uint32(videoDetail.LikeCount),
+		FavoriteCount: uint32(videoDetail.FavoriteCount),
+		CoinCount:     0, // TODO: 实现投币功能后更新
+		ShareCount:    uint32(videoDetail.ShareCount),
+		PlayCount:     uint32(videoDetail.PlayCount),
+		DanmakuCount:  0, // TODO: 从弹幕服务获取
+		CommentCount:  uint32(videoDetail.CommentCount),
+		IsLiked:       false,
+		IsFavorited:   false,
+		IsCoined:      false,
+	}
+
+	// 如果提供了token，检查用户是否已点赞/收藏/投币
+	if req.Token != "" {
+		userIDStr, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+		if err == nil {
+			userID, err := strconv.ParseUint(userIDStr, 10, 32)
+			if err == nil {
+				// 检查是否已点赞
+				isLiked, _ := h.videoService.IsVideoLiked(ctx, uint32(userID), req.VideoId)
+				resp.IsLiked = isLiked
+
+				// 检查是否已收藏
+				isFavorited, _ := h.videoService.IsVideoFavorited(ctx, uint32(userID), req.VideoId)
+				resp.IsFavorited = isFavorited
+
+				// TODO: 检查是否已投币
+				resp.IsCoined = false
+			}
+		}
+	}
+
+	return resp, nil
+}
+
 // ==================== 辅助方法 ====================
 
 // convertToProtoVideo 将模型转换为protobuf格式

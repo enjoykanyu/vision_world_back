@@ -357,6 +357,7 @@ service VideoService {
   rpc FavoriteVideo(FavoriteVideoRequest) returns(FavoriteVideoResponse);
   rpc GetUserLikedVideos(GetUserLikedVideosRequest) returns(GetUserLikedVideosResponse);
   rpc ShareVideo(ShareVideoRequest) returns(ShareVideoResponse);
+  rpc GetVideoInteractionStats(GetVideoInteractionStatsRequest) returns(GetVideoInteractionStatsResponse);
   
   // 视频评论相关
   rpc CommentVideo(CommentRequest) returns(CommentResponse);
@@ -449,4 +450,29 @@ message ReportProgressResponse {
   string status_msg = 2; // 返回状态描述
   bool is_complete = 3; // 是否标记为完整观看
   uint32 watch_time = 4; // 本次观看时长（秒）
+}
+
+// ==================== 视频互动数据统计接口 ====================
+
+// 获取视频互动数据请求
+message GetVideoInteractionStatsRequest {
+  uint32 video_id = 1; // 视频ID
+  string token = 2; // 用户token (可选，用于判断是否已点赞/收藏)
+}
+
+// 获取视频互动数据响应
+message GetVideoInteractionStatsResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  uint32 video_id = 3; // 视频ID
+  uint32 like_count = 4; // 点赞量
+  uint32 favorite_count = 5; // 收藏量
+  uint32 coin_count = 6; // 投币量
+  uint32 share_count = 7; // 转发量
+  uint32 play_count = 8; // 播放量
+  uint32 danmaku_count = 9; // 弹幕量
+  uint32 comment_count = 10; // 评论量
+  bool is_liked = 11; // 当前用户是否已点赞
+  bool is_favorited = 12; // 当前用户是否已收藏
+  bool is_coined = 13; // 当前用户是否已投币
 }

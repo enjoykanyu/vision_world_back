@@ -3585,6 +3585,200 @@ func (x *ReportProgressResponse) GetWatchTime() uint32 {
 	return 0
 }
 
+// 获取视频互动数据请求
+type GetVideoInteractionStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VideoId       uint32                 `protobuf:"varint,1,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"` // 视频ID
+	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`                     // 用户token (可选，用于判断是否已点赞/收藏)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVideoInteractionStatsRequest) Reset() {
+	*x = GetVideoInteractionStatsRequest{}
+	mi := &file_video_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVideoInteractionStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVideoInteractionStatsRequest) ProtoMessage() {}
+
+func (x *GetVideoInteractionStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVideoInteractionStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetVideoInteractionStatsRequest) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *GetVideoInteractionStatsRequest) GetVideoId() uint32 {
+	if x != nil {
+		return x.VideoId
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+// 获取视频互动数据响应
+type GetVideoInteractionStatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StatusCode    int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`          // 状态码，0-成功，其他值-失败
+	StatusMsg     string                 `protobuf:"bytes,2,opt,name=status_msg,json=statusMsg,proto3" json:"status_msg,omitempty"`              // 返回状态描述
+	VideoId       uint32                 `protobuf:"varint,3,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"`                   // 视频ID
+	LikeCount     uint32                 `protobuf:"varint,4,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`             // 点赞量
+	FavoriteCount uint32                 `protobuf:"varint,5,opt,name=favorite_count,json=favoriteCount,proto3" json:"favorite_count,omitempty"` // 收藏量
+	CoinCount     uint32                 `protobuf:"varint,6,opt,name=coin_count,json=coinCount,proto3" json:"coin_count,omitempty"`             // 投币量
+	ShareCount    uint32                 `protobuf:"varint,7,opt,name=share_count,json=shareCount,proto3" json:"share_count,omitempty"`          // 转发量
+	PlayCount     uint32                 `protobuf:"varint,8,opt,name=play_count,json=playCount,proto3" json:"play_count,omitempty"`             // 播放量
+	DanmakuCount  uint32                 `protobuf:"varint,9,opt,name=danmaku_count,json=danmakuCount,proto3" json:"danmaku_count,omitempty"`    // 弹幕量
+	CommentCount  uint32                 `protobuf:"varint,10,opt,name=comment_count,json=commentCount,proto3" json:"comment_count,omitempty"`   // 评论量
+	IsLiked       bool                   `protobuf:"varint,11,opt,name=is_liked,json=isLiked,proto3" json:"is_liked,omitempty"`                  // 当前用户是否已点赞
+	IsFavorited   bool                   `protobuf:"varint,12,opt,name=is_favorited,json=isFavorited,proto3" json:"is_favorited,omitempty"`      // 当前用户是否已收藏
+	IsCoined      bool                   `protobuf:"varint,13,opt,name=is_coined,json=isCoined,proto3" json:"is_coined,omitempty"`               // 当前用户是否已投币
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVideoInteractionStatsResponse) Reset() {
+	*x = GetVideoInteractionStatsResponse{}
+	mi := &file_video_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVideoInteractionStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVideoInteractionStatsResponse) ProtoMessage() {}
+
+func (x *GetVideoInteractionStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVideoInteractionStatsResponse.ProtoReflect.Descriptor instead.
+func (*GetVideoInteractionStatsResponse) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *GetVideoInteractionStatsResponse) GetStatusCode() int32 {
+	if x != nil {
+		return x.StatusCode
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetStatusMsg() string {
+	if x != nil {
+		return x.StatusMsg
+	}
+	return ""
+}
+
+func (x *GetVideoInteractionStatsResponse) GetVideoId() uint32 {
+	if x != nil {
+		return x.VideoId
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetLikeCount() uint32 {
+	if x != nil {
+		return x.LikeCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetFavoriteCount() uint32 {
+	if x != nil {
+		return x.FavoriteCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetCoinCount() uint32 {
+	if x != nil {
+		return x.CoinCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetShareCount() uint32 {
+	if x != nil {
+		return x.ShareCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetPlayCount() uint32 {
+	if x != nil {
+		return x.PlayCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetDanmakuCount() uint32 {
+	if x != nil {
+		return x.DanmakuCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetCommentCount() uint32 {
+	if x != nil {
+		return x.CommentCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetIsLiked() bool {
+	if x != nil {
+		return x.IsLiked
+	}
+	return false
+}
+
+func (x *GetVideoInteractionStatsResponse) GetIsFavorited() bool {
+	if x != nil {
+		return x.IsFavorited
+	}
+	return false
+}
+
+func (x *GetVideoInteractionStatsResponse) GetIsCoined() bool {
+	if x != nil {
+		return x.IsCoined
+	}
+	return false
+}
+
 var File_video_proto protoreflect.FileDescriptor
 
 const file_video_proto_rawDesc = "" +
@@ -3962,7 +4156,31 @@ const file_video_proto_rawDesc = "" +
 	"\vis_complete\x18\x03 \x01(\bR\n" +
 	"isComplete\x12\x1d\n" +
 	"\n" +
-	"watch_time\x18\x04 \x01(\rR\twatchTime2\x95\x0f\n" +
+	"watch_time\x18\x04 \x01(\rR\twatchTime\"R\n" +
+	"\x1fGetVideoInteractionStatsRequest\x12\x19\n" +
+	"\bvideo_id\x18\x01 \x01(\rR\avideoId\x12\x14\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\"\xc7\x03\n" +
+	" GetVideoInteractionStatsResponse\x12\x1f\n" +
+	"\vstatus_code\x18\x01 \x01(\x05R\n" +
+	"statusCode\x12\x1d\n" +
+	"\n" +
+	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x12\x19\n" +
+	"\bvideo_id\x18\x03 \x01(\rR\avideoId\x12\x1d\n" +
+	"\n" +
+	"like_count\x18\x04 \x01(\rR\tlikeCount\x12%\n" +
+	"\x0efavorite_count\x18\x05 \x01(\rR\rfavoriteCount\x12\x1d\n" +
+	"\n" +
+	"coin_count\x18\x06 \x01(\rR\tcoinCount\x12\x1f\n" +
+	"\vshare_count\x18\a \x01(\rR\n" +
+	"shareCount\x12\x1d\n" +
+	"\n" +
+	"play_count\x18\b \x01(\rR\tplayCount\x12#\n" +
+	"\rdanmaku_count\x18\t \x01(\rR\fdanmakuCount\x12#\n" +
+	"\rcomment_count\x18\n" +
+	" \x01(\rR\fcommentCount\x12\x19\n" +
+	"\bis_liked\x18\v \x01(\bR\aisLiked\x12!\n" +
+	"\fis_favorited\x18\f \x01(\bR\visFavorited\x12\x1b\n" +
+	"\tis_coined\x18\r \x01(\bR\bisCoined2\x8a\x10\n" +
 	"\fVideoService\x12L\n" +
 	"\vUploadVideo\x12\x1d.rpc.video.UploadVideoRequest\x1a\x1e.rpc.video.UploadVideoResponse\x12^\n" +
 	"\x11CreateVideoRecord\x12#.rpc.video.CreateVideoRecordRequest\x1a$.rpc.video.CreateVideoRecordResponse\x12O\n" +
@@ -3981,7 +4199,8 @@ const file_video_proto_rawDesc = "" +
 	"\rFavoriteVideo\x12\x1f.rpc.video.FavoriteVideoRequest\x1a .rpc.video.FavoriteVideoResponse\x12a\n" +
 	"\x12GetUserLikedVideos\x12$.rpc.video.GetUserLikedVideosRequest\x1a%.rpc.video.GetUserLikedVideosResponse\x12I\n" +
 	"\n" +
-	"ShareVideo\x12\x1c.rpc.video.ShareVideoRequest\x1a\x1d.rpc.video.ShareVideoResponse\x12E\n" +
+	"ShareVideo\x12\x1c.rpc.video.ShareVideoRequest\x1a\x1d.rpc.video.ShareVideoResponse\x12s\n" +
+	"\x18GetVideoInteractionStats\x12*.rpc.video.GetVideoInteractionStatsRequest\x1a+.rpc.video.GetVideoInteractionStatsResponse\x12E\n" +
 	"\fCommentVideo\x12\x19.rpc.video.CommentRequest\x1a\x1a.rpc.video.CommentResponse\x12R\n" +
 	"\rDeleteComment\x12\x1f.rpc.video.DeleteCommentRequest\x1a .rpc.video.DeleteCommentResponse\x12L\n" +
 	"\vLikeComment\x12\x1d.rpc.video.LikeCommentRequest\x1a\x1e.rpc.video.LikeCommentResponse\x12[\n" +
@@ -4002,58 +4221,60 @@ func file_video_proto_rawDescGZIP() []byte {
 	return file_video_proto_rawDescData
 }
 
-var file_video_proto_msgTypes = make([]protoimpl.MessageInfo, 49)
+var file_video_proto_msgTypes = make([]protoimpl.MessageInfo, 51)
 var file_video_proto_goTypes = []any{
-	(*VideoRequest)(nil),               // 0: rpc.video.VideoRequest
-	(*VideoResponse)(nil),              // 1: rpc.video.VideoResponse
-	(*UploadVideoRequest)(nil),         // 2: rpc.video.UploadVideoRequest
-	(*UploadVideoResponse)(nil),        // 3: rpc.video.UploadVideoResponse
-	(*CreateVideoRecordRequest)(nil),   // 4: rpc.video.CreateVideoRecordRequest
-	(*CreateVideoRecordResponse)(nil),  // 5: rpc.video.CreateVideoRecordResponse
-	(*PublishVideoRequest)(nil),        // 6: rpc.video.PublishVideoRequest
-	(*PublishVideoResponse)(nil),       // 7: rpc.video.PublishVideoResponse
-	(*DeleteVideoRequest)(nil),         // 8: rpc.video.DeleteVideoRequest
-	(*DeleteVideoResponse)(nil),        // 9: rpc.video.DeleteVideoResponse
-	(*RetryTranscodeRequest)(nil),      // 10: rpc.video.RetryTranscodeRequest
-	(*RetryTranscodeResponse)(nil),     // 11: rpc.video.RetryTranscodeResponse
-	(*GetVideoInfoRequest)(nil),        // 12: rpc.video.GetVideoInfoRequest
-	(*GetVideoInfosRequest)(nil),       // 13: rpc.video.GetVideoInfosRequest
-	(*GetVideoInfosResponse)(nil),      // 14: rpc.video.GetVideoInfosResponse
-	(*GetUserVideosRequest)(nil),       // 15: rpc.video.GetUserVideosRequest
-	(*GetUserVideosResponse)(nil),      // 16: rpc.video.GetUserVideosResponse
-	(*GetRecommendVideosRequest)(nil),  // 17: rpc.video.GetRecommendVideosRequest
-	(*GetRecommendVideosResponse)(nil), // 18: rpc.video.GetRecommendVideosResponse
-	(*GetFollowVideosRequest)(nil),     // 19: rpc.video.GetFollowVideosRequest
-	(*GetFollowVideosResponse)(nil),    // 20: rpc.video.GetFollowVideosResponse
-	(*LikeVideoRequest)(nil),           // 21: rpc.video.LikeVideoRequest
-	(*LikeVideoResponse)(nil),          // 22: rpc.video.LikeVideoResponse
-	(*FavoriteVideoRequest)(nil),       // 23: rpc.video.FavoriteVideoRequest
-	(*FavoriteVideoResponse)(nil),      // 24: rpc.video.FavoriteVideoResponse
-	(*GetUserLikedVideosRequest)(nil),  // 25: rpc.video.GetUserLikedVideosRequest
-	(*GetUserLikedVideosResponse)(nil), // 26: rpc.video.GetUserLikedVideosResponse
-	(*ShareVideoRequest)(nil),          // 27: rpc.video.ShareVideoRequest
-	(*ShareVideoResponse)(nil),         // 28: rpc.video.ShareVideoResponse
-	(*CommentRequest)(nil),             // 29: rpc.video.CommentRequest
-	(*CommentResponse)(nil),            // 30: rpc.video.CommentResponse
-	(*DeleteCommentRequest)(nil),       // 31: rpc.video.DeleteCommentRequest
-	(*DeleteCommentResponse)(nil),      // 32: rpc.video.DeleteCommentResponse
-	(*LikeCommentRequest)(nil),         // 33: rpc.video.LikeCommentRequest
-	(*LikeCommentResponse)(nil),        // 34: rpc.video.LikeCommentResponse
-	(*GetVideoCommentsRequest)(nil),    // 35: rpc.video.GetVideoCommentsRequest
-	(*GetVideoCommentsResponse)(nil),   // 36: rpc.video.GetVideoCommentsResponse
-	(*Video)(nil),                      // 37: rpc.video.Video
-	(*Comment)(nil),                    // 38: rpc.video.Comment
-	(*GetHotVideosRequest)(nil),        // 39: rpc.video.GetHotVideosRequest
-	(*GetHotVideosResponse)(nil),       // 40: rpc.video.GetHotVideosResponse
-	(*GetCategoryVideosRequest)(nil),   // 41: rpc.video.GetCategoryVideosRequest
-	(*GetCategoryVideosResponse)(nil),  // 42: rpc.video.GetCategoryVideosResponse
-	(*SearchVideosRequest)(nil),        // 43: rpc.video.SearchVideosRequest
-	(*SearchVideosResponse)(nil),       // 44: rpc.video.SearchVideosResponse
-	(*RecordPlayRequest)(nil),          // 45: rpc.video.RecordPlayRequest
-	(*RecordPlayResponse)(nil),         // 46: rpc.video.RecordPlayResponse
-	(*ReportProgressRequest)(nil),      // 47: rpc.video.ReportProgressRequest
-	(*ReportProgressResponse)(nil),     // 48: rpc.video.ReportProgressResponse
-	(*user.User)(nil),                  // 49: rpc.user.User
+	(*VideoRequest)(nil),                     // 0: rpc.video.VideoRequest
+	(*VideoResponse)(nil),                    // 1: rpc.video.VideoResponse
+	(*UploadVideoRequest)(nil),               // 2: rpc.video.UploadVideoRequest
+	(*UploadVideoResponse)(nil),              // 3: rpc.video.UploadVideoResponse
+	(*CreateVideoRecordRequest)(nil),         // 4: rpc.video.CreateVideoRecordRequest
+	(*CreateVideoRecordResponse)(nil),        // 5: rpc.video.CreateVideoRecordResponse
+	(*PublishVideoRequest)(nil),              // 6: rpc.video.PublishVideoRequest
+	(*PublishVideoResponse)(nil),             // 7: rpc.video.PublishVideoResponse
+	(*DeleteVideoRequest)(nil),               // 8: rpc.video.DeleteVideoRequest
+	(*DeleteVideoResponse)(nil),              // 9: rpc.video.DeleteVideoResponse
+	(*RetryTranscodeRequest)(nil),            // 10: rpc.video.RetryTranscodeRequest
+	(*RetryTranscodeResponse)(nil),           // 11: rpc.video.RetryTranscodeResponse
+	(*GetVideoInfoRequest)(nil),              // 12: rpc.video.GetVideoInfoRequest
+	(*GetVideoInfosRequest)(nil),             // 13: rpc.video.GetVideoInfosRequest
+	(*GetVideoInfosResponse)(nil),            // 14: rpc.video.GetVideoInfosResponse
+	(*GetUserVideosRequest)(nil),             // 15: rpc.video.GetUserVideosRequest
+	(*GetUserVideosResponse)(nil),            // 16: rpc.video.GetUserVideosResponse
+	(*GetRecommendVideosRequest)(nil),        // 17: rpc.video.GetRecommendVideosRequest
+	(*GetRecommendVideosResponse)(nil),       // 18: rpc.video.GetRecommendVideosResponse
+	(*GetFollowVideosRequest)(nil),           // 19: rpc.video.GetFollowVideosRequest
+	(*GetFollowVideosResponse)(nil),          // 20: rpc.video.GetFollowVideosResponse
+	(*LikeVideoRequest)(nil),                 // 21: rpc.video.LikeVideoRequest
+	(*LikeVideoResponse)(nil),                // 22: rpc.video.LikeVideoResponse
+	(*FavoriteVideoRequest)(nil),             // 23: rpc.video.FavoriteVideoRequest
+	(*FavoriteVideoResponse)(nil),            // 24: rpc.video.FavoriteVideoResponse
+	(*GetUserLikedVideosRequest)(nil),        // 25: rpc.video.GetUserLikedVideosRequest
+	(*GetUserLikedVideosResponse)(nil),       // 26: rpc.video.GetUserLikedVideosResponse
+	(*ShareVideoRequest)(nil),                // 27: rpc.video.ShareVideoRequest
+	(*ShareVideoResponse)(nil),               // 28: rpc.video.ShareVideoResponse
+	(*CommentRequest)(nil),                   // 29: rpc.video.CommentRequest
+	(*CommentResponse)(nil),                  // 30: rpc.video.CommentResponse
+	(*DeleteCommentRequest)(nil),             // 31: rpc.video.DeleteCommentRequest
+	(*DeleteCommentResponse)(nil),            // 32: rpc.video.DeleteCommentResponse
+	(*LikeCommentRequest)(nil),               // 33: rpc.video.LikeCommentRequest
+	(*LikeCommentResponse)(nil),              // 34: rpc.video.LikeCommentResponse
+	(*GetVideoCommentsRequest)(nil),          // 35: rpc.video.GetVideoCommentsRequest
+	(*GetVideoCommentsResponse)(nil),         // 36: rpc.video.GetVideoCommentsResponse
+	(*Video)(nil),                            // 37: rpc.video.Video
+	(*Comment)(nil),                          // 38: rpc.video.Comment
+	(*GetHotVideosRequest)(nil),              // 39: rpc.video.GetHotVideosRequest
+	(*GetHotVideosResponse)(nil),             // 40: rpc.video.GetHotVideosResponse
+	(*GetCategoryVideosRequest)(nil),         // 41: rpc.video.GetCategoryVideosRequest
+	(*GetCategoryVideosResponse)(nil),        // 42: rpc.video.GetCategoryVideosResponse
+	(*SearchVideosRequest)(nil),              // 43: rpc.video.SearchVideosRequest
+	(*SearchVideosResponse)(nil),             // 44: rpc.video.SearchVideosResponse
+	(*RecordPlayRequest)(nil),                // 45: rpc.video.RecordPlayRequest
+	(*RecordPlayResponse)(nil),               // 46: rpc.video.RecordPlayResponse
+	(*ReportProgressRequest)(nil),            // 47: rpc.video.ReportProgressRequest
+	(*ReportProgressResponse)(nil),           // 48: rpc.video.ReportProgressResponse
+	(*GetVideoInteractionStatsRequest)(nil),  // 49: rpc.video.GetVideoInteractionStatsRequest
+	(*GetVideoInteractionStatsResponse)(nil), // 50: rpc.video.GetVideoInteractionStatsResponse
+	(*user.User)(nil),                        // 51: rpc.user.User
 }
 var file_video_proto_depIdxs = []int32{
 	37, // 0: rpc.video.VideoResponse.video:type_name -> rpc.video.Video
@@ -4064,9 +4285,9 @@ var file_video_proto_depIdxs = []int32{
 	37, // 5: rpc.video.GetUserLikedVideosResponse.videos:type_name -> rpc.video.Video
 	38, // 6: rpc.video.CommentResponse.comment:type_name -> rpc.video.Comment
 	38, // 7: rpc.video.GetVideoCommentsResponse.comments:type_name -> rpc.video.Comment
-	49, // 8: rpc.video.Video.author:type_name -> rpc.user.User
-	49, // 9: rpc.video.Comment.user:type_name -> rpc.user.User
-	49, // 10: rpc.video.Comment.reply_to_user:type_name -> rpc.user.User
+	51, // 8: rpc.video.Video.author:type_name -> rpc.user.User
+	51, // 9: rpc.video.Comment.user:type_name -> rpc.user.User
+	51, // 10: rpc.video.Comment.reply_to_user:type_name -> rpc.user.User
 	38, // 11: rpc.video.Comment.replies:type_name -> rpc.video.Comment
 	37, // 12: rpc.video.GetHotVideosResponse.videos:type_name -> rpc.video.Video
 	37, // 13: rpc.video.GetCategoryVideosResponse.videos:type_name -> rpc.video.Video
@@ -4088,37 +4309,39 @@ var file_video_proto_depIdxs = []int32{
 	23, // 29: rpc.video.VideoService.FavoriteVideo:input_type -> rpc.video.FavoriteVideoRequest
 	25, // 30: rpc.video.VideoService.GetUserLikedVideos:input_type -> rpc.video.GetUserLikedVideosRequest
 	27, // 31: rpc.video.VideoService.ShareVideo:input_type -> rpc.video.ShareVideoRequest
-	29, // 32: rpc.video.VideoService.CommentVideo:input_type -> rpc.video.CommentRequest
-	31, // 33: rpc.video.VideoService.DeleteComment:input_type -> rpc.video.DeleteCommentRequest
-	33, // 34: rpc.video.VideoService.LikeComment:input_type -> rpc.video.LikeCommentRequest
-	35, // 35: rpc.video.VideoService.GetVideoComments:input_type -> rpc.video.GetVideoCommentsRequest
-	45, // 36: rpc.video.VideoService.RecordPlay:input_type -> rpc.video.RecordPlayRequest
-	47, // 37: rpc.video.VideoService.ReportProgress:input_type -> rpc.video.ReportProgressRequest
-	3,  // 38: rpc.video.VideoService.UploadVideo:output_type -> rpc.video.UploadVideoResponse
-	5,  // 39: rpc.video.VideoService.CreateVideoRecord:output_type -> rpc.video.CreateVideoRecordResponse
-	7,  // 40: rpc.video.VideoService.PublishVideo:output_type -> rpc.video.PublishVideoResponse
-	9,  // 41: rpc.video.VideoService.DeleteVideo:output_type -> rpc.video.DeleteVideoResponse
-	11, // 42: rpc.video.VideoService.RetryTranscode:output_type -> rpc.video.RetryTranscodeResponse
-	1,  // 43: rpc.video.VideoService.GetVideoInfo:output_type -> rpc.video.VideoResponse
-	14, // 44: rpc.video.VideoService.GetVideoInfos:output_type -> rpc.video.GetVideoInfosResponse
-	16, // 45: rpc.video.VideoService.GetUserVideos:output_type -> rpc.video.GetUserVideosResponse
-	18, // 46: rpc.video.VideoService.GetRecommendVideos:output_type -> rpc.video.GetRecommendVideosResponse
-	20, // 47: rpc.video.VideoService.GetFollowVideos:output_type -> rpc.video.GetFollowVideosResponse
-	40, // 48: rpc.video.VideoService.GetHotVideos:output_type -> rpc.video.GetHotVideosResponse
-	42, // 49: rpc.video.VideoService.GetCategoryVideos:output_type -> rpc.video.GetCategoryVideosResponse
-	44, // 50: rpc.video.VideoService.SearchVideos:output_type -> rpc.video.SearchVideosResponse
-	22, // 51: rpc.video.VideoService.LikeVideo:output_type -> rpc.video.LikeVideoResponse
-	24, // 52: rpc.video.VideoService.FavoriteVideo:output_type -> rpc.video.FavoriteVideoResponse
-	26, // 53: rpc.video.VideoService.GetUserLikedVideos:output_type -> rpc.video.GetUserLikedVideosResponse
-	28, // 54: rpc.video.VideoService.ShareVideo:output_type -> rpc.video.ShareVideoResponse
-	30, // 55: rpc.video.VideoService.CommentVideo:output_type -> rpc.video.CommentResponse
-	32, // 56: rpc.video.VideoService.DeleteComment:output_type -> rpc.video.DeleteCommentResponse
-	34, // 57: rpc.video.VideoService.LikeComment:output_type -> rpc.video.LikeCommentResponse
-	36, // 58: rpc.video.VideoService.GetVideoComments:output_type -> rpc.video.GetVideoCommentsResponse
-	46, // 59: rpc.video.VideoService.RecordPlay:output_type -> rpc.video.RecordPlayResponse
-	48, // 60: rpc.video.VideoService.ReportProgress:output_type -> rpc.video.ReportProgressResponse
-	38, // [38:61] is the sub-list for method output_type
-	15, // [15:38] is the sub-list for method input_type
+	49, // 32: rpc.video.VideoService.GetVideoInteractionStats:input_type -> rpc.video.GetVideoInteractionStatsRequest
+	29, // 33: rpc.video.VideoService.CommentVideo:input_type -> rpc.video.CommentRequest
+	31, // 34: rpc.video.VideoService.DeleteComment:input_type -> rpc.video.DeleteCommentRequest
+	33, // 35: rpc.video.VideoService.LikeComment:input_type -> rpc.video.LikeCommentRequest
+	35, // 36: rpc.video.VideoService.GetVideoComments:input_type -> rpc.video.GetVideoCommentsRequest
+	45, // 37: rpc.video.VideoService.RecordPlay:input_type -> rpc.video.RecordPlayRequest
+	47, // 38: rpc.video.VideoService.ReportProgress:input_type -> rpc.video.ReportProgressRequest
+	3,  // 39: rpc.video.VideoService.UploadVideo:output_type -> rpc.video.UploadVideoResponse
+	5,  // 40: rpc.video.VideoService.CreateVideoRecord:output_type -> rpc.video.CreateVideoRecordResponse
+	7,  // 41: rpc.video.VideoService.PublishVideo:output_type -> rpc.video.PublishVideoResponse
+	9,  // 42: rpc.video.VideoService.DeleteVideo:output_type -> rpc.video.DeleteVideoResponse
+	11, // 43: rpc.video.VideoService.RetryTranscode:output_type -> rpc.video.RetryTranscodeResponse
+	1,  // 44: rpc.video.VideoService.GetVideoInfo:output_type -> rpc.video.VideoResponse
+	14, // 45: rpc.video.VideoService.GetVideoInfos:output_type -> rpc.video.GetVideoInfosResponse
+	16, // 46: rpc.video.VideoService.GetUserVideos:output_type -> rpc.video.GetUserVideosResponse
+	18, // 47: rpc.video.VideoService.GetRecommendVideos:output_type -> rpc.video.GetRecommendVideosResponse
+	20, // 48: rpc.video.VideoService.GetFollowVideos:output_type -> rpc.video.GetFollowVideosResponse
+	40, // 49: rpc.video.VideoService.GetHotVideos:output_type -> rpc.video.GetHotVideosResponse
+	42, // 50: rpc.video.VideoService.GetCategoryVideos:output_type -> rpc.video.GetCategoryVideosResponse
+	44, // 51: rpc.video.VideoService.SearchVideos:output_type -> rpc.video.SearchVideosResponse
+	22, // 52: rpc.video.VideoService.LikeVideo:output_type -> rpc.video.LikeVideoResponse
+	24, // 53: rpc.video.VideoService.FavoriteVideo:output_type -> rpc.video.FavoriteVideoResponse
+	26, // 54: rpc.video.VideoService.GetUserLikedVideos:output_type -> rpc.video.GetUserLikedVideosResponse
+	28, // 55: rpc.video.VideoService.ShareVideo:output_type -> rpc.video.ShareVideoResponse
+	50, // 56: rpc.video.VideoService.GetVideoInteractionStats:output_type -> rpc.video.GetVideoInteractionStatsResponse
+	30, // 57: rpc.video.VideoService.CommentVideo:output_type -> rpc.video.CommentResponse
+	32, // 58: rpc.video.VideoService.DeleteComment:output_type -> rpc.video.DeleteCommentResponse
+	34, // 59: rpc.video.VideoService.LikeComment:output_type -> rpc.video.LikeCommentResponse
+	36, // 60: rpc.video.VideoService.GetVideoComments:output_type -> rpc.video.GetVideoCommentsResponse
+	46, // 61: rpc.video.VideoService.RecordPlay:output_type -> rpc.video.RecordPlayResponse
+	48, // 62: rpc.video.VideoService.ReportProgress:output_type -> rpc.video.ReportProgressResponse
+	39, // [39:63] is the sub-list for method output_type
+	15, // [15:39] is the sub-list for method input_type
 	15, // [15:15] is the sub-list for extension type_name
 	15, // [15:15] is the sub-list for extension extendee
 	0,  // [0:15] is the sub-list for field type_name
@@ -4142,7 +4365,7 @@ func file_video_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_video_proto_rawDesc), len(file_video_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   49,
+			NumMessages:   51,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

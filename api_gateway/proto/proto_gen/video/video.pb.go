@@ -7,7 +7,7 @@
 package video
 
 import (
-	user "api_gateway/proto/proto_gen/user"
+	user "github.com/vision_world/video_service/proto/proto_gen/user"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -920,67 +920,6 @@ func (x *GetVideoInfoRequest) GetToken() string {
 	return ""
 }
 
-// 获取单个视频信息响应
-type GetVideoInfoResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	StatusCode    int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"` // 状态码，0-成功，其他值-失败
-	StatusMsg     string                 `protobuf:"bytes,2,opt,name=status_msg,json=statusMsg,proto3" json:"status_msg,omitempty"`     // 返回状态描述
-	Video         *Video                 `protobuf:"bytes,3,opt,name=video,proto3" json:"video,omitempty"`                              // 视频信息
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetVideoInfoResponse) Reset() {
-	*x = GetVideoInfoResponse{}
-	mi := &file_video_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetVideoInfoResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetVideoInfoResponse) ProtoMessage() {}
-
-func (x *GetVideoInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetVideoInfoResponse.ProtoReflect.Descriptor instead.
-func (*GetVideoInfoResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *GetVideoInfoResponse) GetStatusCode() int32 {
-	if x != nil {
-		return x.StatusCode
-	}
-	return 0
-}
-
-func (x *GetVideoInfoResponse) GetStatusMsg() string {
-	if x != nil {
-		return x.StatusMsg
-	}
-	return ""
-}
-
-func (x *GetVideoInfoResponse) GetVideo() *Video {
-	if x != nil {
-		return x.Video
-	}
-	return nil
-}
-
 // 批量获取视频信息请求
 type GetVideoInfosRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -992,7 +931,7 @@ type GetVideoInfosRequest struct {
 
 func (x *GetVideoInfosRequest) Reset() {
 	*x = GetVideoInfosRequest{}
-	mi := &file_video_proto_msgTypes[14]
+	mi := &file_video_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1004,7 +943,7 @@ func (x *GetVideoInfosRequest) String() string {
 func (*GetVideoInfosRequest) ProtoMessage() {}
 
 func (x *GetVideoInfosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[14]
+	mi := &file_video_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1017,7 +956,7 @@ func (x *GetVideoInfosRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVideoInfosRequest.ProtoReflect.Descriptor instead.
 func (*GetVideoInfosRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{14}
+	return file_video_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetVideoInfosRequest) GetVideoIds() []uint32 {
@@ -1045,7 +984,7 @@ type GetVideoInfosResponse struct {
 
 func (x *GetVideoInfosResponse) Reset() {
 	*x = GetVideoInfosResponse{}
-	mi := &file_video_proto_msgTypes[15]
+	mi := &file_video_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1057,7 +996,7 @@ func (x *GetVideoInfosResponse) String() string {
 func (*GetVideoInfosResponse) ProtoMessage() {}
 
 func (x *GetVideoInfosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[15]
+	mi := &file_video_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1070,7 +1009,7 @@ func (x *GetVideoInfosResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVideoInfosResponse.ProtoReflect.Descriptor instead.
 func (*GetVideoInfosResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{15}
+	return file_video_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetVideoInfosResponse) GetStatusCode() int32 {
@@ -1107,7 +1046,7 @@ type GetUserVideosRequest struct {
 
 func (x *GetUserVideosRequest) Reset() {
 	*x = GetUserVideosRequest{}
-	mi := &file_video_proto_msgTypes[16]
+	mi := &file_video_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1119,7 +1058,7 @@ func (x *GetUserVideosRequest) String() string {
 func (*GetUserVideosRequest) ProtoMessage() {}
 
 func (x *GetUserVideosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[16]
+	mi := &file_video_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1132,7 +1071,7 @@ func (x *GetUserVideosRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserVideosRequest.ProtoReflect.Descriptor instead.
 func (*GetUserVideosRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{16}
+	return file_video_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetUserVideosRequest) GetUserId() uint32 {
@@ -1176,7 +1115,7 @@ type GetUserVideosResponse struct {
 
 func (x *GetUserVideosResponse) Reset() {
 	*x = GetUserVideosResponse{}
-	mi := &file_video_proto_msgTypes[17]
+	mi := &file_video_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1188,7 +1127,7 @@ func (x *GetUserVideosResponse) String() string {
 func (*GetUserVideosResponse) ProtoMessage() {}
 
 func (x *GetUserVideosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[17]
+	mi := &file_video_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1201,7 +1140,7 @@ func (x *GetUserVideosResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserVideosResponse.ProtoReflect.Descriptor instead.
 func (*GetUserVideosResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{17}
+	return file_video_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetUserVideosResponse) GetStatusCode() int32 {
@@ -1252,7 +1191,7 @@ type GetRecommendVideosRequest struct {
 
 func (x *GetRecommendVideosRequest) Reset() {
 	*x = GetRecommendVideosRequest{}
-	mi := &file_video_proto_msgTypes[18]
+	mi := &file_video_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1264,7 +1203,7 @@ func (x *GetRecommendVideosRequest) String() string {
 func (*GetRecommendVideosRequest) ProtoMessage() {}
 
 func (x *GetRecommendVideosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[18]
+	mi := &file_video_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1277,7 +1216,7 @@ func (x *GetRecommendVideosRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRecommendVideosRequest.ProtoReflect.Descriptor instead.
 func (*GetRecommendVideosRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{18}
+	return file_video_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetRecommendVideosRequest) GetToken() string {
@@ -1320,7 +1259,7 @@ type GetRecommendVideosResponse struct {
 
 func (x *GetRecommendVideosResponse) Reset() {
 	*x = GetRecommendVideosResponse{}
-	mi := &file_video_proto_msgTypes[19]
+	mi := &file_video_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1332,7 +1271,7 @@ func (x *GetRecommendVideosResponse) String() string {
 func (*GetRecommendVideosResponse) ProtoMessage() {}
 
 func (x *GetRecommendVideosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[19]
+	mi := &file_video_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1345,7 +1284,7 @@ func (x *GetRecommendVideosResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRecommendVideosResponse.ProtoReflect.Descriptor instead.
 func (*GetRecommendVideosResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{19}
+	return file_video_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetRecommendVideosResponse) GetStatusCode() int32 {
@@ -1388,7 +1327,7 @@ type GetFollowVideosRequest struct {
 
 func (x *GetFollowVideosRequest) Reset() {
 	*x = GetFollowVideosRequest{}
-	mi := &file_video_proto_msgTypes[20]
+	mi := &file_video_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1400,7 +1339,7 @@ func (x *GetFollowVideosRequest) String() string {
 func (*GetFollowVideosRequest) ProtoMessage() {}
 
 func (x *GetFollowVideosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[20]
+	mi := &file_video_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1413,7 +1352,7 @@ func (x *GetFollowVideosRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFollowVideosRequest.ProtoReflect.Descriptor instead.
 func (*GetFollowVideosRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{20}
+	return file_video_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetFollowVideosRequest) GetToken() string {
@@ -1449,7 +1388,7 @@ type GetFollowVideosResponse struct {
 
 func (x *GetFollowVideosResponse) Reset() {
 	*x = GetFollowVideosResponse{}
-	mi := &file_video_proto_msgTypes[21]
+	mi := &file_video_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1461,7 +1400,7 @@ func (x *GetFollowVideosResponse) String() string {
 func (*GetFollowVideosResponse) ProtoMessage() {}
 
 func (x *GetFollowVideosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[21]
+	mi := &file_video_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1474,7 +1413,7 @@ func (x *GetFollowVideosResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFollowVideosResponse.ProtoReflect.Descriptor instead.
 func (*GetFollowVideosResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{21}
+	return file_video_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetFollowVideosResponse) GetStatusCode() int32 {
@@ -1517,7 +1456,7 @@ type LikeVideoRequest struct {
 
 func (x *LikeVideoRequest) Reset() {
 	*x = LikeVideoRequest{}
-	mi := &file_video_proto_msgTypes[22]
+	mi := &file_video_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1529,7 +1468,7 @@ func (x *LikeVideoRequest) String() string {
 func (*LikeVideoRequest) ProtoMessage() {}
 
 func (x *LikeVideoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[22]
+	mi := &file_video_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1542,7 +1481,7 @@ func (x *LikeVideoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LikeVideoRequest.ProtoReflect.Descriptor instead.
 func (*LikeVideoRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{22}
+	return file_video_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *LikeVideoRequest) GetToken() string {
@@ -1577,7 +1516,7 @@ type LikeVideoResponse struct {
 
 func (x *LikeVideoResponse) Reset() {
 	*x = LikeVideoResponse{}
-	mi := &file_video_proto_msgTypes[23]
+	mi := &file_video_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1589,7 +1528,7 @@ func (x *LikeVideoResponse) String() string {
 func (*LikeVideoResponse) ProtoMessage() {}
 
 func (x *LikeVideoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[23]
+	mi := &file_video_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1602,7 +1541,7 @@ func (x *LikeVideoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LikeVideoResponse.ProtoReflect.Descriptor instead.
 func (*LikeVideoResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{23}
+	return file_video_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *LikeVideoResponse) GetStatusCode() int32 {
@@ -1638,7 +1577,7 @@ type FavoriteVideoRequest struct {
 
 func (x *FavoriteVideoRequest) Reset() {
 	*x = FavoriteVideoRequest{}
-	mi := &file_video_proto_msgTypes[24]
+	mi := &file_video_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1650,7 +1589,7 @@ func (x *FavoriteVideoRequest) String() string {
 func (*FavoriteVideoRequest) ProtoMessage() {}
 
 func (x *FavoriteVideoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[24]
+	mi := &file_video_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1663,7 +1602,7 @@ func (x *FavoriteVideoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FavoriteVideoRequest.ProtoReflect.Descriptor instead.
 func (*FavoriteVideoRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{24}
+	return file_video_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *FavoriteVideoRequest) GetToken() string {
@@ -1698,7 +1637,7 @@ type FavoriteVideoResponse struct {
 
 func (x *FavoriteVideoResponse) Reset() {
 	*x = FavoriteVideoResponse{}
-	mi := &file_video_proto_msgTypes[25]
+	mi := &file_video_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1710,7 +1649,7 @@ func (x *FavoriteVideoResponse) String() string {
 func (*FavoriteVideoResponse) ProtoMessage() {}
 
 func (x *FavoriteVideoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[25]
+	mi := &file_video_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1723,7 +1662,7 @@ func (x *FavoriteVideoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FavoriteVideoResponse.ProtoReflect.Descriptor instead.
 func (*FavoriteVideoResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{25}
+	return file_video_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *FavoriteVideoResponse) GetStatusCode() int32 {
@@ -1760,7 +1699,7 @@ type GetUserLikedVideosRequest struct {
 
 func (x *GetUserLikedVideosRequest) Reset() {
 	*x = GetUserLikedVideosRequest{}
-	mi := &file_video_proto_msgTypes[26]
+	mi := &file_video_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1772,7 +1711,7 @@ func (x *GetUserLikedVideosRequest) String() string {
 func (*GetUserLikedVideosRequest) ProtoMessage() {}
 
 func (x *GetUserLikedVideosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[26]
+	mi := &file_video_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1785,7 +1724,7 @@ func (x *GetUserLikedVideosRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserLikedVideosRequest.ProtoReflect.Descriptor instead.
 func (*GetUserLikedVideosRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{26}
+	return file_video_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetUserLikedVideosRequest) GetUserId() uint32 {
@@ -1829,7 +1768,7 @@ type GetUserLikedVideosResponse struct {
 
 func (x *GetUserLikedVideosResponse) Reset() {
 	*x = GetUserLikedVideosResponse{}
-	mi := &file_video_proto_msgTypes[27]
+	mi := &file_video_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1841,7 +1780,7 @@ func (x *GetUserLikedVideosResponse) String() string {
 func (*GetUserLikedVideosResponse) ProtoMessage() {}
 
 func (x *GetUserLikedVideosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[27]
+	mi := &file_video_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1854,7 +1793,7 @@ func (x *GetUserLikedVideosResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserLikedVideosResponse.ProtoReflect.Descriptor instead.
 func (*GetUserLikedVideosResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{27}
+	return file_video_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetUserLikedVideosResponse) GetStatusCode() int32 {
@@ -1904,7 +1843,7 @@ type ShareVideoRequest struct {
 
 func (x *ShareVideoRequest) Reset() {
 	*x = ShareVideoRequest{}
-	mi := &file_video_proto_msgTypes[28]
+	mi := &file_video_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1916,7 +1855,7 @@ func (x *ShareVideoRequest) String() string {
 func (*ShareVideoRequest) ProtoMessage() {}
 
 func (x *ShareVideoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[28]
+	mi := &file_video_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1929,7 +1868,7 @@ func (x *ShareVideoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ShareVideoRequest.ProtoReflect.Descriptor instead.
 func (*ShareVideoRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{28}
+	return file_video_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ShareVideoRequest) GetToken() string {
@@ -1964,7 +1903,7 @@ type ShareVideoResponse struct {
 
 func (x *ShareVideoResponse) Reset() {
 	*x = ShareVideoResponse{}
-	mi := &file_video_proto_msgTypes[29]
+	mi := &file_video_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1976,7 +1915,7 @@ func (x *ShareVideoResponse) String() string {
 func (*ShareVideoResponse) ProtoMessage() {}
 
 func (x *ShareVideoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[29]
+	mi := &file_video_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1989,7 +1928,7 @@ func (x *ShareVideoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ShareVideoResponse.ProtoReflect.Descriptor instead.
 func (*ShareVideoResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{29}
+	return file_video_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ShareVideoResponse) GetStatusCode() int32 {
@@ -2026,7 +1965,7 @@ type CommentRequest struct {
 
 func (x *CommentRequest) Reset() {
 	*x = CommentRequest{}
-	mi := &file_video_proto_msgTypes[30]
+	mi := &file_video_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2038,7 +1977,7 @@ func (x *CommentRequest) String() string {
 func (*CommentRequest) ProtoMessage() {}
 
 func (x *CommentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[30]
+	mi := &file_video_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2051,7 +1990,7 @@ func (x *CommentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommentRequest.ProtoReflect.Descriptor instead.
 func (*CommentRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{30}
+	return file_video_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *CommentRequest) GetToken() string {
@@ -2093,7 +2032,7 @@ type CommentResponse struct {
 
 func (x *CommentResponse) Reset() {
 	*x = CommentResponse{}
-	mi := &file_video_proto_msgTypes[31]
+	mi := &file_video_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2105,7 +2044,7 @@ func (x *CommentResponse) String() string {
 func (*CommentResponse) ProtoMessage() {}
 
 func (x *CommentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[31]
+	mi := &file_video_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2118,7 +2057,7 @@ func (x *CommentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommentResponse.ProtoReflect.Descriptor instead.
 func (*CommentResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{31}
+	return file_video_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *CommentResponse) GetStatusCode() int32 {
@@ -2153,7 +2092,7 @@ type DeleteCommentRequest struct {
 
 func (x *DeleteCommentRequest) Reset() {
 	*x = DeleteCommentRequest{}
-	mi := &file_video_proto_msgTypes[32]
+	mi := &file_video_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2165,7 +2104,7 @@ func (x *DeleteCommentRequest) String() string {
 func (*DeleteCommentRequest) ProtoMessage() {}
 
 func (x *DeleteCommentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[32]
+	mi := &file_video_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2178,7 +2117,7 @@ func (x *DeleteCommentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCommentRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCommentRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{32}
+	return file_video_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *DeleteCommentRequest) GetToken() string {
@@ -2205,7 +2144,7 @@ type DeleteCommentResponse struct {
 
 func (x *DeleteCommentResponse) Reset() {
 	*x = DeleteCommentResponse{}
-	mi := &file_video_proto_msgTypes[33]
+	mi := &file_video_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2217,7 +2156,7 @@ func (x *DeleteCommentResponse) String() string {
 func (*DeleteCommentResponse) ProtoMessage() {}
 
 func (x *DeleteCommentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[33]
+	mi := &file_video_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2230,7 +2169,7 @@ func (x *DeleteCommentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCommentResponse.ProtoReflect.Descriptor instead.
 func (*DeleteCommentResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{33}
+	return file_video_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *DeleteCommentResponse) GetStatusCode() int32 {
@@ -2259,7 +2198,7 @@ type LikeCommentRequest struct {
 
 func (x *LikeCommentRequest) Reset() {
 	*x = LikeCommentRequest{}
-	mi := &file_video_proto_msgTypes[34]
+	mi := &file_video_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2271,7 +2210,7 @@ func (x *LikeCommentRequest) String() string {
 func (*LikeCommentRequest) ProtoMessage() {}
 
 func (x *LikeCommentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[34]
+	mi := &file_video_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2284,7 +2223,7 @@ func (x *LikeCommentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LikeCommentRequest.ProtoReflect.Descriptor instead.
 func (*LikeCommentRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{34}
+	return file_video_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *LikeCommentRequest) GetToken() string {
@@ -2320,7 +2259,7 @@ type LikeCommentResponse struct {
 
 func (x *LikeCommentResponse) Reset() {
 	*x = LikeCommentResponse{}
-	mi := &file_video_proto_msgTypes[35]
+	mi := &file_video_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2332,7 +2271,7 @@ func (x *LikeCommentResponse) String() string {
 func (*LikeCommentResponse) ProtoMessage() {}
 
 func (x *LikeCommentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[35]
+	mi := &file_video_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2345,7 +2284,7 @@ func (x *LikeCommentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LikeCommentResponse.ProtoReflect.Descriptor instead.
 func (*LikeCommentResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{35}
+	return file_video_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *LikeCommentResponse) GetStatusCode() int32 {
@@ -2390,7 +2329,7 @@ type GetVideoCommentsRequest struct {
 
 func (x *GetVideoCommentsRequest) Reset() {
 	*x = GetVideoCommentsRequest{}
-	mi := &file_video_proto_msgTypes[36]
+	mi := &file_video_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2402,7 +2341,7 @@ func (x *GetVideoCommentsRequest) String() string {
 func (*GetVideoCommentsRequest) ProtoMessage() {}
 
 func (x *GetVideoCommentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[36]
+	mi := &file_video_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2415,7 +2354,7 @@ func (x *GetVideoCommentsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVideoCommentsRequest.ProtoReflect.Descriptor instead.
 func (*GetVideoCommentsRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{36}
+	return file_video_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *GetVideoCommentsRequest) GetVideoId() uint32 {
@@ -2466,7 +2405,7 @@ type GetVideoCommentsResponse struct {
 
 func (x *GetVideoCommentsResponse) Reset() {
 	*x = GetVideoCommentsResponse{}
-	mi := &file_video_proto_msgTypes[37]
+	mi := &file_video_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2478,7 +2417,7 @@ func (x *GetVideoCommentsResponse) String() string {
 func (*GetVideoCommentsResponse) ProtoMessage() {}
 
 func (x *GetVideoCommentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[37]
+	mi := &file_video_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2491,7 +2430,7 @@ func (x *GetVideoCommentsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVideoCommentsResponse.ProtoReflect.Descriptor instead.
 func (*GetVideoCommentsResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{37}
+	return file_video_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *GetVideoCommentsResponse) GetStatusCode() int32 {
@@ -2567,7 +2506,7 @@ type Video struct {
 
 func (x *Video) Reset() {
 	*x = Video{}
-	mi := &file_video_proto_msgTypes[38]
+	mi := &file_video_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2579,7 +2518,7 @@ func (x *Video) String() string {
 func (*Video) ProtoMessage() {}
 
 func (x *Video) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[38]
+	mi := &file_video_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2592,7 +2531,7 @@ func (x *Video) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Video.ProtoReflect.Descriptor instead.
 func (*Video) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{38}
+	return file_video_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *Video) GetId() uint32 {
@@ -2823,7 +2762,7 @@ type Comment struct {
 
 func (x *Comment) Reset() {
 	*x = Comment{}
-	mi := &file_video_proto_msgTypes[39]
+	mi := &file_video_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2835,7 +2774,7 @@ func (x *Comment) String() string {
 func (*Comment) ProtoMessage() {}
 
 func (x *Comment) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[39]
+	mi := &file_video_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2848,7 +2787,7 @@ func (x *Comment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Comment.ProtoReflect.Descriptor instead.
 func (*Comment) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{39}
+	return file_video_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *Comment) GetId() uint32 {
@@ -2934,7 +2873,7 @@ type GetHotVideosRequest struct {
 
 func (x *GetHotVideosRequest) Reset() {
 	*x = GetHotVideosRequest{}
-	mi := &file_video_proto_msgTypes[40]
+	mi := &file_video_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2946,7 +2885,7 @@ func (x *GetHotVideosRequest) String() string {
 func (*GetHotVideosRequest) ProtoMessage() {}
 
 func (x *GetHotVideosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[40]
+	mi := &file_video_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2959,7 +2898,7 @@ func (x *GetHotVideosRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHotVideosRequest.ProtoReflect.Descriptor instead.
 func (*GetHotVideosRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{40}
+	return file_video_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *GetHotVideosRequest) GetToken() string {
@@ -3002,7 +2941,7 @@ type GetHotVideosResponse struct {
 
 func (x *GetHotVideosResponse) Reset() {
 	*x = GetHotVideosResponse{}
-	mi := &file_video_proto_msgTypes[41]
+	mi := &file_video_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3014,7 +2953,7 @@ func (x *GetHotVideosResponse) String() string {
 func (*GetHotVideosResponse) ProtoMessage() {}
 
 func (x *GetHotVideosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[41]
+	mi := &file_video_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3027,7 +2966,7 @@ func (x *GetHotVideosResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHotVideosResponse.ProtoReflect.Descriptor instead.
 func (*GetHotVideosResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{41}
+	return file_video_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *GetHotVideosResponse) GetStatusCode() int32 {
@@ -3071,7 +3010,7 @@ type GetCategoryVideosRequest struct {
 
 func (x *GetCategoryVideosRequest) Reset() {
 	*x = GetCategoryVideosRequest{}
-	mi := &file_video_proto_msgTypes[42]
+	mi := &file_video_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3083,7 +3022,7 @@ func (x *GetCategoryVideosRequest) String() string {
 func (*GetCategoryVideosRequest) ProtoMessage() {}
 
 func (x *GetCategoryVideosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[42]
+	mi := &file_video_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3096,7 +3035,7 @@ func (x *GetCategoryVideosRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCategoryVideosRequest.ProtoReflect.Descriptor instead.
 func (*GetCategoryVideosRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{42}
+	return file_video_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *GetCategoryVideosRequest) GetToken() string {
@@ -3139,7 +3078,7 @@ type GetCategoryVideosResponse struct {
 
 func (x *GetCategoryVideosResponse) Reset() {
 	*x = GetCategoryVideosResponse{}
-	mi := &file_video_proto_msgTypes[43]
+	mi := &file_video_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3151,7 +3090,7 @@ func (x *GetCategoryVideosResponse) String() string {
 func (*GetCategoryVideosResponse) ProtoMessage() {}
 
 func (x *GetCategoryVideosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[43]
+	mi := &file_video_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3164,7 +3103,7 @@ func (x *GetCategoryVideosResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCategoryVideosResponse.ProtoReflect.Descriptor instead.
 func (*GetCategoryVideosResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{43}
+	return file_video_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *GetCategoryVideosResponse) GetStatusCode() int32 {
@@ -3209,7 +3148,7 @@ type SearchVideosRequest struct {
 
 func (x *SearchVideosRequest) Reset() {
 	*x = SearchVideosRequest{}
-	mi := &file_video_proto_msgTypes[44]
+	mi := &file_video_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3221,7 +3160,7 @@ func (x *SearchVideosRequest) String() string {
 func (*SearchVideosRequest) ProtoMessage() {}
 
 func (x *SearchVideosRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[44]
+	mi := &file_video_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3234,7 +3173,7 @@ func (x *SearchVideosRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchVideosRequest.ProtoReflect.Descriptor instead.
 func (*SearchVideosRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{44}
+	return file_video_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *SearchVideosRequest) GetToken() string {
@@ -3284,7 +3223,7 @@ type SearchVideosResponse struct {
 
 func (x *SearchVideosResponse) Reset() {
 	*x = SearchVideosResponse{}
-	mi := &file_video_proto_msgTypes[45]
+	mi := &file_video_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3296,7 +3235,7 @@ func (x *SearchVideosResponse) String() string {
 func (*SearchVideosResponse) ProtoMessage() {}
 
 func (x *SearchVideosResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[45]
+	mi := &file_video_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3309,7 +3248,7 @@ func (x *SearchVideosResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchVideosResponse.ProtoReflect.Descriptor instead.
 func (*SearchVideosResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{45}
+	return file_video_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *SearchVideosResponse) GetStatusCode() int32 {
@@ -3354,7 +3293,7 @@ type RecordPlayRequest struct {
 
 func (x *RecordPlayRequest) Reset() {
 	*x = RecordPlayRequest{}
-	mi := &file_video_proto_msgTypes[46]
+	mi := &file_video_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3366,7 +3305,7 @@ func (x *RecordPlayRequest) String() string {
 func (*RecordPlayRequest) ProtoMessage() {}
 
 func (x *RecordPlayRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[46]
+	mi := &file_video_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3379,7 +3318,7 @@ func (x *RecordPlayRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordPlayRequest.ProtoReflect.Descriptor instead.
 func (*RecordPlayRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{46}
+	return file_video_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *RecordPlayRequest) GetVideoId() uint32 {
@@ -3430,7 +3369,7 @@ type RecordPlayResponse struct {
 
 func (x *RecordPlayResponse) Reset() {
 	*x = RecordPlayResponse{}
-	mi := &file_video_proto_msgTypes[47]
+	mi := &file_video_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3442,7 +3381,7 @@ func (x *RecordPlayResponse) String() string {
 func (*RecordPlayResponse) ProtoMessage() {}
 
 func (x *RecordPlayResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[47]
+	mi := &file_video_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3455,7 +3394,7 @@ func (x *RecordPlayResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordPlayResponse.ProtoReflect.Descriptor instead.
 func (*RecordPlayResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{47}
+	return file_video_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *RecordPlayResponse) GetStatusCode() int32 {
@@ -3508,7 +3447,7 @@ type ReportProgressRequest struct {
 
 func (x *ReportProgressRequest) Reset() {
 	*x = ReportProgressRequest{}
-	mi := &file_video_proto_msgTypes[48]
+	mi := &file_video_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3520,7 +3459,7 @@ func (x *ReportProgressRequest) String() string {
 func (*ReportProgressRequest) ProtoMessage() {}
 
 func (x *ReportProgressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[48]
+	mi := &file_video_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3533,7 +3472,7 @@ func (x *ReportProgressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportProgressRequest.ProtoReflect.Descriptor instead.
 func (*ReportProgressRequest) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{48}
+	return file_video_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *ReportProgressRequest) GetVideoId() uint32 {
@@ -3590,7 +3529,7 @@ type ReportProgressResponse struct {
 
 func (x *ReportProgressResponse) Reset() {
 	*x = ReportProgressResponse{}
-	mi := &file_video_proto_msgTypes[49]
+	mi := &file_video_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3602,7 +3541,7 @@ func (x *ReportProgressResponse) String() string {
 func (*ReportProgressResponse) ProtoMessage() {}
 
 func (x *ReportProgressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_video_proto_msgTypes[49]
+	mi := &file_video_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3615,7 +3554,7 @@ func (x *ReportProgressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportProgressResponse.ProtoReflect.Descriptor instead.
 func (*ReportProgressResponse) Descriptor() ([]byte, []int) {
-	return file_video_proto_rawDescGZIP(), []int{49}
+	return file_video_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *ReportProgressResponse) GetStatusCode() int32 {
@@ -3644,6 +3583,200 @@ func (x *ReportProgressResponse) GetWatchTime() uint32 {
 		return x.WatchTime
 	}
 	return 0
+}
+
+// 获取视频互动数据请求
+type GetVideoInteractionStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VideoId       uint32                 `protobuf:"varint,1,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"` // 视频ID
+	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`                     // 用户token (可选，用于判断是否已点赞/收藏)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVideoInteractionStatsRequest) Reset() {
+	*x = GetVideoInteractionStatsRequest{}
+	mi := &file_video_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVideoInteractionStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVideoInteractionStatsRequest) ProtoMessage() {}
+
+func (x *GetVideoInteractionStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVideoInteractionStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetVideoInteractionStatsRequest) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *GetVideoInteractionStatsRequest) GetVideoId() uint32 {
+	if x != nil {
+		return x.VideoId
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+// 获取视频互动数据响应
+type GetVideoInteractionStatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StatusCode    int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`          // 状态码，0-成功，其他值-失败
+	StatusMsg     string                 `protobuf:"bytes,2,opt,name=status_msg,json=statusMsg,proto3" json:"status_msg,omitempty"`              // 返回状态描述
+	VideoId       uint32                 `protobuf:"varint,3,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"`                   // 视频ID
+	LikeCount     uint32                 `protobuf:"varint,4,opt,name=like_count,json=likeCount,proto3" json:"like_count,omitempty"`             // 点赞量
+	FavoriteCount uint32                 `protobuf:"varint,5,opt,name=favorite_count,json=favoriteCount,proto3" json:"favorite_count,omitempty"` // 收藏量
+	CoinCount     uint32                 `protobuf:"varint,6,opt,name=coin_count,json=coinCount,proto3" json:"coin_count,omitempty"`             // 投币量
+	ShareCount    uint32                 `protobuf:"varint,7,opt,name=share_count,json=shareCount,proto3" json:"share_count,omitempty"`          // 转发量
+	PlayCount     uint32                 `protobuf:"varint,8,opt,name=play_count,json=playCount,proto3" json:"play_count,omitempty"`             // 播放量
+	DanmakuCount  uint32                 `protobuf:"varint,9,opt,name=danmaku_count,json=danmakuCount,proto3" json:"danmaku_count,omitempty"`    // 弹幕量
+	CommentCount  uint32                 `protobuf:"varint,10,opt,name=comment_count,json=commentCount,proto3" json:"comment_count,omitempty"`   // 评论量
+	IsLiked       bool                   `protobuf:"varint,11,opt,name=is_liked,json=isLiked,proto3" json:"is_liked,omitempty"`                  // 当前用户是否已点赞
+	IsFavorited   bool                   `protobuf:"varint,12,opt,name=is_favorited,json=isFavorited,proto3" json:"is_favorited,omitempty"`      // 当前用户是否已收藏
+	IsCoined      bool                   `protobuf:"varint,13,opt,name=is_coined,json=isCoined,proto3" json:"is_coined,omitempty"`               // 当前用户是否已投币
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVideoInteractionStatsResponse) Reset() {
+	*x = GetVideoInteractionStatsResponse{}
+	mi := &file_video_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVideoInteractionStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVideoInteractionStatsResponse) ProtoMessage() {}
+
+func (x *GetVideoInteractionStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVideoInteractionStatsResponse.ProtoReflect.Descriptor instead.
+func (*GetVideoInteractionStatsResponse) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *GetVideoInteractionStatsResponse) GetStatusCode() int32 {
+	if x != nil {
+		return x.StatusCode
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetStatusMsg() string {
+	if x != nil {
+		return x.StatusMsg
+	}
+	return ""
+}
+
+func (x *GetVideoInteractionStatsResponse) GetVideoId() uint32 {
+	if x != nil {
+		return x.VideoId
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetLikeCount() uint32 {
+	if x != nil {
+		return x.LikeCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetFavoriteCount() uint32 {
+	if x != nil {
+		return x.FavoriteCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetCoinCount() uint32 {
+	if x != nil {
+		return x.CoinCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetShareCount() uint32 {
+	if x != nil {
+		return x.ShareCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetPlayCount() uint32 {
+	if x != nil {
+		return x.PlayCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetDanmakuCount() uint32 {
+	if x != nil {
+		return x.DanmakuCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetCommentCount() uint32 {
+	if x != nil {
+		return x.CommentCount
+	}
+	return 0
+}
+
+func (x *GetVideoInteractionStatsResponse) GetIsLiked() bool {
+	if x != nil {
+		return x.IsLiked
+	}
+	return false
+}
+
+func (x *GetVideoInteractionStatsResponse) GetIsFavorited() bool {
+	if x != nil {
+		return x.IsFavorited
+	}
+	return false
+}
+
+func (x *GetVideoInteractionStatsResponse) GetIsCoined() bool {
+	if x != nil {
+		return x.IsCoined
+	}
+	return false
 }
 
 var File_video_proto protoreflect.FileDescriptor
@@ -3737,13 +3870,7 @@ const file_video_proto_rawDesc = "" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\"F\n" +
 	"\x13GetVideoInfoRequest\x12\x19\n" +
 	"\bvideo_id\x18\x01 \x01(\rR\avideoId\x12\x14\n" +
-	"\x05token\x18\x02 \x01(\tR\x05token\"~\n" +
-	"\x14GetVideoInfoResponse\x12\x1f\n" +
-	"\vstatus_code\x18\x01 \x01(\x05R\n" +
-	"statusCode\x12\x1d\n" +
-	"\n" +
-	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x12&\n" +
-	"\x05video\x18\x03 \x01(\v2\x10.rpc.video.VideoR\x05video\"I\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\"I\n" +
 	"\x14GetVideoInfosRequest\x12\x1b\n" +
 	"\tvideo_ids\x18\x01 \x03(\rR\bvideoIds\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\"\x81\x01\n" +
@@ -4029,7 +4156,31 @@ const file_video_proto_rawDesc = "" +
 	"\vis_complete\x18\x03 \x01(\bR\n" +
 	"isComplete\x12\x1d\n" +
 	"\n" +
-	"watch_time\x18\x04 \x01(\rR\twatchTime2\x95\x0f\n" +
+	"watch_time\x18\x04 \x01(\rR\twatchTime\"R\n" +
+	"\x1fGetVideoInteractionStatsRequest\x12\x19\n" +
+	"\bvideo_id\x18\x01 \x01(\rR\avideoId\x12\x14\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\"\xc7\x03\n" +
+	" GetVideoInteractionStatsResponse\x12\x1f\n" +
+	"\vstatus_code\x18\x01 \x01(\x05R\n" +
+	"statusCode\x12\x1d\n" +
+	"\n" +
+	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x12\x19\n" +
+	"\bvideo_id\x18\x03 \x01(\rR\avideoId\x12\x1d\n" +
+	"\n" +
+	"like_count\x18\x04 \x01(\rR\tlikeCount\x12%\n" +
+	"\x0efavorite_count\x18\x05 \x01(\rR\rfavoriteCount\x12\x1d\n" +
+	"\n" +
+	"coin_count\x18\x06 \x01(\rR\tcoinCount\x12\x1f\n" +
+	"\vshare_count\x18\a \x01(\rR\n" +
+	"shareCount\x12\x1d\n" +
+	"\n" +
+	"play_count\x18\b \x01(\rR\tplayCount\x12#\n" +
+	"\rdanmaku_count\x18\t \x01(\rR\fdanmakuCount\x12#\n" +
+	"\rcomment_count\x18\n" +
+	" \x01(\rR\fcommentCount\x12\x19\n" +
+	"\bis_liked\x18\v \x01(\bR\aisLiked\x12!\n" +
+	"\fis_favorited\x18\f \x01(\bR\visFavorited\x12\x1b\n" +
+	"\tis_coined\x18\r \x01(\bR\bisCoined2\x8a\x10\n" +
 	"\fVideoService\x12L\n" +
 	"\vUploadVideo\x12\x1d.rpc.video.UploadVideoRequest\x1a\x1e.rpc.video.UploadVideoResponse\x12^\n" +
 	"\x11CreateVideoRecord\x12#.rpc.video.CreateVideoRecordRequest\x1a$.rpc.video.CreateVideoRecordResponse\x12O\n" +
@@ -4048,14 +4199,15 @@ const file_video_proto_rawDesc = "" +
 	"\rFavoriteVideo\x12\x1f.rpc.video.FavoriteVideoRequest\x1a .rpc.video.FavoriteVideoResponse\x12a\n" +
 	"\x12GetUserLikedVideos\x12$.rpc.video.GetUserLikedVideosRequest\x1a%.rpc.video.GetUserLikedVideosResponse\x12I\n" +
 	"\n" +
-	"ShareVideo\x12\x1c.rpc.video.ShareVideoRequest\x1a\x1d.rpc.video.ShareVideoResponse\x12E\n" +
+	"ShareVideo\x12\x1c.rpc.video.ShareVideoRequest\x1a\x1d.rpc.video.ShareVideoResponse\x12s\n" +
+	"\x18GetVideoInteractionStats\x12*.rpc.video.GetVideoInteractionStatsRequest\x1a+.rpc.video.GetVideoInteractionStatsResponse\x12E\n" +
 	"\fCommentVideo\x12\x19.rpc.video.CommentRequest\x1a\x1a.rpc.video.CommentResponse\x12R\n" +
 	"\rDeleteComment\x12\x1f.rpc.video.DeleteCommentRequest\x1a .rpc.video.DeleteCommentResponse\x12L\n" +
 	"\vLikeComment\x12\x1d.rpc.video.LikeCommentRequest\x1a\x1e.rpc.video.LikeCommentResponse\x12[\n" +
 	"\x10GetVideoComments\x12\".rpc.video.GetVideoCommentsRequest\x1a#.rpc.video.GetVideoCommentsResponse\x12I\n" +
 	"\n" +
 	"RecordPlay\x12\x1c.rpc.video.RecordPlayRequest\x1a\x1d.rpc.video.RecordPlayResponse\x12U\n" +
-	"\x0eReportProgress\x12 .rpc.video.ReportProgressRequest\x1a!.rpc.video.ReportProgressResponseB#Z!api_gateway/proto/proto_gen/videob\x06proto3"
+	"\x0eReportProgress\x12 .rpc.video.ReportProgressRequest\x1a!.rpc.video.ReportProgressResponseB=Z;github.com/vision_world/video_service/proto/proto_gen/videob\x06proto3"
 
 var (
 	file_video_proto_rawDescOnce sync.Once
@@ -4069,128 +4221,130 @@ func file_video_proto_rawDescGZIP() []byte {
 	return file_video_proto_rawDescData
 }
 
-var file_video_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
+var file_video_proto_msgTypes = make([]protoimpl.MessageInfo, 51)
 var file_video_proto_goTypes = []any{
-	(*VideoRequest)(nil),               // 0: rpc.video.VideoRequest
-	(*VideoResponse)(nil),              // 1: rpc.video.VideoResponse
-	(*UploadVideoRequest)(nil),         // 2: rpc.video.UploadVideoRequest
-	(*UploadVideoResponse)(nil),        // 3: rpc.video.UploadVideoResponse
-	(*CreateVideoRecordRequest)(nil),   // 4: rpc.video.CreateVideoRecordRequest
-	(*CreateVideoRecordResponse)(nil),  // 5: rpc.video.CreateVideoRecordResponse
-	(*PublishVideoRequest)(nil),        // 6: rpc.video.PublishVideoRequest
-	(*PublishVideoResponse)(nil),       // 7: rpc.video.PublishVideoResponse
-	(*DeleteVideoRequest)(nil),         // 8: rpc.video.DeleteVideoRequest
-	(*DeleteVideoResponse)(nil),        // 9: rpc.video.DeleteVideoResponse
-	(*RetryTranscodeRequest)(nil),      // 10: rpc.video.RetryTranscodeRequest
-	(*RetryTranscodeResponse)(nil),     // 11: rpc.video.RetryTranscodeResponse
-	(*GetVideoInfoRequest)(nil),        // 12: rpc.video.GetVideoInfoRequest
-	(*GetVideoInfoResponse)(nil),       // 13: rpc.video.GetVideoInfoResponse
-	(*GetVideoInfosRequest)(nil),       // 14: rpc.video.GetVideoInfosRequest
-	(*GetVideoInfosResponse)(nil),      // 15: rpc.video.GetVideoInfosResponse
-	(*GetUserVideosRequest)(nil),       // 16: rpc.video.GetUserVideosRequest
-	(*GetUserVideosResponse)(nil),      // 17: rpc.video.GetUserVideosResponse
-	(*GetRecommendVideosRequest)(nil),  // 18: rpc.video.GetRecommendVideosRequest
-	(*GetRecommendVideosResponse)(nil), // 19: rpc.video.GetRecommendVideosResponse
-	(*GetFollowVideosRequest)(nil),     // 20: rpc.video.GetFollowVideosRequest
-	(*GetFollowVideosResponse)(nil),    // 21: rpc.video.GetFollowVideosResponse
-	(*LikeVideoRequest)(nil),           // 22: rpc.video.LikeVideoRequest
-	(*LikeVideoResponse)(nil),          // 23: rpc.video.LikeVideoResponse
-	(*FavoriteVideoRequest)(nil),       // 24: rpc.video.FavoriteVideoRequest
-	(*FavoriteVideoResponse)(nil),      // 25: rpc.video.FavoriteVideoResponse
-	(*GetUserLikedVideosRequest)(nil),  // 26: rpc.video.GetUserLikedVideosRequest
-	(*GetUserLikedVideosResponse)(nil), // 27: rpc.video.GetUserLikedVideosResponse
-	(*ShareVideoRequest)(nil),          // 28: rpc.video.ShareVideoRequest
-	(*ShareVideoResponse)(nil),         // 29: rpc.video.ShareVideoResponse
-	(*CommentRequest)(nil),             // 30: rpc.video.CommentRequest
-	(*CommentResponse)(nil),            // 31: rpc.video.CommentResponse
-	(*DeleteCommentRequest)(nil),       // 32: rpc.video.DeleteCommentRequest
-	(*DeleteCommentResponse)(nil),      // 33: rpc.video.DeleteCommentResponse
-	(*LikeCommentRequest)(nil),         // 34: rpc.video.LikeCommentRequest
-	(*LikeCommentResponse)(nil),        // 35: rpc.video.LikeCommentResponse
-	(*GetVideoCommentsRequest)(nil),    // 36: rpc.video.GetVideoCommentsRequest
-	(*GetVideoCommentsResponse)(nil),   // 37: rpc.video.GetVideoCommentsResponse
-	(*Video)(nil),                      // 38: rpc.video.Video
-	(*Comment)(nil),                    // 39: rpc.video.Comment
-	(*GetHotVideosRequest)(nil),        // 40: rpc.video.GetHotVideosRequest
-	(*GetHotVideosResponse)(nil),       // 41: rpc.video.GetHotVideosResponse
-	(*GetCategoryVideosRequest)(nil),   // 42: rpc.video.GetCategoryVideosRequest
-	(*GetCategoryVideosResponse)(nil),  // 43: rpc.video.GetCategoryVideosResponse
-	(*SearchVideosRequest)(nil),        // 44: rpc.video.SearchVideosRequest
-	(*SearchVideosResponse)(nil),       // 45: rpc.video.SearchVideosResponse
-	(*RecordPlayRequest)(nil),          // 46: rpc.video.RecordPlayRequest
-	(*RecordPlayResponse)(nil),         // 47: rpc.video.RecordPlayResponse
-	(*ReportProgressRequest)(nil),      // 48: rpc.video.ReportProgressRequest
-	(*ReportProgressResponse)(nil),     // 49: rpc.video.ReportProgressResponse
-	(*user.User)(nil),                  // 50: rpc.user.User
+	(*VideoRequest)(nil),                     // 0: rpc.video.VideoRequest
+	(*VideoResponse)(nil),                    // 1: rpc.video.VideoResponse
+	(*UploadVideoRequest)(nil),               // 2: rpc.video.UploadVideoRequest
+	(*UploadVideoResponse)(nil),              // 3: rpc.video.UploadVideoResponse
+	(*CreateVideoRecordRequest)(nil),         // 4: rpc.video.CreateVideoRecordRequest
+	(*CreateVideoRecordResponse)(nil),        // 5: rpc.video.CreateVideoRecordResponse
+	(*PublishVideoRequest)(nil),              // 6: rpc.video.PublishVideoRequest
+	(*PublishVideoResponse)(nil),             // 7: rpc.video.PublishVideoResponse
+	(*DeleteVideoRequest)(nil),               // 8: rpc.video.DeleteVideoRequest
+	(*DeleteVideoResponse)(nil),              // 9: rpc.video.DeleteVideoResponse
+	(*RetryTranscodeRequest)(nil),            // 10: rpc.video.RetryTranscodeRequest
+	(*RetryTranscodeResponse)(nil),           // 11: rpc.video.RetryTranscodeResponse
+	(*GetVideoInfoRequest)(nil),              // 12: rpc.video.GetVideoInfoRequest
+	(*GetVideoInfosRequest)(nil),             // 13: rpc.video.GetVideoInfosRequest
+	(*GetVideoInfosResponse)(nil),            // 14: rpc.video.GetVideoInfosResponse
+	(*GetUserVideosRequest)(nil),             // 15: rpc.video.GetUserVideosRequest
+	(*GetUserVideosResponse)(nil),            // 16: rpc.video.GetUserVideosResponse
+	(*GetRecommendVideosRequest)(nil),        // 17: rpc.video.GetRecommendVideosRequest
+	(*GetRecommendVideosResponse)(nil),       // 18: rpc.video.GetRecommendVideosResponse
+	(*GetFollowVideosRequest)(nil),           // 19: rpc.video.GetFollowVideosRequest
+	(*GetFollowVideosResponse)(nil),          // 20: rpc.video.GetFollowVideosResponse
+	(*LikeVideoRequest)(nil),                 // 21: rpc.video.LikeVideoRequest
+	(*LikeVideoResponse)(nil),                // 22: rpc.video.LikeVideoResponse
+	(*FavoriteVideoRequest)(nil),             // 23: rpc.video.FavoriteVideoRequest
+	(*FavoriteVideoResponse)(nil),            // 24: rpc.video.FavoriteVideoResponse
+	(*GetUserLikedVideosRequest)(nil),        // 25: rpc.video.GetUserLikedVideosRequest
+	(*GetUserLikedVideosResponse)(nil),       // 26: rpc.video.GetUserLikedVideosResponse
+	(*ShareVideoRequest)(nil),                // 27: rpc.video.ShareVideoRequest
+	(*ShareVideoResponse)(nil),               // 28: rpc.video.ShareVideoResponse
+	(*CommentRequest)(nil),                   // 29: rpc.video.CommentRequest
+	(*CommentResponse)(nil),                  // 30: rpc.video.CommentResponse
+	(*DeleteCommentRequest)(nil),             // 31: rpc.video.DeleteCommentRequest
+	(*DeleteCommentResponse)(nil),            // 32: rpc.video.DeleteCommentResponse
+	(*LikeCommentRequest)(nil),               // 33: rpc.video.LikeCommentRequest
+	(*LikeCommentResponse)(nil),              // 34: rpc.video.LikeCommentResponse
+	(*GetVideoCommentsRequest)(nil),          // 35: rpc.video.GetVideoCommentsRequest
+	(*GetVideoCommentsResponse)(nil),         // 36: rpc.video.GetVideoCommentsResponse
+	(*Video)(nil),                            // 37: rpc.video.Video
+	(*Comment)(nil),                          // 38: rpc.video.Comment
+	(*GetHotVideosRequest)(nil),              // 39: rpc.video.GetHotVideosRequest
+	(*GetHotVideosResponse)(nil),             // 40: rpc.video.GetHotVideosResponse
+	(*GetCategoryVideosRequest)(nil),         // 41: rpc.video.GetCategoryVideosRequest
+	(*GetCategoryVideosResponse)(nil),        // 42: rpc.video.GetCategoryVideosResponse
+	(*SearchVideosRequest)(nil),              // 43: rpc.video.SearchVideosRequest
+	(*SearchVideosResponse)(nil),             // 44: rpc.video.SearchVideosResponse
+	(*RecordPlayRequest)(nil),                // 45: rpc.video.RecordPlayRequest
+	(*RecordPlayResponse)(nil),               // 46: rpc.video.RecordPlayResponse
+	(*ReportProgressRequest)(nil),            // 47: rpc.video.ReportProgressRequest
+	(*ReportProgressResponse)(nil),           // 48: rpc.video.ReportProgressResponse
+	(*GetVideoInteractionStatsRequest)(nil),  // 49: rpc.video.GetVideoInteractionStatsRequest
+	(*GetVideoInteractionStatsResponse)(nil), // 50: rpc.video.GetVideoInteractionStatsResponse
+	(*user.User)(nil),                        // 51: rpc.user.User
 }
 var file_video_proto_depIdxs = []int32{
-	38, // 0: rpc.video.VideoResponse.video:type_name -> rpc.video.Video
-	38, // 1: rpc.video.GetVideoInfoResponse.video:type_name -> rpc.video.Video
-	38, // 2: rpc.video.GetVideoInfosResponse.videos:type_name -> rpc.video.Video
-	38, // 3: rpc.video.GetUserVideosResponse.videos:type_name -> rpc.video.Video
-	38, // 4: rpc.video.GetRecommendVideosResponse.videos:type_name -> rpc.video.Video
-	38, // 5: rpc.video.GetFollowVideosResponse.videos:type_name -> rpc.video.Video
-	38, // 6: rpc.video.GetUserLikedVideosResponse.videos:type_name -> rpc.video.Video
-	39, // 7: rpc.video.CommentResponse.comment:type_name -> rpc.video.Comment
-	39, // 8: rpc.video.GetVideoCommentsResponse.comments:type_name -> rpc.video.Comment
-	50, // 9: rpc.video.Video.author:type_name -> rpc.user.User
-	50, // 10: rpc.video.Comment.user:type_name -> rpc.user.User
-	50, // 11: rpc.video.Comment.reply_to_user:type_name -> rpc.user.User
-	39, // 12: rpc.video.Comment.replies:type_name -> rpc.video.Comment
-	38, // 13: rpc.video.GetHotVideosResponse.videos:type_name -> rpc.video.Video
-	38, // 14: rpc.video.GetCategoryVideosResponse.videos:type_name -> rpc.video.Video
-	38, // 15: rpc.video.SearchVideosResponse.videos:type_name -> rpc.video.Video
-	2,  // 16: rpc.video.VideoService.UploadVideo:input_type -> rpc.video.UploadVideoRequest
-	4,  // 17: rpc.video.VideoService.CreateVideoRecord:input_type -> rpc.video.CreateVideoRecordRequest
-	6,  // 18: rpc.video.VideoService.PublishVideo:input_type -> rpc.video.PublishVideoRequest
-	8,  // 19: rpc.video.VideoService.DeleteVideo:input_type -> rpc.video.DeleteVideoRequest
-	10, // 20: rpc.video.VideoService.RetryTranscode:input_type -> rpc.video.RetryTranscodeRequest
-	12, // 21: rpc.video.VideoService.GetVideoInfo:input_type -> rpc.video.GetVideoInfoRequest
-	14, // 22: rpc.video.VideoService.GetVideoInfos:input_type -> rpc.video.GetVideoInfosRequest
-	16, // 23: rpc.video.VideoService.GetUserVideos:input_type -> rpc.video.GetUserVideosRequest
-	18, // 24: rpc.video.VideoService.GetRecommendVideos:input_type -> rpc.video.GetRecommendVideosRequest
-	20, // 25: rpc.video.VideoService.GetFollowVideos:input_type -> rpc.video.GetFollowVideosRequest
-	40, // 26: rpc.video.VideoService.GetHotVideos:input_type -> rpc.video.GetHotVideosRequest
-	42, // 27: rpc.video.VideoService.GetCategoryVideos:input_type -> rpc.video.GetCategoryVideosRequest
-	44, // 28: rpc.video.VideoService.SearchVideos:input_type -> rpc.video.SearchVideosRequest
-	22, // 29: rpc.video.VideoService.LikeVideo:input_type -> rpc.video.LikeVideoRequest
-	24, // 30: rpc.video.VideoService.FavoriteVideo:input_type -> rpc.video.FavoriteVideoRequest
-	26, // 31: rpc.video.VideoService.GetUserLikedVideos:input_type -> rpc.video.GetUserLikedVideosRequest
-	28, // 32: rpc.video.VideoService.ShareVideo:input_type -> rpc.video.ShareVideoRequest
-	30, // 33: rpc.video.VideoService.CommentVideo:input_type -> rpc.video.CommentRequest
-	32, // 34: rpc.video.VideoService.DeleteComment:input_type -> rpc.video.DeleteCommentRequest
-	34, // 35: rpc.video.VideoService.LikeComment:input_type -> rpc.video.LikeCommentRequest
-	36, // 36: rpc.video.VideoService.GetVideoComments:input_type -> rpc.video.GetVideoCommentsRequest
-	46, // 37: rpc.video.VideoService.RecordPlay:input_type -> rpc.video.RecordPlayRequest
-	48, // 38: rpc.video.VideoService.ReportProgress:input_type -> rpc.video.ReportProgressRequest
+	37, // 0: rpc.video.VideoResponse.video:type_name -> rpc.video.Video
+	37, // 1: rpc.video.GetVideoInfosResponse.videos:type_name -> rpc.video.Video
+	37, // 2: rpc.video.GetUserVideosResponse.videos:type_name -> rpc.video.Video
+	37, // 3: rpc.video.GetRecommendVideosResponse.videos:type_name -> rpc.video.Video
+	37, // 4: rpc.video.GetFollowVideosResponse.videos:type_name -> rpc.video.Video
+	37, // 5: rpc.video.GetUserLikedVideosResponse.videos:type_name -> rpc.video.Video
+	38, // 6: rpc.video.CommentResponse.comment:type_name -> rpc.video.Comment
+	38, // 7: rpc.video.GetVideoCommentsResponse.comments:type_name -> rpc.video.Comment
+	51, // 8: rpc.video.Video.author:type_name -> rpc.user.User
+	51, // 9: rpc.video.Comment.user:type_name -> rpc.user.User
+	51, // 10: rpc.video.Comment.reply_to_user:type_name -> rpc.user.User
+	38, // 11: rpc.video.Comment.replies:type_name -> rpc.video.Comment
+	37, // 12: rpc.video.GetHotVideosResponse.videos:type_name -> rpc.video.Video
+	37, // 13: rpc.video.GetCategoryVideosResponse.videos:type_name -> rpc.video.Video
+	37, // 14: rpc.video.SearchVideosResponse.videos:type_name -> rpc.video.Video
+	2,  // 15: rpc.video.VideoService.UploadVideo:input_type -> rpc.video.UploadVideoRequest
+	4,  // 16: rpc.video.VideoService.CreateVideoRecord:input_type -> rpc.video.CreateVideoRecordRequest
+	6,  // 17: rpc.video.VideoService.PublishVideo:input_type -> rpc.video.PublishVideoRequest
+	8,  // 18: rpc.video.VideoService.DeleteVideo:input_type -> rpc.video.DeleteVideoRequest
+	10, // 19: rpc.video.VideoService.RetryTranscode:input_type -> rpc.video.RetryTranscodeRequest
+	12, // 20: rpc.video.VideoService.GetVideoInfo:input_type -> rpc.video.GetVideoInfoRequest
+	13, // 21: rpc.video.VideoService.GetVideoInfos:input_type -> rpc.video.GetVideoInfosRequest
+	15, // 22: rpc.video.VideoService.GetUserVideos:input_type -> rpc.video.GetUserVideosRequest
+	17, // 23: rpc.video.VideoService.GetRecommendVideos:input_type -> rpc.video.GetRecommendVideosRequest
+	19, // 24: rpc.video.VideoService.GetFollowVideos:input_type -> rpc.video.GetFollowVideosRequest
+	39, // 25: rpc.video.VideoService.GetHotVideos:input_type -> rpc.video.GetHotVideosRequest
+	41, // 26: rpc.video.VideoService.GetCategoryVideos:input_type -> rpc.video.GetCategoryVideosRequest
+	43, // 27: rpc.video.VideoService.SearchVideos:input_type -> rpc.video.SearchVideosRequest
+	21, // 28: rpc.video.VideoService.LikeVideo:input_type -> rpc.video.LikeVideoRequest
+	23, // 29: rpc.video.VideoService.FavoriteVideo:input_type -> rpc.video.FavoriteVideoRequest
+	25, // 30: rpc.video.VideoService.GetUserLikedVideos:input_type -> rpc.video.GetUserLikedVideosRequest
+	27, // 31: rpc.video.VideoService.ShareVideo:input_type -> rpc.video.ShareVideoRequest
+	49, // 32: rpc.video.VideoService.GetVideoInteractionStats:input_type -> rpc.video.GetVideoInteractionStatsRequest
+	29, // 33: rpc.video.VideoService.CommentVideo:input_type -> rpc.video.CommentRequest
+	31, // 34: rpc.video.VideoService.DeleteComment:input_type -> rpc.video.DeleteCommentRequest
+	33, // 35: rpc.video.VideoService.LikeComment:input_type -> rpc.video.LikeCommentRequest
+	35, // 36: rpc.video.VideoService.GetVideoComments:input_type -> rpc.video.GetVideoCommentsRequest
+	45, // 37: rpc.video.VideoService.RecordPlay:input_type -> rpc.video.RecordPlayRequest
+	47, // 38: rpc.video.VideoService.ReportProgress:input_type -> rpc.video.ReportProgressRequest
 	3,  // 39: rpc.video.VideoService.UploadVideo:output_type -> rpc.video.UploadVideoResponse
 	5,  // 40: rpc.video.VideoService.CreateVideoRecord:output_type -> rpc.video.CreateVideoRecordResponse
 	7,  // 41: rpc.video.VideoService.PublishVideo:output_type -> rpc.video.PublishVideoResponse
 	9,  // 42: rpc.video.VideoService.DeleteVideo:output_type -> rpc.video.DeleteVideoResponse
 	11, // 43: rpc.video.VideoService.RetryTranscode:output_type -> rpc.video.RetryTranscodeResponse
 	1,  // 44: rpc.video.VideoService.GetVideoInfo:output_type -> rpc.video.VideoResponse
-	15, // 45: rpc.video.VideoService.GetVideoInfos:output_type -> rpc.video.GetVideoInfosResponse
-	17, // 46: rpc.video.VideoService.GetUserVideos:output_type -> rpc.video.GetUserVideosResponse
-	19, // 47: rpc.video.VideoService.GetRecommendVideos:output_type -> rpc.video.GetRecommendVideosResponse
-	21, // 48: rpc.video.VideoService.GetFollowVideos:output_type -> rpc.video.GetFollowVideosResponse
-	41, // 49: rpc.video.VideoService.GetHotVideos:output_type -> rpc.video.GetHotVideosResponse
-	43, // 50: rpc.video.VideoService.GetCategoryVideos:output_type -> rpc.video.GetCategoryVideosResponse
-	45, // 51: rpc.video.VideoService.SearchVideos:output_type -> rpc.video.SearchVideosResponse
-	23, // 52: rpc.video.VideoService.LikeVideo:output_type -> rpc.video.LikeVideoResponse
-	25, // 53: rpc.video.VideoService.FavoriteVideo:output_type -> rpc.video.FavoriteVideoResponse
-	27, // 54: rpc.video.VideoService.GetUserLikedVideos:output_type -> rpc.video.GetUserLikedVideosResponse
-	29, // 55: rpc.video.VideoService.ShareVideo:output_type -> rpc.video.ShareVideoResponse
-	31, // 56: rpc.video.VideoService.CommentVideo:output_type -> rpc.video.CommentResponse
-	33, // 57: rpc.video.VideoService.DeleteComment:output_type -> rpc.video.DeleteCommentResponse
-	35, // 58: rpc.video.VideoService.LikeComment:output_type -> rpc.video.LikeCommentResponse
-	37, // 59: rpc.video.VideoService.GetVideoComments:output_type -> rpc.video.GetVideoCommentsResponse
-	47, // 60: rpc.video.VideoService.RecordPlay:output_type -> rpc.video.RecordPlayResponse
-	49, // 61: rpc.video.VideoService.ReportProgress:output_type -> rpc.video.ReportProgressResponse
-	39, // [39:62] is the sub-list for method output_type
-	16, // [16:39] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	14, // 45: rpc.video.VideoService.GetVideoInfos:output_type -> rpc.video.GetVideoInfosResponse
+	16, // 46: rpc.video.VideoService.GetUserVideos:output_type -> rpc.video.GetUserVideosResponse
+	18, // 47: rpc.video.VideoService.GetRecommendVideos:output_type -> rpc.video.GetRecommendVideosResponse
+	20, // 48: rpc.video.VideoService.GetFollowVideos:output_type -> rpc.video.GetFollowVideosResponse
+	40, // 49: rpc.video.VideoService.GetHotVideos:output_type -> rpc.video.GetHotVideosResponse
+	42, // 50: rpc.video.VideoService.GetCategoryVideos:output_type -> rpc.video.GetCategoryVideosResponse
+	44, // 51: rpc.video.VideoService.SearchVideos:output_type -> rpc.video.SearchVideosResponse
+	22, // 52: rpc.video.VideoService.LikeVideo:output_type -> rpc.video.LikeVideoResponse
+	24, // 53: rpc.video.VideoService.FavoriteVideo:output_type -> rpc.video.FavoriteVideoResponse
+	26, // 54: rpc.video.VideoService.GetUserLikedVideos:output_type -> rpc.video.GetUserLikedVideosResponse
+	28, // 55: rpc.video.VideoService.ShareVideo:output_type -> rpc.video.ShareVideoResponse
+	50, // 56: rpc.video.VideoService.GetVideoInteractionStats:output_type -> rpc.video.GetVideoInteractionStatsResponse
+	30, // 57: rpc.video.VideoService.CommentVideo:output_type -> rpc.video.CommentResponse
+	32, // 58: rpc.video.VideoService.DeleteComment:output_type -> rpc.video.DeleteCommentResponse
+	34, // 59: rpc.video.VideoService.LikeComment:output_type -> rpc.video.LikeCommentResponse
+	36, // 60: rpc.video.VideoService.GetVideoComments:output_type -> rpc.video.GetVideoCommentsResponse
+	46, // 61: rpc.video.VideoService.RecordPlay:output_type -> rpc.video.RecordPlayResponse
+	48, // 62: rpc.video.VideoService.ReportProgress:output_type -> rpc.video.ReportProgressResponse
+	39, // [39:63] is the sub-list for method output_type
+	15, // [15:39] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_video_proto_init() }
@@ -4199,19 +4353,19 @@ func file_video_proto_init() {
 		return
 	}
 	file_video_proto_msgTypes[6].OneofWrappers = []any{}
-	file_video_proto_msgTypes[18].OneofWrappers = []any{}
-	file_video_proto_msgTypes[30].OneofWrappers = []any{}
+	file_video_proto_msgTypes[17].OneofWrappers = []any{}
+	file_video_proto_msgTypes[29].OneofWrappers = []any{}
+	file_video_proto_msgTypes[37].OneofWrappers = []any{}
 	file_video_proto_msgTypes[38].OneofWrappers = []any{}
 	file_video_proto_msgTypes[39].OneofWrappers = []any{}
-	file_video_proto_msgTypes[40].OneofWrappers = []any{}
-	file_video_proto_msgTypes[44].OneofWrappers = []any{}
+	file_video_proto_msgTypes[43].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_video_proto_rawDesc), len(file_video_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   50,
+			NumMessages:   51,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

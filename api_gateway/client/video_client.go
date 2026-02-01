@@ -240,3 +240,11 @@ func (c *VideoServiceClient) ReportProgress(ctx context.Context, req *videopb.Re
 	}
 	return c.client.ReportProgress(ctx, req)
 }
+
+// GetVideoInteractionStats 获取视频互动统计数据
+func (c *VideoServiceClient) GetVideoInteractionStats(ctx context.Context, req *videopb.GetVideoInteractionStatsRequest) (*videopb.GetVideoInteractionStatsResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.GetVideoInteractionStats(ctx, req)
+}
