@@ -3279,6 +3279,312 @@ func (x *SearchVideosResponse) GetHasMore() bool {
 	return false
 }
 
+// 记录播放请求
+type RecordPlayRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VideoId       uint32                 `protobuf:"varint,1,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"`         // 视频ID
+	UserId        uint32                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`            // 用户ID（可选，未登录用户为0）
+	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`    // 会话ID
+	DeviceId      string                 `protobuf:"bytes,4,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`       // 设备ID
+	ViewSource    string                 `protobuf:"bytes,5,opt,name=view_source,json=viewSource,proto3" json:"view_source,omitempty"` // 观看来源: recommend, search, follow, home
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecordPlayRequest) Reset() {
+	*x = RecordPlayRequest{}
+	mi := &file_video_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecordPlayRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecordPlayRequest) ProtoMessage() {}
+
+func (x *RecordPlayRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecordPlayRequest.ProtoReflect.Descriptor instead.
+func (*RecordPlayRequest) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *RecordPlayRequest) GetVideoId() uint32 {
+	if x != nil {
+		return x.VideoId
+	}
+	return 0
+}
+
+func (x *RecordPlayRequest) GetUserId() uint32 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *RecordPlayRequest) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *RecordPlayRequest) GetDeviceId() string {
+	if x != nil {
+		return x.DeviceId
+	}
+	return ""
+}
+
+func (x *RecordPlayRequest) GetViewSource() string {
+	if x != nil {
+		return x.ViewSource
+	}
+	return ""
+}
+
+type RecordPlayResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StatusCode    int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`            // 状态码，0-成功，其他值-失败
+	StatusMsg     string                 `protobuf:"bytes,2,opt,name=status_msg,json=statusMsg,proto3" json:"status_msg,omitempty"`                // 返回状态描述
+	PlayCount     uint32                 `protobuf:"varint,3,opt,name=play_count,json=playCount,proto3" json:"play_count,omitempty"`               // 当前播放量
+	IsRecorded    bool                   `protobuf:"varint,4,opt,name=is_recorded,json=isRecorded,proto3" json:"is_recorded,omitempty"`            // 是否成功记录（用于防刷，同一设备不重复计数）
+	RealPlayCount uint32                 `protobuf:"varint,5,opt,name=real_play_count,json=realPlayCount,proto3" json:"real_play_count,omitempty"` // 真实播放量
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecordPlayResponse) Reset() {
+	*x = RecordPlayResponse{}
+	mi := &file_video_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecordPlayResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecordPlayResponse) ProtoMessage() {}
+
+func (x *RecordPlayResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecordPlayResponse.ProtoReflect.Descriptor instead.
+func (*RecordPlayResponse) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *RecordPlayResponse) GetStatusCode() int32 {
+	if x != nil {
+		return x.StatusCode
+	}
+	return 0
+}
+
+func (x *RecordPlayResponse) GetStatusMsg() string {
+	if x != nil {
+		return x.StatusMsg
+	}
+	return ""
+}
+
+func (x *RecordPlayResponse) GetPlayCount() uint32 {
+	if x != nil {
+		return x.PlayCount
+	}
+	return 0
+}
+
+func (x *RecordPlayResponse) GetIsRecorded() bool {
+	if x != nil {
+		return x.IsRecorded
+	}
+	return false
+}
+
+func (x *RecordPlayResponse) GetRealPlayCount() uint32 {
+	if x != nil {
+		return x.RealPlayCount
+	}
+	return 0
+}
+
+// 上报观看进度请求
+type ReportProgressRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VideoId       uint32                 `protobuf:"varint,1,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"`              // 视频ID
+	UserId        uint32                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                 // 用户ID（可选，未登录用户为0）
+	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`         // 会话ID
+	CurrentTime   float64                `protobuf:"fixed64,4,opt,name=current_time,json=currentTime,proto3" json:"current_time,omitempty"` // 当前播放时间（秒）
+	Progress      float64                `protobuf:"fixed64,5,opt,name=progress,proto3" json:"progress,omitempty"`                          // 观看进度（0-1）
+	Action        string                 `protobuf:"bytes,6,opt,name=action,proto3" json:"action,omitempty"`                                // 动作: play, pause, seek, complete, buffer
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportProgressRequest) Reset() {
+	*x = ReportProgressRequest{}
+	mi := &file_video_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportProgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportProgressRequest) ProtoMessage() {}
+
+func (x *ReportProgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportProgressRequest.ProtoReflect.Descriptor instead.
+func (*ReportProgressRequest) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *ReportProgressRequest) GetVideoId() uint32 {
+	if x != nil {
+		return x.VideoId
+	}
+	return 0
+}
+
+func (x *ReportProgressRequest) GetUserId() uint32 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *ReportProgressRequest) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *ReportProgressRequest) GetCurrentTime() float64 {
+	if x != nil {
+		return x.CurrentTime
+	}
+	return 0
+}
+
+func (x *ReportProgressRequest) GetProgress() float64 {
+	if x != nil {
+		return x.Progress
+	}
+	return 0
+}
+
+func (x *ReportProgressRequest) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+type ReportProgressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StatusCode    int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"` // 状态码，0-成功，其他值-失败
+	StatusMsg     string                 `protobuf:"bytes,2,opt,name=status_msg,json=statusMsg,proto3" json:"status_msg,omitempty"`     // 返回状态描述
+	IsComplete    bool                   `protobuf:"varint,3,opt,name=is_complete,json=isComplete,proto3" json:"is_complete,omitempty"` // 是否标记为完整观看
+	WatchTime     uint32                 `protobuf:"varint,4,opt,name=watch_time,json=watchTime,proto3" json:"watch_time,omitempty"`    // 本次观看时长（秒）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportProgressResponse) Reset() {
+	*x = ReportProgressResponse{}
+	mi := &file_video_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportProgressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportProgressResponse) ProtoMessage() {}
+
+func (x *ReportProgressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportProgressResponse.ProtoReflect.Descriptor instead.
+func (*ReportProgressResponse) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *ReportProgressResponse) GetStatusCode() int32 {
+	if x != nil {
+		return x.StatusCode
+	}
+	return 0
+}
+
+func (x *ReportProgressResponse) GetStatusMsg() string {
+	if x != nil {
+		return x.StatusMsg
+	}
+	return ""
+}
+
+func (x *ReportProgressResponse) GetIsComplete() bool {
+	if x != nil {
+		return x.IsComplete
+	}
+	return false
+}
+
+func (x *ReportProgressResponse) GetWatchTime() uint32 {
+	if x != nil {
+		return x.WatchTime
+	}
+	return 0
+}
+
 var File_video_proto protoreflect.FileDescriptor
 
 const file_video_proto_rawDesc = "" +
@@ -3621,7 +3927,42 @@ const file_video_proto_rawDesc = "" +
 	"\n" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x12(\n" +
 	"\x06videos\x18\x03 \x03(\v2\x10.rpc.video.VideoR\x06videos\x12\x19\n" +
-	"\bhas_more\x18\x04 \x01(\bR\ahasMore2\xf3\r\n" +
+	"\bhas_more\x18\x04 \x01(\bR\ahasMore\"\xa4\x01\n" +
+	"\x11RecordPlayRequest\x12\x19\n" +
+	"\bvideo_id\x18\x01 \x01(\rR\avideoId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\rR\x06userId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x03 \x01(\tR\tsessionId\x12\x1b\n" +
+	"\tdevice_id\x18\x04 \x01(\tR\bdeviceId\x12\x1f\n" +
+	"\vview_source\x18\x05 \x01(\tR\n" +
+	"viewSource\"\xbc\x01\n" +
+	"\x12RecordPlayResponse\x12\x1f\n" +
+	"\vstatus_code\x18\x01 \x01(\x05R\n" +
+	"statusCode\x12\x1d\n" +
+	"\n" +
+	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x12\x1d\n" +
+	"\n" +
+	"play_count\x18\x03 \x01(\rR\tplayCount\x12\x1f\n" +
+	"\vis_recorded\x18\x04 \x01(\bR\n" +
+	"isRecorded\x12&\n" +
+	"\x0freal_play_count\x18\x05 \x01(\rR\rrealPlayCount\"\xc1\x01\n" +
+	"\x15ReportProgressRequest\x12\x19\n" +
+	"\bvideo_id\x18\x01 \x01(\rR\avideoId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\rR\x06userId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x03 \x01(\tR\tsessionId\x12!\n" +
+	"\fcurrent_time\x18\x04 \x01(\x01R\vcurrentTime\x12\x1a\n" +
+	"\bprogress\x18\x05 \x01(\x01R\bprogress\x12\x16\n" +
+	"\x06action\x18\x06 \x01(\tR\x06action\"\x98\x01\n" +
+	"\x16ReportProgressResponse\x12\x1f\n" +
+	"\vstatus_code\x18\x01 \x01(\x05R\n" +
+	"statusCode\x12\x1d\n" +
+	"\n" +
+	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x12\x1f\n" +
+	"\vis_complete\x18\x03 \x01(\bR\n" +
+	"isComplete\x12\x1d\n" +
+	"\n" +
+	"watch_time\x18\x04 \x01(\rR\twatchTime2\x95\x0f\n" +
 	"\fVideoService\x12L\n" +
 	"\vUploadVideo\x12\x1d.rpc.video.UploadVideoRequest\x1a\x1e.rpc.video.UploadVideoResponse\x12^\n" +
 	"\x11CreateVideoRecord\x12#.rpc.video.CreateVideoRecordRequest\x1a$.rpc.video.CreateVideoRecordResponse\x12O\n" +
@@ -3644,7 +3985,10 @@ const file_video_proto_rawDesc = "" +
 	"\fCommentVideo\x12\x19.rpc.video.CommentRequest\x1a\x1a.rpc.video.CommentResponse\x12R\n" +
 	"\rDeleteComment\x12\x1f.rpc.video.DeleteCommentRequest\x1a .rpc.video.DeleteCommentResponse\x12L\n" +
 	"\vLikeComment\x12\x1d.rpc.video.LikeCommentRequest\x1a\x1e.rpc.video.LikeCommentResponse\x12[\n" +
-	"\x10GetVideoComments\x12\".rpc.video.GetVideoCommentsRequest\x1a#.rpc.video.GetVideoCommentsResponseB=Z;github.com/vision_world/video_service/proto/proto_gen/videob\x06proto3"
+	"\x10GetVideoComments\x12\".rpc.video.GetVideoCommentsRequest\x1a#.rpc.video.GetVideoCommentsResponse\x12I\n" +
+	"\n" +
+	"RecordPlay\x12\x1c.rpc.video.RecordPlayRequest\x1a\x1d.rpc.video.RecordPlayResponse\x12U\n" +
+	"\x0eReportProgress\x12 .rpc.video.ReportProgressRequest\x1a!.rpc.video.ReportProgressResponseB=Z;github.com/vision_world/video_service/proto/proto_gen/videob\x06proto3"
 
 var (
 	file_video_proto_rawDescOnce sync.Once
@@ -3658,7 +4002,7 @@ func file_video_proto_rawDescGZIP() []byte {
 	return file_video_proto_rawDescData
 }
 
-var file_video_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
+var file_video_proto_msgTypes = make([]protoimpl.MessageInfo, 49)
 var file_video_proto_goTypes = []any{
 	(*VideoRequest)(nil),               // 0: rpc.video.VideoRequest
 	(*VideoResponse)(nil),              // 1: rpc.video.VideoResponse
@@ -3705,7 +4049,11 @@ var file_video_proto_goTypes = []any{
 	(*GetCategoryVideosResponse)(nil),  // 42: rpc.video.GetCategoryVideosResponse
 	(*SearchVideosRequest)(nil),        // 43: rpc.video.SearchVideosRequest
 	(*SearchVideosResponse)(nil),       // 44: rpc.video.SearchVideosResponse
-	(*user.User)(nil),                  // 45: rpc.user.User
+	(*RecordPlayRequest)(nil),          // 45: rpc.video.RecordPlayRequest
+	(*RecordPlayResponse)(nil),         // 46: rpc.video.RecordPlayResponse
+	(*ReportProgressRequest)(nil),      // 47: rpc.video.ReportProgressRequest
+	(*ReportProgressResponse)(nil),     // 48: rpc.video.ReportProgressResponse
+	(*user.User)(nil),                  // 49: rpc.user.User
 }
 var file_video_proto_depIdxs = []int32{
 	37, // 0: rpc.video.VideoResponse.video:type_name -> rpc.video.Video
@@ -3716,9 +4064,9 @@ var file_video_proto_depIdxs = []int32{
 	37, // 5: rpc.video.GetUserLikedVideosResponse.videos:type_name -> rpc.video.Video
 	38, // 6: rpc.video.CommentResponse.comment:type_name -> rpc.video.Comment
 	38, // 7: rpc.video.GetVideoCommentsResponse.comments:type_name -> rpc.video.Comment
-	45, // 8: rpc.video.Video.author:type_name -> rpc.user.User
-	45, // 9: rpc.video.Comment.user:type_name -> rpc.user.User
-	45, // 10: rpc.video.Comment.reply_to_user:type_name -> rpc.user.User
+	49, // 8: rpc.video.Video.author:type_name -> rpc.user.User
+	49, // 9: rpc.video.Comment.user:type_name -> rpc.user.User
+	49, // 10: rpc.video.Comment.reply_to_user:type_name -> rpc.user.User
 	38, // 11: rpc.video.Comment.replies:type_name -> rpc.video.Comment
 	37, // 12: rpc.video.GetHotVideosResponse.videos:type_name -> rpc.video.Video
 	37, // 13: rpc.video.GetCategoryVideosResponse.videos:type_name -> rpc.video.Video
@@ -3744,29 +4092,33 @@ var file_video_proto_depIdxs = []int32{
 	31, // 33: rpc.video.VideoService.DeleteComment:input_type -> rpc.video.DeleteCommentRequest
 	33, // 34: rpc.video.VideoService.LikeComment:input_type -> rpc.video.LikeCommentRequest
 	35, // 35: rpc.video.VideoService.GetVideoComments:input_type -> rpc.video.GetVideoCommentsRequest
-	3,  // 36: rpc.video.VideoService.UploadVideo:output_type -> rpc.video.UploadVideoResponse
-	5,  // 37: rpc.video.VideoService.CreateVideoRecord:output_type -> rpc.video.CreateVideoRecordResponse
-	7,  // 38: rpc.video.VideoService.PublishVideo:output_type -> rpc.video.PublishVideoResponse
-	9,  // 39: rpc.video.VideoService.DeleteVideo:output_type -> rpc.video.DeleteVideoResponse
-	11, // 40: rpc.video.VideoService.RetryTranscode:output_type -> rpc.video.RetryTranscodeResponse
-	1,  // 41: rpc.video.VideoService.GetVideoInfo:output_type -> rpc.video.VideoResponse
-	14, // 42: rpc.video.VideoService.GetVideoInfos:output_type -> rpc.video.GetVideoInfosResponse
-	16, // 43: rpc.video.VideoService.GetUserVideos:output_type -> rpc.video.GetUserVideosResponse
-	18, // 44: rpc.video.VideoService.GetRecommendVideos:output_type -> rpc.video.GetRecommendVideosResponse
-	20, // 45: rpc.video.VideoService.GetFollowVideos:output_type -> rpc.video.GetFollowVideosResponse
-	40, // 46: rpc.video.VideoService.GetHotVideos:output_type -> rpc.video.GetHotVideosResponse
-	42, // 47: rpc.video.VideoService.GetCategoryVideos:output_type -> rpc.video.GetCategoryVideosResponse
-	44, // 48: rpc.video.VideoService.SearchVideos:output_type -> rpc.video.SearchVideosResponse
-	22, // 49: rpc.video.VideoService.LikeVideo:output_type -> rpc.video.LikeVideoResponse
-	24, // 50: rpc.video.VideoService.FavoriteVideo:output_type -> rpc.video.FavoriteVideoResponse
-	26, // 51: rpc.video.VideoService.GetUserLikedVideos:output_type -> rpc.video.GetUserLikedVideosResponse
-	28, // 52: rpc.video.VideoService.ShareVideo:output_type -> rpc.video.ShareVideoResponse
-	30, // 53: rpc.video.VideoService.CommentVideo:output_type -> rpc.video.CommentResponse
-	32, // 54: rpc.video.VideoService.DeleteComment:output_type -> rpc.video.DeleteCommentResponse
-	34, // 55: rpc.video.VideoService.LikeComment:output_type -> rpc.video.LikeCommentResponse
-	36, // 56: rpc.video.VideoService.GetVideoComments:output_type -> rpc.video.GetVideoCommentsResponse
-	36, // [36:57] is the sub-list for method output_type
-	15, // [15:36] is the sub-list for method input_type
+	45, // 36: rpc.video.VideoService.RecordPlay:input_type -> rpc.video.RecordPlayRequest
+	47, // 37: rpc.video.VideoService.ReportProgress:input_type -> rpc.video.ReportProgressRequest
+	3,  // 38: rpc.video.VideoService.UploadVideo:output_type -> rpc.video.UploadVideoResponse
+	5,  // 39: rpc.video.VideoService.CreateVideoRecord:output_type -> rpc.video.CreateVideoRecordResponse
+	7,  // 40: rpc.video.VideoService.PublishVideo:output_type -> rpc.video.PublishVideoResponse
+	9,  // 41: rpc.video.VideoService.DeleteVideo:output_type -> rpc.video.DeleteVideoResponse
+	11, // 42: rpc.video.VideoService.RetryTranscode:output_type -> rpc.video.RetryTranscodeResponse
+	1,  // 43: rpc.video.VideoService.GetVideoInfo:output_type -> rpc.video.VideoResponse
+	14, // 44: rpc.video.VideoService.GetVideoInfos:output_type -> rpc.video.GetVideoInfosResponse
+	16, // 45: rpc.video.VideoService.GetUserVideos:output_type -> rpc.video.GetUserVideosResponse
+	18, // 46: rpc.video.VideoService.GetRecommendVideos:output_type -> rpc.video.GetRecommendVideosResponse
+	20, // 47: rpc.video.VideoService.GetFollowVideos:output_type -> rpc.video.GetFollowVideosResponse
+	40, // 48: rpc.video.VideoService.GetHotVideos:output_type -> rpc.video.GetHotVideosResponse
+	42, // 49: rpc.video.VideoService.GetCategoryVideos:output_type -> rpc.video.GetCategoryVideosResponse
+	44, // 50: rpc.video.VideoService.SearchVideos:output_type -> rpc.video.SearchVideosResponse
+	22, // 51: rpc.video.VideoService.LikeVideo:output_type -> rpc.video.LikeVideoResponse
+	24, // 52: rpc.video.VideoService.FavoriteVideo:output_type -> rpc.video.FavoriteVideoResponse
+	26, // 53: rpc.video.VideoService.GetUserLikedVideos:output_type -> rpc.video.GetUserLikedVideosResponse
+	28, // 54: rpc.video.VideoService.ShareVideo:output_type -> rpc.video.ShareVideoResponse
+	30, // 55: rpc.video.VideoService.CommentVideo:output_type -> rpc.video.CommentResponse
+	32, // 56: rpc.video.VideoService.DeleteComment:output_type -> rpc.video.DeleteCommentResponse
+	34, // 57: rpc.video.VideoService.LikeComment:output_type -> rpc.video.LikeCommentResponse
+	36, // 58: rpc.video.VideoService.GetVideoComments:output_type -> rpc.video.GetVideoCommentsResponse
+	46, // 59: rpc.video.VideoService.RecordPlay:output_type -> rpc.video.RecordPlayResponse
+	48, // 60: rpc.video.VideoService.ReportProgress:output_type -> rpc.video.ReportProgressResponse
+	38, // [38:61] is the sub-list for method output_type
+	15, // [15:38] is the sub-list for method input_type
 	15, // [15:15] is the sub-list for extension type_name
 	15, // [15:15] is the sub-list for extension extendee
 	0,  // [0:15] is the sub-list for field type_name
@@ -3790,7 +4142,7 @@ func file_video_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_video_proto_rawDesc), len(file_video_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   45,
+			NumMessages:   49,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

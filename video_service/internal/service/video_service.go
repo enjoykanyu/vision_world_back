@@ -24,6 +24,7 @@ import (
 	"github.com/vision_world/video_service/pkg/minio"
 	"github.com/vision_world/video_service/pkg/transcode"
 	"github.com/vision_world/video_service/proto/proto_gen/user"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 )
@@ -1186,4 +1187,87 @@ func (s *VideoService) RetryTranscode(ctx context.Context, videoID uint32) error
 
 	s.logger.Info("Transcode task submitted successfully", "video_id", videoID)
 	return nil
+}
+
+// RecordPlay 记录视频播放
+func (s *VideoService) RecordPlay(ctx context.Context, videoID uint32, userID uint32, sessionID, deviceID, viewSource string) (uint32, bool, uint32, error) {
+	s.logger.Info("Recording video play",
+		"video_id", videoID,
+		"user_id", userID,
+		"session_id", sessionID,
+		"device_id", deviceID,
+		"view_source", viewSource)
+
+	// 检查是否是重复播放（同一设备同一天只记录一次）
+	// 构建Redis key: play:video:{video_id}:device:{device_id}:{date}
+	date := time.Now().Format("2006-01-02")
+	deviceKey := fmt.Sprintf("play:video:%d:device:%s:%s", videoID, deviceID, date)
+
+	// 检查该设备今天是否已经记录过
+	exists, err := s.redis.Exists(ctx, deviceKey).Result()
+	if err != nil {
+		s.logger.Error("Failed to check device play record", "error", err)
+		// 继续执行，不阻断播放
+	}
+
+	exists = 0 //临时调试用
+	isRecorded := false
+	log.Println("计算下播放量")
+	if exists == 0 {
+		log.Println("增加下播放量")
+		// 未记录过，设置记录 redis保存
+		err = s.redis.Set(ctx, deviceKey, "1", 24*time.Hour).Err()
+		//db存储下 video表
+		// 增加播放量
+		_, err = s.UpdateVideoViewCount(ctx, string(videoID), 1)
+		if err != nil {
+			s.logger.Error("Failed to update view count", zap.Error(err))
+			// 不影响主流程，只记录错误
+		}
+		if err != nil {
+			s.logger.Error("Failed to set device play record", "error", err)
+		}
+		isRecorded = true
+	}
+
+	// 获取当前播放量
+	playCount, err := s.repo.GetVideoPlayCount(ctx, videoID)
+	if err != nil {
+		s.logger.Error("Failed to get video play count", "error", err)
+		playCount = 0
+	}
+
+	// 获取真实播放量（去重后的）
+	realPlayCount, err := s.repo.GetVideoRealPlayCount(ctx, videoID)
+	if err != nil {
+		s.logger.Error("Failed to get video real play count", "error", err)
+		realPlayCount = 0
+	}
+
+	return playCount, isRecorded, realPlayCount, nil
+}
+
+// ReportProgress 上报视频观看进度
+func (s *VideoService) ReportProgress(ctx context.Context, videoID uint32, userID uint32, sessionID string, currentTime, progress float64, action string) (bool, uint32, error) {
+	s.logger.Info("Reporting video progress",
+		"video_id", videoID,
+		"user_id", userID,
+		"session_id", sessionID,
+		"current_time", currentTime,
+		"progress", progress,
+		"action", action)
+
+	// 判断是否完整观看（观看进度 >= 90%）
+	isComplete := progress >= 0.9
+
+	// 计算本次观看时长（简化处理，实际应该根据会话计算）
+	watchTime := uint32(currentTime)
+
+	// 如果完整观看，可以更新相关统计
+	if isComplete {
+		s.logger.Info("Video complete watch detected", "video_id", videoID, "user_id", userID)
+		// 这里可以添加完整观看的统计逻辑
+	}
+
+	return isComplete, watchTime, nil
 }

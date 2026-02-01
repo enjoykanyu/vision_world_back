@@ -363,6 +363,10 @@ service VideoService {
   rpc DeleteComment(DeleteCommentRequest) returns(DeleteCommentResponse);
   rpc LikeComment(LikeCommentRequest) returns(LikeCommentResponse);
   rpc GetVideoComments(GetVideoCommentsRequest) returns(GetVideoCommentsResponse);
+  
+  // 播放量统计相关
+  rpc RecordPlay(RecordPlayRequest) returns(RecordPlayResponse);
+  rpc ReportProgress(ReportProgressRequest) returns(ReportProgressResponse);
 }
 
 // 获取热门视频列表请求
@@ -409,4 +413,40 @@ message SearchVideosResponse {
   string status_msg = 2; // 返回状态描述
   repeated Video videos = 3; // 搜索结果视频列表
   bool has_more = 4; // 是否有更多
+}
+
+// ==================== 播放量统计相关接口 ====================
+
+// 记录播放请求
+message RecordPlayRequest {
+  uint32 video_id = 1; // 视频ID
+  uint32 user_id = 2; // 用户ID（可选，未登录用户为0）
+  string session_id = 3; // 会话ID
+  string device_id = 4; // 设备ID
+  string view_source = 5; // 观看来源: recommend, search, follow, home
+}
+
+message RecordPlayResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  uint32 play_count = 3; // 当前播放量
+  bool is_recorded = 4; // 是否成功记录（用于防刷，同一设备不重复计数）
+  uint32 real_play_count = 5; // 真实播放量
+}
+
+// 上报观看进度请求
+message ReportProgressRequest {
+  uint32 video_id = 1; // 视频ID
+  uint32 user_id = 2; // 用户ID（可选，未登录用户为0）
+  string session_id = 3; // 会话ID
+  double current_time = 4; // 当前播放时间（秒）
+  double progress = 5; // 观看进度（0-1）
+  string action = 6; // 动作: play, pause, seek, complete, buffer
+}
+
+message ReportProgressResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  bool is_complete = 3; // 是否标记为完整观看
+  uint32 watch_time = 4; // 本次观看时长（秒）
 }

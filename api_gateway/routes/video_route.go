@@ -2190,7 +2190,7 @@ func (h *VideoHandler) GetCommentReplies(c *gin.Context) {
 func (h *VideoHandler) RecordVideoPlay(c *gin.Context) {
 	// 解析请求体
 	var req struct {
-		VideoID    uint32 `json:"video_id" binding:"required"`
+		VideoID    string `json:"video_id" binding:"required"`
 		SessionID  string `json:"session_id" binding:"required"`
 		DeviceID   string `json:"device_id" binding:"required"`
 		ViewSource string `json:"view_source"`
@@ -2203,6 +2203,17 @@ func (h *VideoHandler) RecordVideoPlay(c *gin.Context) {
 		})
 		return
 	}
+
+	// 将 video_id 从字符串转换为 uint32
+	videoIDUint64, err := strconv.ParseUint(req.VideoID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid video_id format",
+		})
+		return
+	}
+	videoID := uint32(videoIDUint64)
 
 	// 获取用户ID（如果已登录）
 	userID := uint32(0)
@@ -2228,7 +2239,7 @@ func (h *VideoHandler) RecordVideoPlay(c *gin.Context) {
 
 	// 调用视频服务的RecordPlay接口
 	resp, err := videoClient.RecordPlay(ctx, &pb.RecordPlayRequest{
-		VideoId:    req.VideoID,
+		VideoId:    videoID,
 		UserId:     userID,
 		SessionId:  req.SessionID,
 		DeviceId:   req.DeviceID,
@@ -2260,7 +2271,7 @@ func (h *VideoHandler) RecordVideoPlay(c *gin.Context) {
 func (h *VideoHandler) ReportVideoProgress(c *gin.Context) {
 	// 解析请求体
 	var req struct {
-		VideoID     uint32  `json:"video_id" binding:"required"`
+		VideoID     string  `json:"video_id" binding:"required"`
 		SessionID   string  `json:"session_id" binding:"required"`
 		CurrentTime float64 `json:"current_time" binding:"required"`
 		Progress    float64 `json:"progress" binding:"required"`
@@ -2274,6 +2285,17 @@ func (h *VideoHandler) ReportVideoProgress(c *gin.Context) {
 		})
 		return
 	}
+
+	// 将 video_id 从字符串转换为 uint32
+	videoIDUint64, err := strconv.ParseUint(req.VideoID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid video_id format",
+		})
+		return
+	}
+	videoID := uint32(videoIDUint64)
 
 	// 获取用户ID（如果已登录）
 	userID := uint32(0)
@@ -2299,7 +2321,7 @@ func (h *VideoHandler) ReportVideoProgress(c *gin.Context) {
 
 	// 调用视频服务的ReportProgress接口
 	resp, err := videoClient.ReportProgress(ctx, &pb.ReportProgressRequest{
-		VideoId:     req.VideoID,
+		VideoId:     videoID,
 		UserId:      userID,
 		SessionId:   req.SessionID,
 		CurrentTime: req.CurrentTime,

@@ -39,6 +39,8 @@ type VideoRepository interface {
 	IncrementFavoriteCount(ctx context.Context, videoID string) error
 	DecrementFavoriteCount(ctx context.Context, videoID string) error
 	IncrementShareCount(ctx context.Context, videoID string) error
+	GetVideoPlayCount(ctx context.Context, videoID uint32) (uint32, error)
+	GetVideoRealPlayCount(ctx context.Context, videoID uint32) (uint32, error)
 
 	// 资源清理
 	Close() error
@@ -720,6 +722,26 @@ func (r *videoRepository) Close() error {
 		return r.redis.Close()
 	}
 	return nil
+}
+
+// GetVideoPlayCount 获取视频播放量
+func (r *videoRepository) GetVideoPlayCount(ctx context.Context, videoID uint32) (uint32, error) {
+	var video model.Video
+	if err := r.db.WithContext(ctx).Select("play_count").Where("id = ?", videoID).First(&video).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return 0, fmt.Errorf("video not found: %d", videoID)
+		}
+		return 0, fmt.Errorf("failed to get video play count: %w", err)
+	}
+	return video.PlayCount, nil
+}
+
+// GetVideoRealPlayCount 获取视频真实播放量（去重后）
+// 注意：当前实现返回普通播放量，真实播放量需要在数据库中添加 real_play_count 字段
+func (r *videoRepository) GetVideoRealPlayCount(ctx context.Context, videoID uint32) (uint32, error) {
+	// 暂时返回普通播放量作为真实播放量的近似值
+	// TODO: 在数据库中添加 real_play_count 字段后更新此实现
+	return r.GetVideoPlayCount(ctx, videoID)
 }
 
 // convertToRecommendationVideo 将Video模型转换为RecommendationVideo模型

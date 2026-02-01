@@ -715,13 +715,6 @@ func (h *VideoHandler) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoReq
 		}, nil
 	}
 
-	// 增加播放量
-	_, err = h.videoService.UpdateVideoViewCount(ctx, videoID, 1)
-	if err != nil {
-		h.logger.Error("Failed to update view count", zap.Error(err))
-		// 不影响主流程，只记录错误
-	}
-
 	// 转换为protobuf格式
 	pbVideo := h.convertToProtoVideoDetail(videoDetail)
 
@@ -1219,6 +1212,62 @@ func (h *VideoHandler) LikeComment(ctx context.Context, req *pb.LikeCommentReque
 	h.logger.Info("LikeComment called", zap.Uint32("comment_id", req.CommentId), zap.Bool("action_type", req.ActionType))
 
 	return h.commentService.LikeComment(ctx, req)
+}
+
+// RecordPlay 记录视频播放
+func (h *VideoHandler) RecordPlay(ctx context.Context, req *pb.RecordPlayRequest) (*pb.RecordPlayResponse, error) {
+	h.logger.Info("RecordPlay called",
+		zap.Uint32("video_id", req.VideoId),
+		zap.Uint32("user_id", req.UserId),
+		zap.String("session_id", req.SessionId),
+		zap.String("device_id", req.DeviceId),
+		zap.String("view_source", req.ViewSource))
+
+	// 调用 videoService 记录播放
+	playCount, isRecorded, realPlayCount, err := h.videoService.RecordPlay(ctx, req.VideoId, req.UserId, req.SessionId, req.DeviceId, req.ViewSource)
+	if err != nil {
+		h.logger.Error("Failed to record play", zap.Error(err))
+		return &pb.RecordPlayResponse{
+			StatusCode: 500,
+			StatusMsg:  "Failed to record play: " + err.Error(),
+		}, nil
+	}
+
+	return &pb.RecordPlayResponse{
+		StatusCode:    0,
+		StatusMsg:     "success",
+		PlayCount:     playCount,
+		IsRecorded:    isRecorded,
+		RealPlayCount: realPlayCount,
+	}, nil
+}
+
+// ReportProgress 上报视频观看进度
+func (h *VideoHandler) ReportProgress(ctx context.Context, req *pb.ReportProgressRequest) (*pb.ReportProgressResponse, error) {
+	h.logger.Info("ReportProgress called",
+		zap.Uint32("video_id", req.VideoId),
+		zap.Uint32("user_id", req.UserId),
+		zap.String("session_id", req.SessionId),
+		zap.Float64("current_time", req.CurrentTime),
+		zap.Float64("progress", req.Progress),
+		zap.String("action", req.Action))
+
+	// 调用 videoService 上报进度
+	isComplete, watchTime, err := h.videoService.ReportProgress(ctx, req.VideoId, req.UserId, req.SessionId, req.CurrentTime, req.Progress, req.Action)
+	if err != nil {
+		h.logger.Error("Failed to report progress", zap.Error(err))
+		return &pb.ReportProgressResponse{
+			StatusCode: 500,
+			StatusMsg:  "Failed to report progress: " + err.Error(),
+		}, nil
+	}
+
+	return &pb.ReportProgressResponse{
+		StatusCode: 0,
+		StatusMsg:  "success",
+		IsComplete: isComplete,
+		WatchTime:  watchTime,
+	}, nil
 }
 
 // ==================== 辅助方法 ====================
