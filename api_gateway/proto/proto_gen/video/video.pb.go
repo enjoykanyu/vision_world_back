@@ -7,7 +7,7 @@
 package video
 
 import (
-	user "github.com/vision_world/video_service/proto/proto_gen/user"
+	user "api_gateway/proto/proto_gen/user"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -3779,6 +3779,383 @@ func (x *GetVideoInteractionStatsResponse) GetIsCoined() bool {
 	return false
 }
 
+// 发送弹幕请求
+type SendDanmakuRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	VideoId        uint32                 `protobuf:"varint,1,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"`                       // 视频ID
+	Text           string                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`                                             // 弹幕内容
+	Color          string                 `protobuf:"bytes,3,opt,name=color,proto3" json:"color,omitempty"`                                           // 弹幕颜色，默认为白色
+	VideoTimestamp float32                `protobuf:"fixed32,4,opt,name=video_timestamp,json=videoTimestamp,proto3" json:"video_timestamp,omitempty"` // 视频时间戳（秒）
+	Speed          string                 `protobuf:"bytes,5,opt,name=speed,proto3" json:"speed,omitempty"`                                           // 弹幕速度：slow, normal, fast
+	Token          string                 `protobuf:"bytes,6,opt,name=token,proto3" json:"token,omitempty"`                                           // 用户token
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *SendDanmakuRequest) Reset() {
+	*x = SendDanmakuRequest{}
+	mi := &file_video_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendDanmakuRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendDanmakuRequest) ProtoMessage() {}
+
+func (x *SendDanmakuRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendDanmakuRequest.ProtoReflect.Descriptor instead.
+func (*SendDanmakuRequest) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *SendDanmakuRequest) GetVideoId() uint32 {
+	if x != nil {
+		return x.VideoId
+	}
+	return 0
+}
+
+func (x *SendDanmakuRequest) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *SendDanmakuRequest) GetColor() string {
+	if x != nil {
+		return x.Color
+	}
+	return ""
+}
+
+func (x *SendDanmakuRequest) GetVideoTimestamp() float32 {
+	if x != nil {
+		return x.VideoTimestamp
+	}
+	return 0
+}
+
+func (x *SendDanmakuRequest) GetSpeed() string {
+	if x != nil {
+		return x.Speed
+	}
+	return ""
+}
+
+func (x *SendDanmakuRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+// 发送弹幕响应
+type SendDanmakuResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StatusCode    int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"` // 状态码，0-成功，其他值-失败
+	StatusMsg     string                 `protobuf:"bytes,2,opt,name=status_msg,json=statusMsg,proto3" json:"status_msg,omitempty"`     // 返回状态描述
+	Danmaku       *Danmaku               `protobuf:"bytes,3,opt,name=danmaku,proto3" json:"danmaku,omitempty"`                          // 发送的弹幕信息
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendDanmakuResponse) Reset() {
+	*x = SendDanmakuResponse{}
+	mi := &file_video_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendDanmakuResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendDanmakuResponse) ProtoMessage() {}
+
+func (x *SendDanmakuResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendDanmakuResponse.ProtoReflect.Descriptor instead.
+func (*SendDanmakuResponse) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *SendDanmakuResponse) GetStatusCode() int32 {
+	if x != nil {
+		return x.StatusCode
+	}
+	return 0
+}
+
+func (x *SendDanmakuResponse) GetStatusMsg() string {
+	if x != nil {
+		return x.StatusMsg
+	}
+	return ""
+}
+
+func (x *SendDanmakuResponse) GetDanmaku() *Danmaku {
+	if x != nil {
+		return x.Danmaku
+	}
+	return nil
+}
+
+// 获取弹幕列表请求
+type GetDanmakusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VideoId       uint32                 `protobuf:"varint,1,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"`    // 视频ID
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`                         // 页码，默认1
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"` // 每页数量，默认20
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDanmakusRequest) Reset() {
+	*x = GetDanmakusRequest{}
+	mi := &file_video_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDanmakusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDanmakusRequest) ProtoMessage() {}
+
+func (x *GetDanmakusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDanmakusRequest.ProtoReflect.Descriptor instead.
+func (*GetDanmakusRequest) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{53}
+}
+
+func (x *GetDanmakusRequest) GetVideoId() uint32 {
+	if x != nil {
+		return x.VideoId
+	}
+	return 0
+}
+
+func (x *GetDanmakusRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *GetDanmakusRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+// 获取弹幕列表响应
+type GetDanmakusResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StatusCode    int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"` // 状态码，0-成功，其他值-失败
+	StatusMsg     string                 `protobuf:"bytes,2,opt,name=status_msg,json=statusMsg,proto3" json:"status_msg,omitempty"`     // 返回状态描述
+	Danmakus      []*Danmaku             `protobuf:"bytes,3,rep,name=danmakus,proto3" json:"danmakus,omitempty"`                        // 弹幕列表
+	Total         int32                  `protobuf:"varint,4,opt,name=total,proto3" json:"total,omitempty"`                             // 总数量
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDanmakusResponse) Reset() {
+	*x = GetDanmakusResponse{}
+	mi := &file_video_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDanmakusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDanmakusResponse) ProtoMessage() {}
+
+func (x *GetDanmakusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDanmakusResponse.ProtoReflect.Descriptor instead.
+func (*GetDanmakusResponse) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *GetDanmakusResponse) GetStatusCode() int32 {
+	if x != nil {
+		return x.StatusCode
+	}
+	return 0
+}
+
+func (x *GetDanmakusResponse) GetStatusMsg() string {
+	if x != nil {
+		return x.StatusMsg
+	}
+	return ""
+}
+
+func (x *GetDanmakusResponse) GetDanmakus() []*Danmaku {
+	if x != nil {
+		return x.Danmakus
+	}
+	return nil
+}
+
+func (x *GetDanmakusResponse) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+// 弹幕信息
+type Danmaku struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                                // 弹幕ID
+	UserId         uint32                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                          // 用户ID
+	VideoId        uint32                 `protobuf:"varint,3,opt,name=video_id,json=videoId,proto3" json:"video_id,omitempty"`                       // 视频ID
+	Text           string                 `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`                                             // 弹幕内容
+	Color          string                 `protobuf:"bytes,5,opt,name=color,proto3" json:"color,omitempty"`                                           // 弹幕颜色
+	VideoTimestamp float32                `protobuf:"fixed32,6,opt,name=video_timestamp,json=videoTimestamp,proto3" json:"video_timestamp,omitempty"` // 视频时间戳（秒）
+	Speed          string                 `protobuf:"bytes,7,opt,name=speed,proto3" json:"speed,omitempty"`                                           // 弹幕速度
+	CreatedAt      int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                 // 创建时间戳（秒）
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Danmaku) Reset() {
+	*x = Danmaku{}
+	mi := &file_video_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Danmaku) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Danmaku) ProtoMessage() {}
+
+func (x *Danmaku) ProtoReflect() protoreflect.Message {
+	mi := &file_video_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Danmaku.ProtoReflect.Descriptor instead.
+func (*Danmaku) Descriptor() ([]byte, []int) {
+	return file_video_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *Danmaku) GetId() uint32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Danmaku) GetUserId() uint32 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *Danmaku) GetVideoId() uint32 {
+	if x != nil {
+		return x.VideoId
+	}
+	return 0
+}
+
+func (x *Danmaku) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *Danmaku) GetColor() string {
+	if x != nil {
+		return x.Color
+	}
+	return ""
+}
+
+func (x *Danmaku) GetVideoTimestamp() float32 {
+	if x != nil {
+		return x.VideoTimestamp
+	}
+	return 0
+}
+
+func (x *Danmaku) GetSpeed() string {
+	if x != nil {
+		return x.Speed
+	}
+	return ""
+}
+
+func (x *Danmaku) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
 var File_video_proto protoreflect.FileDescriptor
 
 const file_video_proto_rawDesc = "" +
@@ -4180,7 +4557,41 @@ const file_video_proto_rawDesc = "" +
 	" \x01(\rR\fcommentCount\x12\x19\n" +
 	"\bis_liked\x18\v \x01(\bR\aisLiked\x12!\n" +
 	"\fis_favorited\x18\f \x01(\bR\visFavorited\x12\x1b\n" +
-	"\tis_coined\x18\r \x01(\bR\bisCoined2\x8a\x10\n" +
+	"\tis_coined\x18\r \x01(\bR\bisCoined\"\xae\x01\n" +
+	"\x12SendDanmakuRequest\x12\x19\n" +
+	"\bvideo_id\x18\x01 \x01(\rR\avideoId\x12\x12\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\x12\x14\n" +
+	"\x05color\x18\x03 \x01(\tR\x05color\x12'\n" +
+	"\x0fvideo_timestamp\x18\x04 \x01(\x02R\x0evideoTimestamp\x12\x14\n" +
+	"\x05speed\x18\x05 \x01(\tR\x05speed\x12\x14\n" +
+	"\x05token\x18\x06 \x01(\tR\x05token\"\x83\x01\n" +
+	"\x13SendDanmakuResponse\x12\x1f\n" +
+	"\vstatus_code\x18\x01 \x01(\x05R\n" +
+	"statusCode\x12\x1d\n" +
+	"\n" +
+	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x12,\n" +
+	"\adanmaku\x18\x03 \x01(\v2\x12.rpc.video.DanmakuR\adanmaku\"`\n" +
+	"\x12GetDanmakusRequest\x12\x19\n" +
+	"\bvideo_id\x18\x01 \x01(\rR\avideoId\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"\x9b\x01\n" +
+	"\x13GetDanmakusResponse\x12\x1f\n" +
+	"\vstatus_code\x18\x01 \x01(\x05R\n" +
+	"statusCode\x12\x1d\n" +
+	"\n" +
+	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x12.\n" +
+	"\bdanmakus\x18\x03 \x03(\v2\x12.rpc.video.DanmakuR\bdanmakus\x12\x14\n" +
+	"\x05total\x18\x04 \x01(\x05R\x05total\"\xd5\x01\n" +
+	"\aDanmaku\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\rR\x02id\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\rR\x06userId\x12\x19\n" +
+	"\bvideo_id\x18\x03 \x01(\rR\avideoId\x12\x12\n" +
+	"\x04text\x18\x04 \x01(\tR\x04text\x12\x14\n" +
+	"\x05color\x18\x05 \x01(\tR\x05color\x12'\n" +
+	"\x0fvideo_timestamp\x18\x06 \x01(\x02R\x0evideoTimestamp\x12\x14\n" +
+	"\x05speed\x18\a \x01(\tR\x05speed\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\b \x01(\x03R\tcreatedAt2\xa6\x11\n" +
 	"\fVideoService\x12L\n" +
 	"\vUploadVideo\x12\x1d.rpc.video.UploadVideoRequest\x1a\x1e.rpc.video.UploadVideoResponse\x12^\n" +
 	"\x11CreateVideoRecord\x12#.rpc.video.CreateVideoRecordRequest\x1a$.rpc.video.CreateVideoRecordResponse\x12O\n" +
@@ -4207,7 +4618,9 @@ const file_video_proto_rawDesc = "" +
 	"\x10GetVideoComments\x12\".rpc.video.GetVideoCommentsRequest\x1a#.rpc.video.GetVideoCommentsResponse\x12I\n" +
 	"\n" +
 	"RecordPlay\x12\x1c.rpc.video.RecordPlayRequest\x1a\x1d.rpc.video.RecordPlayResponse\x12U\n" +
-	"\x0eReportProgress\x12 .rpc.video.ReportProgressRequest\x1a!.rpc.video.ReportProgressResponseB=Z;github.com/vision_world/video_service/proto/proto_gen/videob\x06proto3"
+	"\x0eReportProgress\x12 .rpc.video.ReportProgressRequest\x1a!.rpc.video.ReportProgressResponse\x12L\n" +
+	"\vSendDanmaku\x12\x1d.rpc.video.SendDanmakuRequest\x1a\x1e.rpc.video.SendDanmakuResponse\x12L\n" +
+	"\vGetDanmakus\x12\x1d.rpc.video.GetDanmakusRequest\x1a\x1e.rpc.video.GetDanmakusResponseB=Z;github.com/vision_world/video_service/proto/proto_gen/videob\x06proto3"
 
 var (
 	file_video_proto_rawDescOnce sync.Once
@@ -4221,7 +4634,7 @@ func file_video_proto_rawDescGZIP() []byte {
 	return file_video_proto_rawDescData
 }
 
-var file_video_proto_msgTypes = make([]protoimpl.MessageInfo, 51)
+var file_video_proto_msgTypes = make([]protoimpl.MessageInfo, 56)
 var file_video_proto_goTypes = []any{
 	(*VideoRequest)(nil),                     // 0: rpc.video.VideoRequest
 	(*VideoResponse)(nil),                    // 1: rpc.video.VideoResponse
@@ -4274,7 +4687,12 @@ var file_video_proto_goTypes = []any{
 	(*ReportProgressResponse)(nil),           // 48: rpc.video.ReportProgressResponse
 	(*GetVideoInteractionStatsRequest)(nil),  // 49: rpc.video.GetVideoInteractionStatsRequest
 	(*GetVideoInteractionStatsResponse)(nil), // 50: rpc.video.GetVideoInteractionStatsResponse
-	(*user.User)(nil),                        // 51: rpc.user.User
+	(*SendDanmakuRequest)(nil),               // 51: rpc.video.SendDanmakuRequest
+	(*SendDanmakuResponse)(nil),              // 52: rpc.video.SendDanmakuResponse
+	(*GetDanmakusRequest)(nil),               // 53: rpc.video.GetDanmakusRequest
+	(*GetDanmakusResponse)(nil),              // 54: rpc.video.GetDanmakusResponse
+	(*Danmaku)(nil),                          // 55: rpc.video.Danmaku
+	(*user.User)(nil),                        // 56: rpc.user.User
 }
 var file_video_proto_depIdxs = []int32{
 	37, // 0: rpc.video.VideoResponse.video:type_name -> rpc.video.Video
@@ -4285,66 +4703,72 @@ var file_video_proto_depIdxs = []int32{
 	37, // 5: rpc.video.GetUserLikedVideosResponse.videos:type_name -> rpc.video.Video
 	38, // 6: rpc.video.CommentResponse.comment:type_name -> rpc.video.Comment
 	38, // 7: rpc.video.GetVideoCommentsResponse.comments:type_name -> rpc.video.Comment
-	51, // 8: rpc.video.Video.author:type_name -> rpc.user.User
-	51, // 9: rpc.video.Comment.user:type_name -> rpc.user.User
-	51, // 10: rpc.video.Comment.reply_to_user:type_name -> rpc.user.User
+	56, // 8: rpc.video.Video.author:type_name -> rpc.user.User
+	56, // 9: rpc.video.Comment.user:type_name -> rpc.user.User
+	56, // 10: rpc.video.Comment.reply_to_user:type_name -> rpc.user.User
 	38, // 11: rpc.video.Comment.replies:type_name -> rpc.video.Comment
 	37, // 12: rpc.video.GetHotVideosResponse.videos:type_name -> rpc.video.Video
 	37, // 13: rpc.video.GetCategoryVideosResponse.videos:type_name -> rpc.video.Video
 	37, // 14: rpc.video.SearchVideosResponse.videos:type_name -> rpc.video.Video
-	2,  // 15: rpc.video.VideoService.UploadVideo:input_type -> rpc.video.UploadVideoRequest
-	4,  // 16: rpc.video.VideoService.CreateVideoRecord:input_type -> rpc.video.CreateVideoRecordRequest
-	6,  // 17: rpc.video.VideoService.PublishVideo:input_type -> rpc.video.PublishVideoRequest
-	8,  // 18: rpc.video.VideoService.DeleteVideo:input_type -> rpc.video.DeleteVideoRequest
-	10, // 19: rpc.video.VideoService.RetryTranscode:input_type -> rpc.video.RetryTranscodeRequest
-	12, // 20: rpc.video.VideoService.GetVideoInfo:input_type -> rpc.video.GetVideoInfoRequest
-	13, // 21: rpc.video.VideoService.GetVideoInfos:input_type -> rpc.video.GetVideoInfosRequest
-	15, // 22: rpc.video.VideoService.GetUserVideos:input_type -> rpc.video.GetUserVideosRequest
-	17, // 23: rpc.video.VideoService.GetRecommendVideos:input_type -> rpc.video.GetRecommendVideosRequest
-	19, // 24: rpc.video.VideoService.GetFollowVideos:input_type -> rpc.video.GetFollowVideosRequest
-	39, // 25: rpc.video.VideoService.GetHotVideos:input_type -> rpc.video.GetHotVideosRequest
-	41, // 26: rpc.video.VideoService.GetCategoryVideos:input_type -> rpc.video.GetCategoryVideosRequest
-	43, // 27: rpc.video.VideoService.SearchVideos:input_type -> rpc.video.SearchVideosRequest
-	21, // 28: rpc.video.VideoService.LikeVideo:input_type -> rpc.video.LikeVideoRequest
-	23, // 29: rpc.video.VideoService.FavoriteVideo:input_type -> rpc.video.FavoriteVideoRequest
-	25, // 30: rpc.video.VideoService.GetUserLikedVideos:input_type -> rpc.video.GetUserLikedVideosRequest
-	27, // 31: rpc.video.VideoService.ShareVideo:input_type -> rpc.video.ShareVideoRequest
-	49, // 32: rpc.video.VideoService.GetVideoInteractionStats:input_type -> rpc.video.GetVideoInteractionStatsRequest
-	29, // 33: rpc.video.VideoService.CommentVideo:input_type -> rpc.video.CommentRequest
-	31, // 34: rpc.video.VideoService.DeleteComment:input_type -> rpc.video.DeleteCommentRequest
-	33, // 35: rpc.video.VideoService.LikeComment:input_type -> rpc.video.LikeCommentRequest
-	35, // 36: rpc.video.VideoService.GetVideoComments:input_type -> rpc.video.GetVideoCommentsRequest
-	45, // 37: rpc.video.VideoService.RecordPlay:input_type -> rpc.video.RecordPlayRequest
-	47, // 38: rpc.video.VideoService.ReportProgress:input_type -> rpc.video.ReportProgressRequest
-	3,  // 39: rpc.video.VideoService.UploadVideo:output_type -> rpc.video.UploadVideoResponse
-	5,  // 40: rpc.video.VideoService.CreateVideoRecord:output_type -> rpc.video.CreateVideoRecordResponse
-	7,  // 41: rpc.video.VideoService.PublishVideo:output_type -> rpc.video.PublishVideoResponse
-	9,  // 42: rpc.video.VideoService.DeleteVideo:output_type -> rpc.video.DeleteVideoResponse
-	11, // 43: rpc.video.VideoService.RetryTranscode:output_type -> rpc.video.RetryTranscodeResponse
-	1,  // 44: rpc.video.VideoService.GetVideoInfo:output_type -> rpc.video.VideoResponse
-	14, // 45: rpc.video.VideoService.GetVideoInfos:output_type -> rpc.video.GetVideoInfosResponse
-	16, // 46: rpc.video.VideoService.GetUserVideos:output_type -> rpc.video.GetUserVideosResponse
-	18, // 47: rpc.video.VideoService.GetRecommendVideos:output_type -> rpc.video.GetRecommendVideosResponse
-	20, // 48: rpc.video.VideoService.GetFollowVideos:output_type -> rpc.video.GetFollowVideosResponse
-	40, // 49: rpc.video.VideoService.GetHotVideos:output_type -> rpc.video.GetHotVideosResponse
-	42, // 50: rpc.video.VideoService.GetCategoryVideos:output_type -> rpc.video.GetCategoryVideosResponse
-	44, // 51: rpc.video.VideoService.SearchVideos:output_type -> rpc.video.SearchVideosResponse
-	22, // 52: rpc.video.VideoService.LikeVideo:output_type -> rpc.video.LikeVideoResponse
-	24, // 53: rpc.video.VideoService.FavoriteVideo:output_type -> rpc.video.FavoriteVideoResponse
-	26, // 54: rpc.video.VideoService.GetUserLikedVideos:output_type -> rpc.video.GetUserLikedVideosResponse
-	28, // 55: rpc.video.VideoService.ShareVideo:output_type -> rpc.video.ShareVideoResponse
-	50, // 56: rpc.video.VideoService.GetVideoInteractionStats:output_type -> rpc.video.GetVideoInteractionStatsResponse
-	30, // 57: rpc.video.VideoService.CommentVideo:output_type -> rpc.video.CommentResponse
-	32, // 58: rpc.video.VideoService.DeleteComment:output_type -> rpc.video.DeleteCommentResponse
-	34, // 59: rpc.video.VideoService.LikeComment:output_type -> rpc.video.LikeCommentResponse
-	36, // 60: rpc.video.VideoService.GetVideoComments:output_type -> rpc.video.GetVideoCommentsResponse
-	46, // 61: rpc.video.VideoService.RecordPlay:output_type -> rpc.video.RecordPlayResponse
-	48, // 62: rpc.video.VideoService.ReportProgress:output_type -> rpc.video.ReportProgressResponse
-	39, // [39:63] is the sub-list for method output_type
-	15, // [15:39] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	55, // 15: rpc.video.SendDanmakuResponse.danmaku:type_name -> rpc.video.Danmaku
+	55, // 16: rpc.video.GetDanmakusResponse.danmakus:type_name -> rpc.video.Danmaku
+	2,  // 17: rpc.video.VideoService.UploadVideo:input_type -> rpc.video.UploadVideoRequest
+	4,  // 18: rpc.video.VideoService.CreateVideoRecord:input_type -> rpc.video.CreateVideoRecordRequest
+	6,  // 19: rpc.video.VideoService.PublishVideo:input_type -> rpc.video.PublishVideoRequest
+	8,  // 20: rpc.video.VideoService.DeleteVideo:input_type -> rpc.video.DeleteVideoRequest
+	10, // 21: rpc.video.VideoService.RetryTranscode:input_type -> rpc.video.RetryTranscodeRequest
+	12, // 22: rpc.video.VideoService.GetVideoInfo:input_type -> rpc.video.GetVideoInfoRequest
+	13, // 23: rpc.video.VideoService.GetVideoInfos:input_type -> rpc.video.GetVideoInfosRequest
+	15, // 24: rpc.video.VideoService.GetUserVideos:input_type -> rpc.video.GetUserVideosRequest
+	17, // 25: rpc.video.VideoService.GetRecommendVideos:input_type -> rpc.video.GetRecommendVideosRequest
+	19, // 26: rpc.video.VideoService.GetFollowVideos:input_type -> rpc.video.GetFollowVideosRequest
+	39, // 27: rpc.video.VideoService.GetHotVideos:input_type -> rpc.video.GetHotVideosRequest
+	41, // 28: rpc.video.VideoService.GetCategoryVideos:input_type -> rpc.video.GetCategoryVideosRequest
+	43, // 29: rpc.video.VideoService.SearchVideos:input_type -> rpc.video.SearchVideosRequest
+	21, // 30: rpc.video.VideoService.LikeVideo:input_type -> rpc.video.LikeVideoRequest
+	23, // 31: rpc.video.VideoService.FavoriteVideo:input_type -> rpc.video.FavoriteVideoRequest
+	25, // 32: rpc.video.VideoService.GetUserLikedVideos:input_type -> rpc.video.GetUserLikedVideosRequest
+	27, // 33: rpc.video.VideoService.ShareVideo:input_type -> rpc.video.ShareVideoRequest
+	49, // 34: rpc.video.VideoService.GetVideoInteractionStats:input_type -> rpc.video.GetVideoInteractionStatsRequest
+	29, // 35: rpc.video.VideoService.CommentVideo:input_type -> rpc.video.CommentRequest
+	31, // 36: rpc.video.VideoService.DeleteComment:input_type -> rpc.video.DeleteCommentRequest
+	33, // 37: rpc.video.VideoService.LikeComment:input_type -> rpc.video.LikeCommentRequest
+	35, // 38: rpc.video.VideoService.GetVideoComments:input_type -> rpc.video.GetVideoCommentsRequest
+	45, // 39: rpc.video.VideoService.RecordPlay:input_type -> rpc.video.RecordPlayRequest
+	47, // 40: rpc.video.VideoService.ReportProgress:input_type -> rpc.video.ReportProgressRequest
+	51, // 41: rpc.video.VideoService.SendDanmaku:input_type -> rpc.video.SendDanmakuRequest
+	53, // 42: rpc.video.VideoService.GetDanmakus:input_type -> rpc.video.GetDanmakusRequest
+	3,  // 43: rpc.video.VideoService.UploadVideo:output_type -> rpc.video.UploadVideoResponse
+	5,  // 44: rpc.video.VideoService.CreateVideoRecord:output_type -> rpc.video.CreateVideoRecordResponse
+	7,  // 45: rpc.video.VideoService.PublishVideo:output_type -> rpc.video.PublishVideoResponse
+	9,  // 46: rpc.video.VideoService.DeleteVideo:output_type -> rpc.video.DeleteVideoResponse
+	11, // 47: rpc.video.VideoService.RetryTranscode:output_type -> rpc.video.RetryTranscodeResponse
+	1,  // 48: rpc.video.VideoService.GetVideoInfo:output_type -> rpc.video.VideoResponse
+	14, // 49: rpc.video.VideoService.GetVideoInfos:output_type -> rpc.video.GetVideoInfosResponse
+	16, // 50: rpc.video.VideoService.GetUserVideos:output_type -> rpc.video.GetUserVideosResponse
+	18, // 51: rpc.video.VideoService.GetRecommendVideos:output_type -> rpc.video.GetRecommendVideosResponse
+	20, // 52: rpc.video.VideoService.GetFollowVideos:output_type -> rpc.video.GetFollowVideosResponse
+	40, // 53: rpc.video.VideoService.GetHotVideos:output_type -> rpc.video.GetHotVideosResponse
+	42, // 54: rpc.video.VideoService.GetCategoryVideos:output_type -> rpc.video.GetCategoryVideosResponse
+	44, // 55: rpc.video.VideoService.SearchVideos:output_type -> rpc.video.SearchVideosResponse
+	22, // 56: rpc.video.VideoService.LikeVideo:output_type -> rpc.video.LikeVideoResponse
+	24, // 57: rpc.video.VideoService.FavoriteVideo:output_type -> rpc.video.FavoriteVideoResponse
+	26, // 58: rpc.video.VideoService.GetUserLikedVideos:output_type -> rpc.video.GetUserLikedVideosResponse
+	28, // 59: rpc.video.VideoService.ShareVideo:output_type -> rpc.video.ShareVideoResponse
+	50, // 60: rpc.video.VideoService.GetVideoInteractionStats:output_type -> rpc.video.GetVideoInteractionStatsResponse
+	30, // 61: rpc.video.VideoService.CommentVideo:output_type -> rpc.video.CommentResponse
+	32, // 62: rpc.video.VideoService.DeleteComment:output_type -> rpc.video.DeleteCommentResponse
+	34, // 63: rpc.video.VideoService.LikeComment:output_type -> rpc.video.LikeCommentResponse
+	36, // 64: rpc.video.VideoService.GetVideoComments:output_type -> rpc.video.GetVideoCommentsResponse
+	46, // 65: rpc.video.VideoService.RecordPlay:output_type -> rpc.video.RecordPlayResponse
+	48, // 66: rpc.video.VideoService.ReportProgress:output_type -> rpc.video.ReportProgressResponse
+	52, // 67: rpc.video.VideoService.SendDanmaku:output_type -> rpc.video.SendDanmakuResponse
+	54, // 68: rpc.video.VideoService.GetDanmakus:output_type -> rpc.video.GetDanmakusResponse
+	43, // [43:69] is the sub-list for method output_type
+	17, // [17:43] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_video_proto_init() }
@@ -4365,7 +4789,7 @@ func file_video_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_video_proto_rawDesc), len(file_video_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   51,
+			NumMessages:   56,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

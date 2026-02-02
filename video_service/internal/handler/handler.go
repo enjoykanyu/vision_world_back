@@ -22,6 +22,7 @@ import (
 	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
 	auditpb "github.com/vision_world/video_service/proto/proto_gen/audit"
+	"github.com/vision_world/video_service/proto/proto_gen/user"
 	userpb "github.com/vision_world/video_service/proto/proto_gen/user"
 	pb "github.com/vision_world/video_service/proto/proto_gen/video"
 	"google.golang.org/grpc"
@@ -1468,4 +1469,57 @@ func (h *VideoHandler) convertToProtoVideoDetail(videoDetail *model.VideoDetail)
 		Type:       &videoType,
 		Source:     &videoDetail.Source,
 	}
+}
+
+// ==================== 弹幕相关接口 ====================
+
+// SendDanmaku 发送弹幕
+func (h *VideoHandler) SendDanmaku(ctx context.Context, req *pb.SendDanmakuRequest) (*pb.SendDanmakuResponse, error) {
+	h.logger.Info("SendDanmaku called", zap.Uint32("video_id", req.VideoId))
+
+	// 验证token获取用户ID
+	// 调用用户服务验证token
+	verifyResp, err := h.userClient.VerifyToken(ctx, &user.VerifyTokenRequest{Token: req.Token})
+	if err != nil || verifyResp.StatusCode != 0 || !verifyResp.Valid {
+		return &pb.SendDanmakuResponse{
+			StatusCode: 401,
+			StatusMsg:  "token无效",
+		}, err
+	}
+
+	userID := verifyResp.UserId
+
+	// TODO: 调用弹幕服务存储弹幕
+	// 这里暂时返回模拟数据
+	now := time.Now().Unix()
+	danmaku := &pb.Danmaku{
+		Id:             uint32(now), // 使用时间戳作为临时ID
+		UserId:         userID,
+		VideoId:        req.VideoId,
+		Text:           req.Text,
+		Color:          req.Color,
+		VideoTimestamp: req.VideoTimestamp,
+		Speed:          req.Speed,
+		CreatedAt:      now,
+	}
+
+	return &pb.SendDanmakuResponse{
+		StatusCode: 0,
+		StatusMsg:  "success",
+		Danmaku:    danmaku,
+	}, nil
+}
+
+// GetDanmakus 获取视频弹幕列表
+func (h *VideoHandler) GetDanmakus(ctx context.Context, req *pb.GetDanmakusRequest) (*pb.GetDanmakusResponse, error) {
+	h.logger.Info("GetDanmakus called", zap.Uint32("video_id", req.VideoId))
+
+	// TODO: 从弹幕服务获取弹幕列表
+	// 这里暂时返回空列表
+	return &pb.GetDanmakusResponse{
+		StatusCode: 0,
+		StatusMsg:  "success",
+		Danmakus:   []*pb.Danmaku{},
+		Total:      0,
+	}, nil
 }

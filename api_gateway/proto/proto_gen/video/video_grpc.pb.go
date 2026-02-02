@@ -43,6 +43,8 @@ const (
 	VideoService_GetVideoComments_FullMethodName         = "/rpc.video.VideoService/GetVideoComments"
 	VideoService_RecordPlay_FullMethodName               = "/rpc.video.VideoService/RecordPlay"
 	VideoService_ReportProgress_FullMethodName           = "/rpc.video.VideoService/ReportProgress"
+	VideoService_SendDanmaku_FullMethodName              = "/rpc.video.VideoService/SendDanmaku"
+	VideoService_GetDanmakus_FullMethodName              = "/rpc.video.VideoService/GetDanmakus"
 )
 
 // VideoServiceClient is the client API for VideoService service.
@@ -79,6 +81,9 @@ type VideoServiceClient interface {
 	// 播放量统计相关
 	RecordPlay(ctx context.Context, in *RecordPlayRequest, opts ...grpc.CallOption) (*RecordPlayResponse, error)
 	ReportProgress(ctx context.Context, in *ReportProgressRequest, opts ...grpc.CallOption) (*ReportProgressResponse, error)
+	// 弹幕相关
+	SendDanmaku(ctx context.Context, in *SendDanmakuRequest, opts ...grpc.CallOption) (*SendDanmakuResponse, error)
+	GetDanmakus(ctx context.Context, in *GetDanmakusRequest, opts ...grpc.CallOption) (*GetDanmakusResponse, error)
 }
 
 type videoServiceClient struct {
@@ -305,6 +310,24 @@ func (c *videoServiceClient) ReportProgress(ctx context.Context, in *ReportProgr
 	return out, nil
 }
 
+func (c *videoServiceClient) SendDanmaku(ctx context.Context, in *SendDanmakuRequest, opts ...grpc.CallOption) (*SendDanmakuResponse, error) {
+	out := new(SendDanmakuResponse)
+	err := c.cc.Invoke(ctx, VideoService_SendDanmaku_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoServiceClient) GetDanmakus(ctx context.Context, in *GetDanmakusRequest, opts ...grpc.CallOption) (*GetDanmakusResponse, error) {
+	out := new(GetDanmakusResponse)
+	err := c.cc.Invoke(ctx, VideoService_GetDanmakus_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VideoServiceServer is the server API for VideoService service.
 // All implementations must embed UnimplementedVideoServiceServer
 // for forward compatibility
@@ -339,6 +362,9 @@ type VideoServiceServer interface {
 	// 播放量统计相关
 	RecordPlay(context.Context, *RecordPlayRequest) (*RecordPlayResponse, error)
 	ReportProgress(context.Context, *ReportProgressRequest) (*ReportProgressResponse, error)
+	// 弹幕相关
+	SendDanmaku(context.Context, *SendDanmakuRequest) (*SendDanmakuResponse, error)
+	GetDanmakus(context.Context, *GetDanmakusRequest) (*GetDanmakusResponse, error)
 	mustEmbedUnimplementedVideoServiceServer()
 }
 
@@ -417,6 +443,12 @@ func (UnimplementedVideoServiceServer) RecordPlay(context.Context, *RecordPlayRe
 }
 func (UnimplementedVideoServiceServer) ReportProgress(context.Context, *ReportProgressRequest) (*ReportProgressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportProgress not implemented")
+}
+func (UnimplementedVideoServiceServer) SendDanmaku(context.Context, *SendDanmakuRequest) (*SendDanmakuResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendDanmaku not implemented")
+}
+func (UnimplementedVideoServiceServer) GetDanmakus(context.Context, *GetDanmakusRequest) (*GetDanmakusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDanmakus not implemented")
 }
 func (UnimplementedVideoServiceServer) mustEmbedUnimplementedVideoServiceServer() {}
 
@@ -863,6 +895,42 @@ func _VideoService_ReportProgress_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VideoService_SendDanmaku_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendDanmakuRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).SendDanmaku(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_SendDanmaku_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).SendDanmaku(ctx, req.(*SendDanmakuRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_GetDanmakus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDanmakusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).GetDanmakus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_GetDanmakus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).GetDanmakus(ctx, req.(*GetDanmakusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VideoService_ServiceDesc is the grpc.ServiceDesc for VideoService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -965,6 +1033,14 @@ var VideoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportProgress",
 			Handler:    _VideoService_ReportProgress_Handler,
+		},
+		{
+			MethodName: "SendDanmaku",
+			Handler:    _VideoService_SendDanmaku_Handler,
+		},
+		{
+			MethodName: "GetDanmakus",
+			Handler:    _VideoService_GetDanmakus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

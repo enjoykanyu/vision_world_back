@@ -2354,6 +2354,65 @@ func (h *VideoHandler) ReportVideoProgress(c *gin.Context) {
 	})
 }
 
+// SendDanmaku 发送弹幕
+func (h *VideoHandler) SendDanmaku(c *gin.Context) {
+	// 获取请求参数
+	var req struct {
+		VideoID        string  `json:"video_id" binding:"required"`
+		Text           string  `json:"text" binding:"required,max=200"`
+		Color          string  `json:"color"`
+		VideoTimestamp float32 `json:"video_timestamp" binding:"required"`
+		Speed          string  `json:"speed"`
+	}
+
+	// 绑定请求参数
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request parameters: " + err.Error()})
+		return
+	}
+
+	// 获取视频服务客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		log.Printf("Failed to get video service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"code":    503,
+			"message": "Video service temporarily unavailable",
+		})
+		return
+	}
+
+	// 调用弹幕服务的SendDanmaku接口
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	videoIDUint64, err := strconv.ParseUint(req.VideoID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    400,
+			"message": "Invalid video_id format",
+		})
+		return
+	}
+	videoID := uint32(videoIDUint64)
+	grpcReq := &pb.SendDanmakuRequest{
+		VideoId:        videoID,
+		Text:           req.Text,
+		Color:          req.Color,
+		VideoTimestamp: req.VideoTimestamp,
+		Speed:          req.Speed,
+	}
+
+	resp, err := videoClient.SendDanmaku(ctx, grpcReq)
+
+	if err != nil {
+		log.Printf("Failed to send danmaku: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send danmaku"})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
 func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandler) {
 	// 分片上传路由组 - 需要认证
@@ -2402,6 +2461,18 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 			// 播放量统计相关接口
 			authGroup.POST("/play", videoHandler.RecordVideoPlay)
 			authGroup.POST("/progress", videoHandler.ReportVideoProgress)
+		}
+	}
+	danmakuGroup := router.Group("/api/danmaku")
+	{
+		// 公开路由
+		//danmakuGroup.GET("/:video_id", videoHandler.GetDanmakus)
+
+		// 需要认证的路由
+		authGroup := danmakuGroup.Group("/")
+		authGroup.Use(middleware.RequireAuthMiddleware())
+		{
+			authGroup.POST("/send", videoHandler.SendDanmaku)
 		}
 	}
 }

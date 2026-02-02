@@ -248,3 +248,19 @@ func (c *VideoServiceClient) GetVideoInteractionStats(ctx context.Context, req *
 	}
 	return c.client.GetVideoInteractionStats(ctx, req)
 }
+
+// SendDanmaku 发送弹幕
+func (c *VideoServiceClient) SendDanmaku(ctx context.Context, req *videopb.SendDanmakuRequest) (*videopb.SendDanmakuResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.SendDanmaku(ctx, req)
+}
+
+// GetDanmakus 获取视频弹幕列表
+func (c *VideoServiceClient) GetDanmakus(ctx context.Context, req *videopb.GetDanmakusRequest) (*videopb.GetDanmakusResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.GetDanmakus(ctx, req)
+}

@@ -368,6 +368,10 @@ service VideoService {
   // 播放量统计相关
   rpc RecordPlay(RecordPlayRequest) returns(RecordPlayResponse);
   rpc ReportProgress(ReportProgressRequest) returns(ReportProgressResponse);
+
+  // 弹幕相关
+  rpc SendDanmaku(SendDanmakuRequest) returns(SendDanmakuResponse);
+  rpc GetDanmakus(GetDanmakusRequest) returns(GetDanmakusResponse);
 }
 
 // 获取热门视频列表请求
@@ -475,4 +479,50 @@ message GetVideoInteractionStatsResponse {
   bool is_liked = 11; // 当前用户是否已点赞
   bool is_favorited = 12; // 当前用户是否已收藏
   bool is_coined = 13; // 当前用户是否已投币
+}
+
+// ==================== 弹幕相关接口 ====================
+
+// 发送弹幕请求
+message SendDanmakuRequest {
+  uint32 video_id = 1; // 视频ID
+  string text = 2; // 弹幕内容
+  string color = 3; // 弹幕颜色，默认为白色
+  float video_timestamp = 4; // 视频时间戳（秒）
+  string speed = 5; // 弹幕速度：slow, normal, fast
+  string token = 6; // 用户token
+}
+
+// 发送弹幕响应
+message SendDanmakuResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  Danmaku danmaku = 3; // 发送的弹幕信息
+}
+
+// 获取弹幕列表请求
+message GetDanmakusRequest {
+  uint32 video_id = 1; // 视频ID
+  int32 page = 2; // 页码，默认1
+  int32 page_size = 3; // 每页数量，默认20
+}
+
+// 获取弹幕列表响应
+message GetDanmakusResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  repeated Danmaku danmakus = 3; // 弹幕列表
+  int32 total = 4; // 总数量
+}
+
+// 弹幕信息
+message Danmaku {
+  uint32 id = 1; // 弹幕ID
+  uint32 user_id = 2; // 用户ID
+  uint32 video_id = 3; // 视频ID
+  string text = 4; // 弹幕内容
+  string color = 5; // 弹幕颜色
+  float video_timestamp = 6; // 视频时间戳（秒）
+  string speed = 7; // 弹幕速度
+  int64 created_at = 8; // 创建时间戳（秒）
 }
