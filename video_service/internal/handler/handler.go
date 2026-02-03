@@ -1488,9 +1488,27 @@ func (h *VideoHandler) SendDanmaku(ctx context.Context, req *pb.SendDanmakuReque
 	}
 
 	userID := verifyResp.UserId
+	// userID, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+	if err != nil {
+		h.logger.Error("Failed to verify token", zap.Error(err))
+		return &pb.SendDanmakuResponse{
+			StatusCode: 401,
+			StatusMsg:  "未登录或token无效",
+		}, nil
+	}
 
 	// TODO: 调用弹幕服务存储弹幕
+	//调用service->db
 	// 这里暂时返回模拟数据
+	videoID, videoURL, video, err := h.videoService.SendDanmaku(ctx, userID, req.VideoId, req.Text, req.Color, req.VideoTimestamp, req.Speed)
+	if err != nil {
+		h.logger.Error("Failed to send danmaku", zap.Error(err))
+		return &pb.SendDanmakuResponse{
+			StatusCode: 500,
+			StatusMsg:  "发送弹幕失败",
+		}, err
+	}
+
 	now := time.Now().Unix()
 	danmaku := &pb.Danmaku{
 		Id:             uint32(now), // 使用时间戳作为临时ID

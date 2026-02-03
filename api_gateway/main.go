@@ -14,21 +14,10 @@ import (
 	ginprometheus "github.com/zsais/go-gin-prometheus"
 
 	"api_gateway/config"
-	"api_gateway/middleware"
 	"api_gateway/pkg/minio"
 	"api_gateway/pkg/redis"
-	"api_gateway/routes"
+	"api_gateway/router"
 )
-
-// EtcdConfig etcd配置
-type EtcdConfig struct {
-	Endpoints []string `mapstructure:"endpoints"`
-}
-
-// Config 应用配置
-type Config struct {
-	Etcd EtcdConfig `mapstructure:"etcd"`
-}
 
 func main() {
 	// 加载配置
@@ -66,111 +55,29 @@ func main() {
 	defer minioClient.Close()
 
 	// 创建Gin引擎，设置最大请求体大小为500MB以支持大文件上传
-	router := gin.New()
-	router.MaxMultipartMemory = 500 << 20 // 500 MB
+	engine := gin.New()
+	engine.MaxMultipartMemory = 500 << 20 // 500 MB
 
 	// 初始化Prometheus监控
 	p := ginprometheus.NewPrometheus("vision_world_gateway")
-	p.Use(router)
+	p.Use(engine)
 
-	// 初始化统一鉴权（基于 etcd 的 user-service 验证）
-	middleware.InitAuth(cfg.Etcd.Endpoints)
-
-	// 添加中间件（将鉴权放在业务路由前，但不使用全局鉴权）
-	router.Use(middleware.MetricsMiddleware())  // 自定义监控中间件
-	router.Use(middleware.LoggerMiddleware())   // 日志中间件
-	router.Use(middleware.RecoveryMiddleware()) // 恢复中间件
-	router.Use(middleware.CORSMiddleware())     // CORS中间件
-	// 移除全局鉴权中间件，改为在需要认证的路由组中使用
-	// router.Use(middleware.RequireAuthMiddleware()) // 统一鉴权中间件
-
-	// 健康检查路由
-	router.GET("/health", middleware.HealthCheck())
-
-	// Grafana健康检查路由
-	router.GET("/grafana/health", middleware.GrafanaHealthCheck())
-
-	// 注册用户服务路由
-	userHandler, err := routes.NewUserHandler(cfg.Etcd.Endpoints)
+	// 创建路由管理器（内部会注册所有中间件和路由）
+	r, err := router.NewRouter(engine, cfg.Etcd.Endpoints, minioClient, cfg.MinIO.BucketName)
 	if err != nil {
-		log.Fatalf("Failed to connect to user service: %v", err)
+		log.Fatalf("Failed to create router: %v", err)
 	}
-	defer userHandler.Close()
-
-	// 注册直播服务路由
-	liveHandler, err := routes.NewLiveHandler(cfg.Etcd.Endpoints)
-	if err != nil {
-		log.Fatalf("Failed to connect to live service: %v", err)
-	}
-	defer liveHandler.Close()
-
-	// 注册视频服务路由
-	videoHandler, err := routes.NewVideoHandler(cfg.Etcd.Endpoints, minioClient, cfg.MinIO.BucketName)
-	if err != nil {
-		log.Fatalf("Failed to connect to video service: %v", err)
-	}
-	defer videoHandler.Close()
-
-	// 注册视频相关路由
-	routes.RegisterVideoRoutesWithHandler(router, videoHandler)
-
-	//// 注册视频上传路由（全局鉴权中间件已生效，无需重复添加）
-	//router.POST("/api/video/upload", videoHandler.HandleVideoUpload)
-	//router.POST("/api/video/publish", videoHandler.HandleVideoPublish)
-
-	// 注册用户相关路由
-	router.POST("/api/user/login/phone", userHandler.PhoneLogin)
-	router.POST("/api/user/login/code", userHandler.CodeLogin)
-	router.POST("/api/user/sms/send", userHandler.SendSmsCode)
-	router.GET("/api/user/info/:id", userHandler.GetUserInfo)
-	// 添加Token验证路由
-	router.POST("/api/user/token/verify", userHandler.VerifyToken)
-
-	// 添加认证相关路由，与前端API路径保持一致
-	router.POST("/api/auth/login", userHandler.CodeLogin) // 使用验证码登录接口
-	router.POST("/api/auth/logout", userHandler.Logout)
-	router.POST("/api/auth/refresh", userHandler.RefreshToken)
-	router.GET("/api/auth/userinfo", userHandler.GetUserInfo)
-	// 添加认证相关的Token验证路由
-	router.POST("/api/auth/token/verify", userHandler.VerifyToken)
-
-	// 添加用户信息更新路由
-	router.POST("/api/user/profile/update", userHandler.UpdateUserInfo)
-
-	// 添加头像上传路由
-	router.POST("/api/upload/avatar", userHandler.UploadAvatar)
-
-	// 注册直播相关路由
-	router.POST("/api/live/start", liveHandler.StartLive)
-	router.POST("/api/live/stop", liveHandler.StopLive)
-	router.GET("/api/live/stream/:id", liveHandler.GetLiveStream)
-	router.GET("/api/live/list", liveHandler.GetLiveList)
-
-	//// 注册弹幕相关路由
-	//danmakuHandler, err := routes.NewDanmakuHandler(cfg.Etcd.Endpoints)
-	//if err != nil {
-	//	log.Fatalf("Failed to connect to danmaku service: %v", err)
-	//}
-	//defer danmakuHandler.Close()
-
-	// 注册首页相关路由
-	router.GET("/api/home/recommended", videoHandler.GetRecommendedVideos)
-	router.GET("/api/home/hot", videoHandler.GetHotVideos)
-
-	//// 注册弹幕路由
-	//routes.RegisterDanmakuRoutes(router, cfg.Etcd.Endpoints)
-
-	// 直接启动Gin服务器
-	log.Printf("Starting Vision World Gateway on port %d", cfg.Server.Port)
+	defer r.Close()
 
 	// 创建HTTP服务器
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
-		Handler: router,
+		Handler: engine,
 	}
 
 	// 启动服务器
 	go func() {
+		log.Printf("Starting Vision World Gateway on port %d", cfg.Server.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
 		}

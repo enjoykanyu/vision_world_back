@@ -447,42 +447,38 @@ func (h *VideoHandler) GetFollowVideos(c *gin.Context) {
 
 // GetHotVideos 获取热门视频
 func (h *VideoHandler) GetHotVideos(c *gin.Context) {
-	// 获取查询参数
-	pageStr := c.DefaultQuery("page", "1")
-	pageSizeStr := c.DefaultQuery("page_size", "20")
-
-	// 转换参数
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 {
+	// 1. 解析参数
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	if page < 1 {
 		page = 1
 	}
-
-	pageSize, err := strconv.Atoi(pageSizeStr)
-	if err != nil || pageSize < 1 || pageSize > 100 {
+	if pageSize < 1 || pageSize > 100 {
 		pageSize = 20
 	}
 
-	// 获取视频服务客户端
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
 
-	req := &pb.GetHotVideosRequest{}
-
-	resp, err := videoClient.GetHotVideos(ctx, req)
+	resp, err := videoClient.GetHotVideos(ctx, &pb.GetHotVideosRequest{
+		Page:     uint32(page),
+		PageSize: uint32(pageSize),
+	})
 	if err != nil {
-		log.Printf("Failed to get hot videos: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get hot videos"})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	// 4. 返回响应
+	Success(c, resp)
 }
 
 // RegisterVideoRoutes 注册视频相关路由
@@ -948,55 +944,41 @@ func (h *VideoHandler) GetUserPublishedVideos(c *gin.Context) {
 
 // GetVideoDetail 获取视频详情
 func (h *VideoHandler) GetVideoDetail(c *gin.Context) {
-	// 获取视频ID
-	videoID := c.Param("id")
-	if videoID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Video ID is required"})
+	// 1. 解析参数
+	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		Error(c, http.StatusBadRequest, "Invalid video ID")
 		return
 	}
 
-	// 获取视频服务客户端
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	// 调用视频服务的GetVideoInfo接口
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
 
-	videoIDUint, err := strconv.ParseUint(videoID, 10, 32)
+	resp, err := videoClient.GetVideoInfo(ctx, &pb.GetVideoInfoRequest{
+		VideoId: uint32(videoID),
+	})
 	if err != nil {
-		log.Printf("Failed to parse video ID: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	req := &pb.GetVideoInfoRequest{
-		VideoId: uint32(videoIDUint),
-	}
+	// 4. 返回响应（字段映射保留在 Gateway 层）
+	Success(c, gin.H{
+		"video": convertVideoToFrontendFormat(resp.Video),
+	})
+}
 
-	resp, err := videoClient.GetVideoInfo(ctx, req)
-	if err != nil {
-		log.Printf("Failed to get video info: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get video info"})
-		return
-	}
-
-	if resp.StatusCode != 0 {
-		log.Printf("GetVideoInfo failed with status code %d: %s", resp.StatusCode, resp.StatusMsg)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": resp.StatusMsg,
-			"code":  resp.StatusCode,
-		})
-		return
-	}
-
-	// 字段映射：将protobuf响应转换为前端期望的JSON格式
-	video := resp.Video
-	mappedVideo := gin.H{
+// convertVideoToFrontendFormat 将视频数据转换为前端格式
+func convertVideoToFrontendFormat(video *pb.Video) gin.H {
+	return gin.H{
 		"video_id":       video.Id,
 		"title":          video.Title,
 		"description":    video.Description,
@@ -1026,14 +1008,6 @@ func (h *VideoHandler) GetVideoDetail(c *gin.Context) {
 			"follower_count": video.Author.FollowerCount,
 		},
 	}
-
-	// 返回成功响应
-	c.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"video": mappedVideo,
-		},
-		"status": "success",
-	})
 }
 
 // ProxyHLSStream 代理HLS视频流请求
@@ -1643,196 +1617,172 @@ func (h *VideoHandler) CompleteUpload(c *gin.Context) {
 
 // LikeVideo 点赞/取消点赞视频
 func (h *VideoHandler) LikeVideo(c *gin.Context) {
-	// 获取视频ID
-	videoIDStr := c.Param("id")
-	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	// 1. 解析参数
+	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		Error(c, http.StatusBadRequest, "Invalid video ID")
 		return
 	}
 
-	// 获取请求体
 	var req struct {
 		ActionType bool `json:"action_type"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		Error(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	// 获取视频服务客户端
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
 
-	// 调用视频服务点赞接口
 	resp, err := videoClient.LikeVideo(ctx, &pb.LikeVideoRequest{
-		Token:      getTokenFromHeader(c),
+		Token:      GetToken(c),
 		VideoId:    uint32(videoID),
 		ActionType: req.ActionType,
 	})
 	if err != nil {
-		log.Printf("Failed to like video: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like video"})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	// 返回成功响应
-	c.JSON(http.StatusOK, resp)
+	// 4. 返回响应
+	Success(c, resp)
 }
 
 // FavoriteVideo 收藏/取消收藏视频
 func (h *VideoHandler) FavoriteVideo(c *gin.Context) {
-	// 获取视频ID
-	videoIDStr := c.Param("id")
-	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	// 1. 解析参数
+	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		Error(c, http.StatusBadRequest, "Invalid video ID")
 		return
 	}
 
-	// 获取请求体
 	var req struct {
 		ActionType bool `json:"action_type"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		Error(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	// 获取视频服务客户端
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
 
-	// 调用视频服务收藏接口
 	resp, err := videoClient.FavoriteVideo(ctx, &pb.FavoriteVideoRequest{
-		Token:      getTokenFromHeader(c),
+		Token:      GetToken(c),
 		VideoId:    uint32(videoID),
 		ActionType: req.ActionType,
 	})
 	if err != nil {
-		log.Printf("Failed to favorite video: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to favorite video"})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	// 返回成功响应
-	c.JSON(http.StatusOK, resp)
+	// 4. 返回响应
+	Success(c, resp)
 }
 
 // ShareVideo 分享视频
 func (h *VideoHandler) ShareVideo(c *gin.Context) {
-	// 获取视频ID
-	videoIDStr := c.Param("id")
-	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	// 1. 解析参数
+	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		Error(c, http.StatusBadRequest, "Invalid video ID")
 		return
 	}
 
-	// 获取请求体
 	var req struct {
 		ShareType string `json:"share_type"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		Error(c, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	// 获取视频服务客户端
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
 
-	// 调用视频服务分享接口
 	resp, err := videoClient.ShareVideo(ctx, &pb.ShareVideoRequest{
-		Token:     getTokenFromHeader(c),
+		Token:     GetToken(c),
 		VideoId:   uint32(videoID),
 		ShareType: req.ShareType,
 	})
 	if err != nil {
-		log.Printf("Failed to share video: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to share video"})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	// 返回成功响应
-	c.JSON(http.StatusOK, resp)
+	// 4. 返回响应
+	Success(c, resp)
 }
 
 // GetVideoStats 获取视频互动数据（点赞、收藏、转发数量）
 func (h *VideoHandler) GetVideoStats(c *gin.Context) {
-	// 获取视频ID
-	videoIDStr := c.Param("id")
-	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	// 1. 解析参数
+	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		Error(c, http.StatusBadRequest, "Invalid video ID")
 		return
 	}
 
-	// 获取视频服务客户端
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
 
-	// 调用视频服务获取视频互动统计数据
 	resp, err := videoClient.GetVideoInteractionStats(ctx, &pb.GetVideoInteractionStatsRequest{
 		VideoId: uint32(videoID),
-		Token:   getTokenFromHeader(c),
+		Token:   GetToken(c),
 	})
 	if err != nil {
-		log.Printf("Failed to get video interaction stats: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get video stats"})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	// 检查响应状态
-	if resp.StatusCode != 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": resp.StatusMsg})
-		return
-	}
-
-	// 返回互动数据
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data": gin.H{
-			"video_id":       resp.VideoId,
-			"like_count":     resp.LikeCount,
-			"favorite_count": resp.FavoriteCount,
-			"coin_count":     resp.CoinCount,
-			"share_count":    resp.ShareCount,
-			"play_count":     resp.PlayCount,
-			"danmaku_count":  resp.DanmakuCount,
-			"comment_count":  resp.CommentCount,
-			"is_liked":       resp.IsLiked,
-			"is_favorite":    resp.IsFavorited,
-			"is_coined":      resp.IsCoined,
-		},
+	// 4. 返回响应
+	Success(c, gin.H{
+		"video_id":       resp.VideoId,
+		"like_count":     resp.LikeCount,
+		"favorite_count": resp.FavoriteCount,
+		"coin_count":     resp.CoinCount,
+		"share_count":    resp.ShareCount,
+		"play_count":     resp.PlayCount,
+		"danmaku_count":  resp.DanmakuCount,
+		"comment_count":  resp.CommentCount,
+		"is_liked":       resp.IsLiked,
+		"is_favorite":    resp.IsFavorited,
+		"is_coined":      resp.IsCoined,
 	})
 }
 
@@ -1958,21 +1908,14 @@ func (h *VideoHandler) GetVideoComments(c *gin.Context) {
 
 // CommentVideo 发布评论
 func (h *VideoHandler) CommentVideo(c *gin.Context) {
-	// 解析请求体
+	// 1. 解析参数
 	var req struct {
 		VideoID  interface{} `json:"video_id" binding:"required"`
 		Content  string      `json:"content" binding:"required"`
 		ParentID *uint32     `json:"parent_id"`
 	}
-
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// 验证必填字段
-	if req.Content == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "content is required"})
+		Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -1982,7 +1925,7 @@ func (h *VideoHandler) CommentVideo(c *gin.Context) {
 	case string:
 		parsedID, err := strconv.ParseUint(v, 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video_id"})
+			Error(c, http.StatusBadRequest, "Invalid video_id")
 			return
 		}
 		videoID = uint32(parsedID)
@@ -1991,136 +1934,109 @@ func (h *VideoHandler) CommentVideo(c *gin.Context) {
 	case int:
 		videoID = uint32(v)
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video_id type"})
+		Error(c, http.StatusBadRequest, "Invalid video_id type")
 		return
 	}
 
-	// 获取视频服务客户端
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
 
-	// 调用视频服务发表评论
 	resp, err := videoClient.CommentVideo(ctx, &pb.CommentRequest{
-		Token:    getTokenFromHeader(c),
+		Token:    GetToken(c),
 		VideoId:  videoID,
 		Content:  req.Content,
 		ParentId: req.ParentID,
 	})
 	if err != nil {
-		log.Printf("Failed to comment video: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to comment video"})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	// 返回评论结果
-	c.JSON(http.StatusOK, gin.H{
-		"status_code": resp.StatusCode,
-		"status_msg":  resp.StatusMsg,
-		"comment":     resp.Comment,
-	})
+	// 4. 返回响应
+	Success(c, resp)
 }
 
 // LikeComment 点赞/取消点赞评论
 func (h *VideoHandler) LikeComment(c *gin.Context) {
-	// 解析请求体
+	// 1. 解析参数
 	var req struct {
 		CommentID  uint32 `json:"comment_id" binding:"required"`
 		ActionType bool   `json:"action_type" binding:"required"`
 	}
-
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	// 获取视频服务客户端
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
 
-	// 调用视频服务点赞评论
 	resp, err := videoClient.LikeComment(ctx, &pb.LikeCommentRequest{
-		Token:      getTokenFromHeader(c),
+		Token:      GetToken(c),
 		CommentId:  req.CommentID,
 		ActionType: req.ActionType,
 	})
 	if err != nil {
-		log.Printf("Failed to like comment: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like comment"})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	// 返回点赞结果
-	c.JSON(http.StatusOK, gin.H{
-		"status_code": resp.StatusCode,
-		"status_msg":  resp.StatusMsg,
-		"like_count":  resp.LikeCount,
-		"is_liked":    resp.IsLiked,
-	})
+	// 4. 返回响应
+	Success(c, resp)
 }
 
 // ReplyComment 回复评论
 func (h *VideoHandler) ReplyComment(c *gin.Context) {
-	// 解析请求体
+	// 1. 解析参数
 	var req struct {
 		CommentID uint32 `json:"comment_id" binding:"required"`
 		Content   string `json:"content" binding:"required"`
 	}
-
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	// 验证必填字段
-	if req.Content == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "content is required"})
-		return
-	}
-
-	// 获取视频服务客户端
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Video service temporarily unavailable"})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
 
-	// 调用视频服务回复评论
 	resp, err := videoClient.CommentVideo(ctx, &pb.CommentRequest{
-		Token:    getTokenFromHeader(c),
+		Token:    GetToken(c),
 		VideoId:  0,
 		Content:  req.Content,
 		ParentId: &req.CommentID,
 	})
 	if err != nil {
-		log.Printf("Failed to reply comment: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reply comment"})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	// 返回回复结果
-	c.JSON(http.StatusOK, gin.H{
-		"status_code": resp.StatusCode,
-		"status_msg":  resp.StatusMsg,
-		"comment":     resp.Comment,
-	})
+	// 4. 返回响应
+	Success(c, resp)
 }
 
 // GetCommentReplies 获取评论回复列表
@@ -2192,90 +2108,55 @@ func (h *VideoHandler) GetCommentReplies(c *gin.Context) {
 }
 
 // RecordVideoPlay 记录视频播放
-// POST /api/video/play
 func (h *VideoHandler) RecordVideoPlay(c *gin.Context) {
-	// 解析请求体
+	// 1. 解析参数
 	var req struct {
 		VideoID    string `json:"video_id" binding:"required"`
 		SessionID  string `json:"session_id" binding:"required"`
 		DeviceID   string `json:"device_id" binding:"required"`
 		ViewSource string `json:"view_source"`
 	}
-
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": "Invalid request: " + err.Error(),
-		})
+		Error(c, http.StatusBadRequest, "Invalid request: "+err.Error())
 		return
 	}
 
-	// 将 video_id 从字符串转换为 uint32
-	videoIDUint64, err := strconv.ParseUint(req.VideoID, 10, 32)
+	videoID, err := strconv.ParseUint(req.VideoID, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": "Invalid video_id format",
-		})
+		Error(c, http.StatusBadRequest, "Invalid video_id format")
 		return
 	}
-	videoID := uint32(videoIDUint64)
 
-	// 获取用户ID（如果已登录）
-	userID := uint32(0)
-	if userIDValue, exists := c.Get("user_id"); exists {
-		if id, ok := userIDValue.(uint32); ok {
-			userID = id
-		}
-	}
-
-	// 获取视频服务客户端
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"code":    503,
-			"message": "Video service temporarily unavailable",
-		})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
 
-	// 调用视频服务的RecordPlay接口
 	resp, err := videoClient.RecordPlay(ctx, &pb.RecordPlayRequest{
-		VideoId:    videoID,
-		UserId:     userID,
+		VideoId:    uint32(videoID),
+		UserId:     GetUserID(c),
 		SessionId:  req.SessionID,
 		DeviceId:   req.DeviceID,
 		ViewSource: req.ViewSource,
 	})
-
 	if err != nil {
-		log.Printf("Failed to record video play: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":    500,
-			"message": "Failed to record video play",
-		})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":    0,
-		"message": "success",
-		"data": gin.H{
-			"play_count":      resp.PlayCount,
-			"is_recorded":     resp.IsRecorded,
-			"real_play_count": resp.RealPlayCount,
-		},
-	})
+	// 4. 返回响应
+	Success(c, resp)
 }
 
 // ReportVideoProgress 上报视频观看进度
-// POST /api/video/progress
 func (h *VideoHandler) ReportVideoProgress(c *gin.Context) {
-	// 解析请求体
+	// 1. 解析参数
 	var req struct {
 		VideoID     string  `json:"video_id" binding:"required"`
 		SessionID   string  `json:"session_id" binding:"required"`
@@ -2283,80 +2164,48 @@ func (h *VideoHandler) ReportVideoProgress(c *gin.Context) {
 		Progress    float64 `json:"progress" binding:"required"`
 		Action      string  `json:"action" binding:"required"`
 	}
-
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": "Invalid request: " + err.Error(),
-		})
+		Error(c, http.StatusBadRequest, "Invalid request: "+err.Error())
 		return
 	}
 
-	// 将 video_id 从字符串转换为 uint32
-	videoIDUint64, err := strconv.ParseUint(req.VideoID, 10, 32)
+	videoID, err := strconv.ParseUint(req.VideoID, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": "Invalid video_id format",
-		})
+		Error(c, http.StatusBadRequest, "Invalid video_id format")
 		return
 	}
-	videoID := uint32(videoIDUint64)
 
-	// 获取用户ID（如果已登录）
-	userID := uint32(0)
-	if userIDValue, exists := c.Get("user_id"); exists {
-		if id, ok := userIDValue.(uint32); ok {
-			userID = id
-		}
-	}
-
-	// 获取视频服务客户端
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"code":    503,
-			"message": "Video service temporarily unavailable",
-		})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
 
-	// 调用视频服务的ReportProgress接口
 	resp, err := videoClient.ReportProgress(ctx, &pb.ReportProgressRequest{
-		VideoId:     videoID,
-		UserId:      userID,
+		VideoId:     uint32(videoID),
+		UserId:      GetUserID(c),
 		SessionId:   req.SessionID,
 		CurrentTime: req.CurrentTime,
 		Progress:    req.Progress,
 		Action:      req.Action,
 	})
-
 	if err != nil {
-		log.Printf("Failed to report video progress: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":    500,
-			"message": "Failed to report video progress",
-		})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code":    0,
-		"message": "success",
-		"data": gin.H{
-			"is_complete": resp.IsComplete,
-			"watch_time":  resp.WatchTime,
-		},
-	})
+	// 4. 返回响应
+	Success(c, resp)
 }
 
 // SendDanmaku 发送弹幕
 func (h *VideoHandler) SendDanmaku(c *gin.Context) {
-	// 获取请求参数
+	// 1. 解析参数
 	var req struct {
 		VideoID        string  `json:"video_id" binding:"required"`
 		Text           string  `json:"text" binding:"required,max=200"`
@@ -2364,53 +2213,42 @@ func (h *VideoHandler) SendDanmaku(c *gin.Context) {
 		VideoTimestamp float32 `json:"video_timestamp" binding:"required"`
 		Speed          string  `json:"speed"`
 	}
-
-	// 绑定请求参数
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request parameters: " + err.Error()})
+		Error(c, http.StatusBadRequest, "Invalid request parameters: "+err.Error())
 		return
 	}
 
-	// 获取视频服务客户端
+	videoID, err := strconv.ParseUint(req.VideoID, 10, 32)
+	if err != nil {
+		Error(c, http.StatusBadRequest, "Invalid video_id format")
+		return
+	}
+
+	// 2. 获取客户端
 	videoClient, err := h.getVideoClient()
 	if err != nil {
-		log.Printf("Failed to get video service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"code":    503,
-			"message": "Video service temporarily unavailable",
-		})
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
 		return
 	}
 
-	// 调用弹幕服务的SendDanmaku接口
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
 	defer cancel()
-	videoIDUint64, err := strconv.ParseUint(req.VideoID, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": "Invalid video_id format",
-		})
-		return
-	}
-	videoID := uint32(videoIDUint64)
-	grpcReq := &pb.SendDanmakuRequest{
-		VideoId:        videoID,
+
+	resp, err := videoClient.SendDanmaku(ctx, &pb.SendDanmakuRequest{
+		VideoId:        uint32(videoID),
 		Text:           req.Text,
 		Color:          req.Color,
 		VideoTimestamp: req.VideoTimestamp,
 		Speed:          req.Speed,
-	}
-
-	resp, err := videoClient.SendDanmaku(ctx, grpcReq)
-
+	})
 	if err != nil {
-		log.Printf("Failed to send danmaku: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send danmaku"})
+		HandleGRPCError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	// 4. 返回响应
+	Success(c, resp)
 }
 
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
