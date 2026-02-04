@@ -14,8 +14,6 @@ import (
 	ginprometheus "github.com/zsais/go-gin-prometheus"
 
 	"api_gateway/config"
-	"api_gateway/pkg/minio"
-	"api_gateway/pkg/redis"
 	"api_gateway/router"
 )
 
@@ -26,35 +24,7 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Redis客户端初始化
-	redisConfig := redis.Config{
-		Host:     "localhost",
-		Port:     6379,
-		Password: cfg.Redis.Password,
-		DB:       cfg.Redis.DB,
-		PoolSize: 10,
-	}
-	redisClient, err := redis.NewClient(redisConfig)
-	if err != nil {
-		log.Fatalf("Failed to initialize Redis client: %v", err)
-	}
-	defer redisClient.Close()
-
-	// 初始化MinIO客户端
-	minioClient, err := minio.NewClient(minio.Config{
-		Endpoint:        cfg.MinIO.Endpoint,
-		AccessKeyID:     cfg.MinIO.AccessKeyID,
-		SecretAccessKey: cfg.MinIO.SecretAccessKey,
-		UseSSL:          cfg.MinIO.UseSSL,
-		BucketName:      cfg.MinIO.BucketName,
-		Location:        cfg.MinIO.Location,
-	})
-	if err != nil {
-		log.Fatalf("Failed to create MinIO client: %v", err)
-	}
-	defer minioClient.Close()
-
-	// 创建Gin引擎，设置最大请求体大小为500MB以支持大文件上传
+	// 创建Gin引擎
 	engine := gin.New()
 	engine.MaxMultipartMemory = 500 << 20 // 500 MB
 
@@ -62,8 +32,8 @@ func main() {
 	p := ginprometheus.NewPrometheus("vision_world_gateway")
 	p.Use(engine)
 
-	// 创建路由管理器（内部会注册所有中间件和路由）
-	r, err := router.NewRouter(engine, cfg.Etcd.Endpoints, minioClient, cfg.MinIO.BucketName)
+	// 创建路由管理器（只处理路由转发）
+	r, err := router.NewRouter(engine, cfg.Etcd.Endpoints)
 	if err != nil {
 		log.Fatalf("Failed to create router: %v", err)
 	}
