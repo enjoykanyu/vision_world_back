@@ -22,7 +22,7 @@ import (
 	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
 	auditpb "github.com/vision_world/video_service/proto/proto_gen/audit"
-	"github.com/vision_world/video_service/proto/proto_gen/user"
+	//"github.com/vision_world/video_service/proto/proto_gen/user"
 	userpb "github.com/vision_world/video_service/proto/proto_gen/user"
 	pb "github.com/vision_world/video_service/proto/proto_gen/video"
 	"google.golang.org/grpc"
@@ -689,6 +689,171 @@ func (h *VideoHandler) RetryTranscode(ctx context.Context, req *pb.RetryTranscod
 	return &pb.RetryTranscodeResponse{
 		StatusCode: 0,
 		StatusMsg:  "转码任务已提交",
+	}, nil
+}
+
+// ==================== 分片上传接口 ====================
+
+// InitChunkUpload 初始化分片上传
+// func (h *VideoHandler) InitChunkUpload(ctx context.Context, req *pb.InitChunkUploadRequest) (*pb.InitChunkUploadResponse, error) {
+// 	h.logger.Info("InitChunkUpload called",
+// 		zap.String("file_name", req.FileName),
+// 		zap.Int64("file_size", req.FileSize))
+
+// 	// 验证用户token并获取用户ID
+// 	userID, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+// 	if err != nil {
+// 		h.logger.Error("Failed to verify token", zap.Error(err))
+// 		return &pb.InitChunkUploadResponse{
+// 			StatusCode: 401,
+// 			StatusMsg:  "用户认证失败: " + err.Error(),
+// 		}, nil
+// 	}
+
+// 	h.logger.Info("User authenticated successfully", zap.String("user_id", userID))
+
+// 	// 调用service层初始化分片上传
+// 	uploadID, objectName, chunkSize, totalChunks, err := h.videoService.InitChunkUpload(ctx, userID, req.FileName, req.FileSize, req.Title, req.Description, req.Category, req.Tags)
+// 	if err != nil {
+// 		h.logger.Error("Failed to init chunk upload", zap.Error(err))
+// 		return &pb.InitChunkUploadResponse{
+// 			StatusCode: 500,
+// 			StatusMsg:  "初始化分片上传失败: " + err.Error(),
+// 		}, nil
+// 	}
+
+// 	h.logger.Info("Chunk upload initialized successfully",
+// 		zap.String("upload_id", uploadID),
+// 		zap.String("object_name", objectName),
+// 		zap.Int("chunk_size", chunkSize),
+// 		zap.Int("total_chunks", totalChunks))
+
+// 	return &pb.InitChunkUploadResponse{
+// 		StatusCode:  0,
+// 		StatusMsg:   "初始化成功",
+// 		UploadId:    uploadID,
+// 		ObjectName:  objectName,
+// 		ChunkSize:   int32(chunkSize),
+// 		TotalChunks: int32(totalChunks),
+// 	}, nil
+// }
+
+// UploadChunk 上传分片
+func (h *VideoHandler) UploadChunk(ctx context.Context, req *pb.UploadChunkRequest) (*pb.UploadChunkResponse, error) {
+	h.logger.Info("UploadChunk called",
+		zap.String("upload_id", req.UploadId),
+		zap.Int32("chunk_number", req.ChunkNumber))
+
+	// 验证用户token
+	_, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+	if err != nil {
+		h.logger.Error("Failed to verify token", zap.Error(err))
+		return &pb.UploadChunkResponse{
+			StatusCode: 401,
+			StatusMsg:  "用户认证失败: " + err.Error(),
+		}, nil
+	}
+
+	// 调用service层上传分片
+	etag, err := h.videoService.UploadChunk(ctx, req.UploadId, req.ObjectName, int(req.ChunkNumber), req.ChunkData)
+	if err != nil {
+		h.logger.Error("Failed to upload chunk", zap.Error(err))
+		return &pb.UploadChunkResponse{
+			StatusCode: 500,
+			StatusMsg:  "上传分片失败: " + err.Error(),
+		}, nil
+	}
+
+	h.logger.Info("Chunk uploaded successfully",
+		zap.Int32("chunk_number", req.ChunkNumber),
+		zap.String("etag", etag))
+
+	return &pb.UploadChunkResponse{
+		StatusCode:  0,
+		StatusMsg:   "分片上传成功",
+		ChunkNumber: req.ChunkNumber,
+		Etag:        etag,
+	}, nil
+}
+
+// CompleteChunkUpload 完成分片上传
+// func (h *VideoHandler) CompleteChunkUpload(ctx context.Context, req *pb.CompleteChunkUploadRequest) (*pb.CompleteChunkUploadResponse, error) {
+// 	h.logger.Info("CompleteChunkUpload called",
+// 		zap.String("upload_id", req.UploadId),
+// 		zap.String("object_name", req.ObjectName))
+
+// 	// 验证用户token并获取用户ID
+// 	userID, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+// 	if err != nil {
+// 		h.logger.Error("Failed to verify token", zap.Error(err))
+// 		return &pb.CompleteChunkUploadResponse{
+// 			StatusCode: 401,
+// 			StatusMsg:  "用户认证失败: " + err.Error(),
+// 		}, nil
+// 	}
+
+// 	// 转换分片列表
+// 	parts := make([]miniogo.CompletePart, 0, len(req.Parts))
+// 	for _, part := range req.Parts {
+// 		parts = append(parts, miniogo.CompletePart{
+// 			PartNumber: int(part.PartNumber),
+// 			ETag:       part.Etag,
+// 		})
+// 	}
+
+// 	// 调用service层完成分片上传
+// 	videoID, videoURL, err := h.videoService.CompleteChunkUpload(ctx, userID, req.UploadId, req.ObjectName, parts)
+// 	if err != nil {
+// 		h.logger.Error("Failed to complete chunk upload", zap.Error(err))
+// 		return &pb.CompleteChunkUploadResponse{
+// 			StatusCode: 500,
+// 			StatusMsg:  "完成分片上传失败: " + err.Error(),
+// 		}, nil
+// 	}
+
+// 	h.logger.Info("Chunk upload completed successfully",
+// 		zap.Uint32("video_id", videoID),
+// 		zap.String("video_url", videoURL))
+
+// 	return &pb.CompleteChunkUploadResponse{
+// 		StatusCode: 0,
+// 		StatusMsg:  "上传完成",
+// 		VideoId:    videoID,
+// 		VideoUrl:   videoURL,
+// 	}, nil
+// }
+
+// AbortChunkUpload 取消分片上传
+func (h *VideoHandler) AbortChunkUpload(ctx context.Context, req *pb.AbortChunkUploadRequest) (*pb.AbortChunkUploadResponse, error) {
+	h.logger.Info("AbortChunkUpload called",
+		zap.String("upload_id", req.UploadId),
+		zap.String("object_name", req.ObjectName))
+
+	// 验证用户token
+	_, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+	if err != nil {
+		h.logger.Error("Failed to verify token", zap.Error(err))
+		return &pb.AbortChunkUploadResponse{
+			StatusCode: 401,
+			StatusMsg:  "用户认证失败: " + err.Error(),
+		}, nil
+	}
+
+	// 调用service层取消分片上传
+	err = h.videoService.AbortChunkUpload(ctx, req.UploadId, req.ObjectName)
+	if err != nil {
+		h.logger.Error("Failed to abort chunk upload", zap.Error(err))
+		return &pb.AbortChunkUploadResponse{
+			StatusCode: 500,
+			StatusMsg:  "取消分片上传失败: " + err.Error(),
+		}, nil
+	}
+
+	h.logger.Info("Chunk upload aborted successfully")
+
+	return &pb.AbortChunkUploadResponse{
+		StatusCode: 0,
+		StatusMsg:  "取消成功",
 	}, nil
 }
 
@@ -1474,59 +1639,59 @@ func (h *VideoHandler) convertToProtoVideoDetail(videoDetail *model.VideoDetail)
 // ==================== 弹幕相关接口 ====================
 
 // SendDanmaku 发送弹幕
-func (h *VideoHandler) SendDanmaku(ctx context.Context, req *pb.SendDanmakuRequest) (*pb.SendDanmakuResponse, error) {
-	h.logger.Info("SendDanmaku called", zap.Uint32("video_id", req.VideoId))
+// func (h *VideoHandler) SendDanmaku(ctx context.Context, req *pb.SendDanmakuRequest) (*pb.SendDanmakuResponse, error) {
+// 	h.logger.Info("SendDanmaku called", zap.Uint32("video_id", req.VideoId))
 
-	// 验证token获取用户ID
-	// 调用用户服务验证token
-	verifyResp, err := h.userClient.VerifyToken(ctx, &user.VerifyTokenRequest{Token: req.Token})
-	if err != nil || verifyResp.StatusCode != 0 || !verifyResp.Valid {
-		return &pb.SendDanmakuResponse{
-			StatusCode: 401,
-			StatusMsg:  "token无效",
-		}, err
-	}
+// 	// 验证token获取用户ID
+// 	// 调用用户服务验证token
+// 	verifyResp, err := h.userClient.VerifyToken(ctx, &user.VerifyTokenRequest{Token: req.Token})
+// 	if err != nil || verifyResp.StatusCode != 0 || !verifyResp.Valid {
+// 		return &pb.SendDanmakuResponse{
+// 			StatusCode: 401,
+// 			StatusMsg:  "token无效",
+// 		}, err
+// 	}
 
-	userID := verifyResp.UserId
-	// userID, err := h.verifyTokenAndGetUserID(ctx, req.Token)
-	if err != nil {
-		h.logger.Error("Failed to verify token", zap.Error(err))
-		return &pb.SendDanmakuResponse{
-			StatusCode: 401,
-			StatusMsg:  "未登录或token无效",
-		}, nil
-	}
+// 	userID := verifyResp.UserId
+// 	// userID, err := h.verifyTokenAndGetUserID(ctx, req.Token)
+// 	if err != nil {
+// 		h.logger.Error("Failed to verify token", zap.Error(err))
+// 		return &pb.SendDanmakuResponse{
+// 			StatusCode: 401,
+// 			StatusMsg:  "未登录或token无效",
+// 		}, nil
+// 	}
 
-	// TODO: 调用弹幕服务存储弹幕
-	//调用service->db
-	// 这里暂时返回模拟数据
-	videoID, videoURL, video, err := h.videoService.SendDanmaku(ctx, userID, req.VideoId, req.Text, req.Color, req.VideoTimestamp, req.Speed)
-	if err != nil {
-		h.logger.Error("Failed to send danmaku", zap.Error(err))
-		return &pb.SendDanmakuResponse{
-			StatusCode: 500,
-			StatusMsg:  "发送弹幕失败",
-		}, err
-	}
+// 	// TODO: 调用弹幕服务存储弹幕
+// 	//调用service->db
+// 	// 这里暂时返回模拟数据
+// 	videoID, videoURL, video, err := h.videoService.SendDanmaku(ctx, userID, req.VideoId, req.Text, req.Color, req.VideoTimestamp, req.Speed)
+// 	if err != nil {
+// 		h.logger.Error("Failed to send danmaku", zap.Error(err))
+// 		return &pb.SendDanmakuResponse{
+// 			StatusCode: 500,
+// 			StatusMsg:  "发送弹幕失败",
+// 		}, err
+// 	}
 
-	now := time.Now().Unix()
-	danmaku := &pb.Danmaku{
-		Id:             uint32(now), // 使用时间戳作为临时ID
-		UserId:         userID,
-		VideoId:        req.VideoId,
-		Text:           req.Text,
-		Color:          req.Color,
-		VideoTimestamp: req.VideoTimestamp,
-		Speed:          req.Speed,
-		CreatedAt:      now,
-	}
+// 	now := time.Now().Unix()
+// 	danmaku := &pb.Danmaku{
+// 		Id:             uint32(now), // 使用时间戳作为临时ID
+// 		UserId:         userID,
+// 		VideoId:        req.VideoId,
+// 		Text:           req.Text,
+// 		Color:          req.Color,
+// 		VideoTimestamp: req.VideoTimestamp,
+// 		Speed:          req.Speed,
+// 		CreatedAt:      now,
+// 	}
 
-	return &pb.SendDanmakuResponse{
-		StatusCode: 0,
-		StatusMsg:  "success",
-		Danmaku:    danmaku,
-	}, nil
-}
+// 	return &pb.SendDanmakuResponse{
+// 		StatusCode: 0,
+// 		StatusMsg:  "success",
+// 		Danmaku:    danmaku,
+// 	}, nil
+// }
 
 // GetDanmakus 获取视频弹幕列表
 func (h *VideoHandler) GetDanmakus(ctx context.Context, req *pb.GetDanmakusRequest) (*pb.GetDanmakusResponse, error) {

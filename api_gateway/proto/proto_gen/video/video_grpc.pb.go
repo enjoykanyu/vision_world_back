@@ -24,6 +24,10 @@ const (
 	VideoService_PublishVideo_FullMethodName             = "/rpc.video.VideoService/PublishVideo"
 	VideoService_DeleteVideo_FullMethodName              = "/rpc.video.VideoService/DeleteVideo"
 	VideoService_RetryTranscode_FullMethodName           = "/rpc.video.VideoService/RetryTranscode"
+	VideoService_InitChunkUpload_FullMethodName          = "/rpc.video.VideoService/InitChunkUpload"
+	VideoService_UploadChunk_FullMethodName              = "/rpc.video.VideoService/UploadChunk"
+	VideoService_CompleteChunkUpload_FullMethodName      = "/rpc.video.VideoService/CompleteChunkUpload"
+	VideoService_AbortChunkUpload_FullMethodName         = "/rpc.video.VideoService/AbortChunkUpload"
 	VideoService_GetVideoInfo_FullMethodName             = "/rpc.video.VideoService/GetVideoInfo"
 	VideoService_GetVideoInfos_FullMethodName            = "/rpc.video.VideoService/GetVideoInfos"
 	VideoService_GetUserVideos_FullMethodName            = "/rpc.video.VideoService/GetUserVideos"
@@ -36,13 +40,13 @@ const (
 	VideoService_FavoriteVideo_FullMethodName            = "/rpc.video.VideoService/FavoriteVideo"
 	VideoService_GetUserLikedVideos_FullMethodName       = "/rpc.video.VideoService/GetUserLikedVideos"
 	VideoService_ShareVideo_FullMethodName               = "/rpc.video.VideoService/ShareVideo"
-	VideoService_GetVideoInteractionStats_FullMethodName = "/rpc.video.VideoService/GetVideoInteractionStats"
 	VideoService_CommentVideo_FullMethodName             = "/rpc.video.VideoService/CommentVideo"
 	VideoService_DeleteComment_FullMethodName            = "/rpc.video.VideoService/DeleteComment"
 	VideoService_LikeComment_FullMethodName              = "/rpc.video.VideoService/LikeComment"
 	VideoService_GetVideoComments_FullMethodName         = "/rpc.video.VideoService/GetVideoComments"
 	VideoService_RecordPlay_FullMethodName               = "/rpc.video.VideoService/RecordPlay"
 	VideoService_ReportProgress_FullMethodName           = "/rpc.video.VideoService/ReportProgress"
+	VideoService_GetVideoInteractionStats_FullMethodName = "/rpc.video.VideoService/GetVideoInteractionStats"
 	VideoService_SendDanmaku_FullMethodName              = "/rpc.video.VideoService/SendDanmaku"
 	VideoService_GetDanmakus_FullMethodName              = "/rpc.video.VideoService/GetDanmakus"
 )
@@ -57,6 +61,11 @@ type VideoServiceClient interface {
 	PublishVideo(ctx context.Context, in *PublishVideoRequest, opts ...grpc.CallOption) (*PublishVideoResponse, error)
 	DeleteVideo(ctx context.Context, in *DeleteVideoRequest, opts ...grpc.CallOption) (*DeleteVideoResponse, error)
 	RetryTranscode(ctx context.Context, in *RetryTranscodeRequest, opts ...grpc.CallOption) (*RetryTranscodeResponse, error)
+	// 分片上传相关
+	InitChunkUpload(ctx context.Context, in *InitChunkUploadRequest, opts ...grpc.CallOption) (*InitChunkUploadResponse, error)
+	UploadChunk(ctx context.Context, in *UploadChunkRequest, opts ...grpc.CallOption) (*UploadChunkResponse, error)
+	CompleteChunkUpload(ctx context.Context, in *CompleteChunkUploadRequest, opts ...grpc.CallOption) (*CompleteChunkUploadResponse, error)
+	AbortChunkUpload(ctx context.Context, in *AbortChunkUploadRequest, opts ...grpc.CallOption) (*AbortChunkUploadResponse, error)
 	// 视频信息获取
 	GetVideoInfo(ctx context.Context, in *GetVideoInfoRequest, opts ...grpc.CallOption) (*VideoResponse, error)
 	GetVideoInfos(ctx context.Context, in *GetVideoInfosRequest, opts ...grpc.CallOption) (*GetVideoInfosResponse, error)
@@ -72,7 +81,6 @@ type VideoServiceClient interface {
 	FavoriteVideo(ctx context.Context, in *FavoriteVideoRequest, opts ...grpc.CallOption) (*FavoriteVideoResponse, error)
 	GetUserLikedVideos(ctx context.Context, in *GetUserLikedVideosRequest, opts ...grpc.CallOption) (*GetUserLikedVideosResponse, error)
 	ShareVideo(ctx context.Context, in *ShareVideoRequest, opts ...grpc.CallOption) (*ShareVideoResponse, error)
-	GetVideoInteractionStats(ctx context.Context, in *GetVideoInteractionStatsRequest, opts ...grpc.CallOption) (*GetVideoInteractionStatsResponse, error)
 	// 视频评论相关
 	CommentVideo(ctx context.Context, in *CommentRequest, opts ...grpc.CallOption) (*CommentResponse, error)
 	DeleteComment(ctx context.Context, in *DeleteCommentRequest, opts ...grpc.CallOption) (*DeleteCommentResponse, error)
@@ -81,6 +89,8 @@ type VideoServiceClient interface {
 	// 播放量统计相关
 	RecordPlay(ctx context.Context, in *RecordPlayRequest, opts ...grpc.CallOption) (*RecordPlayResponse, error)
 	ReportProgress(ctx context.Context, in *ReportProgressRequest, opts ...grpc.CallOption) (*ReportProgressResponse, error)
+	// 视频互动统计相关
+	GetVideoInteractionStats(ctx context.Context, in *GetVideoInteractionStatsRequest, opts ...grpc.CallOption) (*GetVideoInteractionStatsResponse, error)
 	// 弹幕相关
 	SendDanmaku(ctx context.Context, in *SendDanmakuRequest, opts ...grpc.CallOption) (*SendDanmakuResponse, error)
 	GetDanmakus(ctx context.Context, in *GetDanmakusRequest, opts ...grpc.CallOption) (*GetDanmakusResponse, error)
@@ -133,6 +143,42 @@ func (c *videoServiceClient) DeleteVideo(ctx context.Context, in *DeleteVideoReq
 func (c *videoServiceClient) RetryTranscode(ctx context.Context, in *RetryTranscodeRequest, opts ...grpc.CallOption) (*RetryTranscodeResponse, error) {
 	out := new(RetryTranscodeResponse)
 	err := c.cc.Invoke(ctx, VideoService_RetryTranscode_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoServiceClient) InitChunkUpload(ctx context.Context, in *InitChunkUploadRequest, opts ...grpc.CallOption) (*InitChunkUploadResponse, error) {
+	out := new(InitChunkUploadResponse)
+	err := c.cc.Invoke(ctx, VideoService_InitChunkUpload_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoServiceClient) UploadChunk(ctx context.Context, in *UploadChunkRequest, opts ...grpc.CallOption) (*UploadChunkResponse, error) {
+	out := new(UploadChunkResponse)
+	err := c.cc.Invoke(ctx, VideoService_UploadChunk_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoServiceClient) CompleteChunkUpload(ctx context.Context, in *CompleteChunkUploadRequest, opts ...grpc.CallOption) (*CompleteChunkUploadResponse, error) {
+	out := new(CompleteChunkUploadResponse)
+	err := c.cc.Invoke(ctx, VideoService_CompleteChunkUpload_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoServiceClient) AbortChunkUpload(ctx context.Context, in *AbortChunkUploadRequest, opts ...grpc.CallOption) (*AbortChunkUploadResponse, error) {
+	out := new(AbortChunkUploadResponse)
+	err := c.cc.Invoke(ctx, VideoService_AbortChunkUpload_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -247,15 +293,6 @@ func (c *videoServiceClient) ShareVideo(ctx context.Context, in *ShareVideoReque
 	return out, nil
 }
 
-func (c *videoServiceClient) GetVideoInteractionStats(ctx context.Context, in *GetVideoInteractionStatsRequest, opts ...grpc.CallOption) (*GetVideoInteractionStatsResponse, error) {
-	out := new(GetVideoInteractionStatsResponse)
-	err := c.cc.Invoke(ctx, VideoService_GetVideoInteractionStats_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *videoServiceClient) CommentVideo(ctx context.Context, in *CommentRequest, opts ...grpc.CallOption) (*CommentResponse, error) {
 	out := new(CommentResponse)
 	err := c.cc.Invoke(ctx, VideoService_CommentVideo_FullMethodName, in, out, opts...)
@@ -310,6 +347,15 @@ func (c *videoServiceClient) ReportProgress(ctx context.Context, in *ReportProgr
 	return out, nil
 }
 
+func (c *videoServiceClient) GetVideoInteractionStats(ctx context.Context, in *GetVideoInteractionStatsRequest, opts ...grpc.CallOption) (*GetVideoInteractionStatsResponse, error) {
+	out := new(GetVideoInteractionStatsResponse)
+	err := c.cc.Invoke(ctx, VideoService_GetVideoInteractionStats_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *videoServiceClient) SendDanmaku(ctx context.Context, in *SendDanmakuRequest, opts ...grpc.CallOption) (*SendDanmakuResponse, error) {
 	out := new(SendDanmakuResponse)
 	err := c.cc.Invoke(ctx, VideoService_SendDanmaku_FullMethodName, in, out, opts...)
@@ -338,6 +384,11 @@ type VideoServiceServer interface {
 	PublishVideo(context.Context, *PublishVideoRequest) (*PublishVideoResponse, error)
 	DeleteVideo(context.Context, *DeleteVideoRequest) (*DeleteVideoResponse, error)
 	RetryTranscode(context.Context, *RetryTranscodeRequest) (*RetryTranscodeResponse, error)
+	// 分片上传相关
+	InitChunkUpload(context.Context, *InitChunkUploadRequest) (*InitChunkUploadResponse, error)
+	UploadChunk(context.Context, *UploadChunkRequest) (*UploadChunkResponse, error)
+	CompleteChunkUpload(context.Context, *CompleteChunkUploadRequest) (*CompleteChunkUploadResponse, error)
+	AbortChunkUpload(context.Context, *AbortChunkUploadRequest) (*AbortChunkUploadResponse, error)
 	// 视频信息获取
 	GetVideoInfo(context.Context, *GetVideoInfoRequest) (*VideoResponse, error)
 	GetVideoInfos(context.Context, *GetVideoInfosRequest) (*GetVideoInfosResponse, error)
@@ -353,7 +404,6 @@ type VideoServiceServer interface {
 	FavoriteVideo(context.Context, *FavoriteVideoRequest) (*FavoriteVideoResponse, error)
 	GetUserLikedVideos(context.Context, *GetUserLikedVideosRequest) (*GetUserLikedVideosResponse, error)
 	ShareVideo(context.Context, *ShareVideoRequest) (*ShareVideoResponse, error)
-	GetVideoInteractionStats(context.Context, *GetVideoInteractionStatsRequest) (*GetVideoInteractionStatsResponse, error)
 	// 视频评论相关
 	CommentVideo(context.Context, *CommentRequest) (*CommentResponse, error)
 	DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentResponse, error)
@@ -362,6 +412,8 @@ type VideoServiceServer interface {
 	// 播放量统计相关
 	RecordPlay(context.Context, *RecordPlayRequest) (*RecordPlayResponse, error)
 	ReportProgress(context.Context, *ReportProgressRequest) (*ReportProgressResponse, error)
+	// 视频互动统计相关
+	GetVideoInteractionStats(context.Context, *GetVideoInteractionStatsRequest) (*GetVideoInteractionStatsResponse, error)
 	// 弹幕相关
 	SendDanmaku(context.Context, *SendDanmakuRequest) (*SendDanmakuResponse, error)
 	GetDanmakus(context.Context, *GetDanmakusRequest) (*GetDanmakusResponse, error)
@@ -386,6 +438,18 @@ func (UnimplementedVideoServiceServer) DeleteVideo(context.Context, *DeleteVideo
 }
 func (UnimplementedVideoServiceServer) RetryTranscode(context.Context, *RetryTranscodeRequest) (*RetryTranscodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RetryTranscode not implemented")
+}
+func (UnimplementedVideoServiceServer) InitChunkUpload(context.Context, *InitChunkUploadRequest) (*InitChunkUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InitChunkUpload not implemented")
+}
+func (UnimplementedVideoServiceServer) UploadChunk(context.Context, *UploadChunkRequest) (*UploadChunkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UploadChunk not implemented")
+}
+func (UnimplementedVideoServiceServer) CompleteChunkUpload(context.Context, *CompleteChunkUploadRequest) (*CompleteChunkUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CompleteChunkUpload not implemented")
+}
+func (UnimplementedVideoServiceServer) AbortChunkUpload(context.Context, *AbortChunkUploadRequest) (*AbortChunkUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AbortChunkUpload not implemented")
 }
 func (UnimplementedVideoServiceServer) GetVideoInfo(context.Context, *GetVideoInfoRequest) (*VideoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVideoInfo not implemented")
@@ -423,9 +487,6 @@ func (UnimplementedVideoServiceServer) GetUserLikedVideos(context.Context, *GetU
 func (UnimplementedVideoServiceServer) ShareVideo(context.Context, *ShareVideoRequest) (*ShareVideoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShareVideo not implemented")
 }
-func (UnimplementedVideoServiceServer) GetVideoInteractionStats(context.Context, *GetVideoInteractionStatsRequest) (*GetVideoInteractionStatsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVideoInteractionStats not implemented")
-}
 func (UnimplementedVideoServiceServer) CommentVideo(context.Context, *CommentRequest) (*CommentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CommentVideo not implemented")
 }
@@ -443,6 +504,9 @@ func (UnimplementedVideoServiceServer) RecordPlay(context.Context, *RecordPlayRe
 }
 func (UnimplementedVideoServiceServer) ReportProgress(context.Context, *ReportProgressRequest) (*ReportProgressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportProgress not implemented")
+}
+func (UnimplementedVideoServiceServer) GetVideoInteractionStats(context.Context, *GetVideoInteractionStatsRequest) (*GetVideoInteractionStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVideoInteractionStats not implemented")
 }
 func (UnimplementedVideoServiceServer) SendDanmaku(context.Context, *SendDanmakuRequest) (*SendDanmakuResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendDanmaku not implemented")
@@ -549,6 +613,78 @@ func _VideoService_RetryTranscode_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VideoServiceServer).RetryTranscode(ctx, req.(*RetryTranscodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_InitChunkUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InitChunkUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).InitChunkUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_InitChunkUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).InitChunkUpload(ctx, req.(*InitChunkUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_UploadChunk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadChunkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).UploadChunk(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_UploadChunk_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).UploadChunk(ctx, req.(*UploadChunkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_CompleteChunkUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteChunkUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).CompleteChunkUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_CompleteChunkUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).CompleteChunkUpload(ctx, req.(*CompleteChunkUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_AbortChunkUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AbortChunkUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).AbortChunkUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_AbortChunkUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).AbortChunkUpload(ctx, req.(*AbortChunkUploadRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -769,24 +905,6 @@ func _VideoService_ShareVideo_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VideoService_GetVideoInteractionStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVideoInteractionStatsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(VideoServiceServer).GetVideoInteractionStats(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: VideoService_GetVideoInteractionStats_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VideoServiceServer).GetVideoInteractionStats(ctx, req.(*GetVideoInteractionStatsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _VideoService_CommentVideo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CommentRequest)
 	if err := dec(in); err != nil {
@@ -895,6 +1013,24 @@ func _VideoService_ReportProgress_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VideoService_GetVideoInteractionStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVideoInteractionStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).GetVideoInteractionStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_GetVideoInteractionStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).GetVideoInteractionStats(ctx, req.(*GetVideoInteractionStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _VideoService_SendDanmaku_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendDanmakuRequest)
 	if err := dec(in); err != nil {
@@ -959,6 +1095,22 @@ var VideoService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _VideoService_RetryTranscode_Handler,
 		},
 		{
+			MethodName: "InitChunkUpload",
+			Handler:    _VideoService_InitChunkUpload_Handler,
+		},
+		{
+			MethodName: "UploadChunk",
+			Handler:    _VideoService_UploadChunk_Handler,
+		},
+		{
+			MethodName: "CompleteChunkUpload",
+			Handler:    _VideoService_CompleteChunkUpload_Handler,
+		},
+		{
+			MethodName: "AbortChunkUpload",
+			Handler:    _VideoService_AbortChunkUpload_Handler,
+		},
+		{
 			MethodName: "GetVideoInfo",
 			Handler:    _VideoService_GetVideoInfo_Handler,
 		},
@@ -1007,10 +1159,6 @@ var VideoService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _VideoService_ShareVideo_Handler,
 		},
 		{
-			MethodName: "GetVideoInteractionStats",
-			Handler:    _VideoService_GetVideoInteractionStats_Handler,
-		},
-		{
 			MethodName: "CommentVideo",
 			Handler:    _VideoService_CommentVideo_Handler,
 		},
@@ -1033,6 +1181,10 @@ var VideoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportProgress",
 			Handler:    _VideoService_ReportProgress_Handler,
+		},
+		{
+			MethodName: "GetVideoInteractionStats",
+			Handler:    _VideoService_GetVideoInteractionStats_Handler,
 		},
 		{
 			MethodName: "SendDanmaku",

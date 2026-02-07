@@ -57,6 +57,79 @@ message CreateVideoRecordResponse {
 }
 
 // 发布视频请求
+// ==================== 分片上传接口 ====================
+
+// 初始化分片上传请求
+message InitChunkUploadRequest {
+  string token = 1; // 用户token
+  string file_name = 2; // 原始文件名
+  int64 file_size = 3; // 文件总大小
+  string title = 4; // 视频标题
+  string description = 5; // 视频描述
+  string category = 6; // 视频分类
+  repeated string tags = 7; // 视频标签
+}
+
+message InitChunkUploadResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  string upload_id = 3; // 分片上传ID
+  string object_name = 4; // 对象名称
+  int32 chunk_size = 5; // 建议的分片大小
+  int32 total_chunks = 6; // 总分片数
+}
+
+// 上传分片请求
+message UploadChunkRequest {
+  string token = 1; // 用户token
+  string upload_id = 2; // 分片上传ID
+  int32 chunk_number = 3; // 分片序号（从1开始）
+  bytes chunk_data = 4; // 分片数据
+  string object_name = 5; // 对象名称
+}
+
+message UploadChunkResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  int32 chunk_number = 3; // 分片序号
+  string etag = 4; // 分片ETag
+}
+
+// 分片信息
+message ChunkPart {
+  int32 part_number = 1; // 分片序号
+  string etag = 2; // 分片ETag
+}
+
+// 完成分片上传请求
+message CompleteChunkUploadRequest {
+  string token = 1; // 用户token
+  string upload_id = 2; // 分片上传ID
+  string object_name = 3; // 对象名称
+  repeated ChunkPart parts = 4; // 已上传的分片列表
+}
+
+message CompleteChunkUploadResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  uint32 video_id = 3; // 视频ID
+  string video_url = 4; // 视频URL
+}
+
+// 取消分片上传请求
+message AbortChunkUploadRequest {
+  string token = 1; // 用户token
+  string upload_id = 2; // 分片上传ID
+  string object_name = 3; // 对象名称
+}
+
+message AbortChunkUploadResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+}
+
+// ==================== 视频发布相关接口 ====================
+
 message PublishVideoRequest {
   string token = 1; // 用户token
   string title = 2; // 视频标题
@@ -339,6 +412,12 @@ service VideoService {
   rpc PublishVideo(PublishVideoRequest) returns(PublishVideoResponse);
   rpc DeleteVideo(DeleteVideoRequest) returns(DeleteVideoResponse);
   rpc RetryTranscode(RetryTranscodeRequest) returns(RetryTranscodeResponse);
+  
+  // 分片上传相关
+  rpc InitChunkUpload(InitChunkUploadRequest) returns(InitChunkUploadResponse);
+  rpc UploadChunk(UploadChunkRequest) returns(UploadChunkResponse);
+  rpc CompleteChunkUpload(CompleteChunkUploadRequest) returns(CompleteChunkUploadResponse);
+  rpc AbortChunkUpload(AbortChunkUploadRequest) returns(AbortChunkUploadResponse);
   
   // 视频信息获取
   rpc GetVideoInfo(GetVideoInfoRequest) returns(VideoResponse);

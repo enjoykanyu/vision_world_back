@@ -24,6 +24,10 @@ const (
 	VideoService_PublishVideo_FullMethodName             = "/rpc.video.VideoService/PublishVideo"
 	VideoService_DeleteVideo_FullMethodName              = "/rpc.video.VideoService/DeleteVideo"
 	VideoService_RetryTranscode_FullMethodName           = "/rpc.video.VideoService/RetryTranscode"
+	VideoService_InitChunkUpload_FullMethodName          = "/rpc.video.VideoService/InitChunkUpload"
+	VideoService_UploadChunk_FullMethodName              = "/rpc.video.VideoService/UploadChunk"
+	VideoService_CompleteChunkUpload_FullMethodName      = "/rpc.video.VideoService/CompleteChunkUpload"
+	VideoService_AbortChunkUpload_FullMethodName         = "/rpc.video.VideoService/AbortChunkUpload"
 	VideoService_GetVideoInfo_FullMethodName             = "/rpc.video.VideoService/GetVideoInfo"
 	VideoService_GetVideoInfos_FullMethodName            = "/rpc.video.VideoService/GetVideoInfos"
 	VideoService_GetUserVideos_FullMethodName            = "/rpc.video.VideoService/GetUserVideos"
@@ -57,6 +61,11 @@ type VideoServiceClient interface {
 	PublishVideo(ctx context.Context, in *PublishVideoRequest, opts ...grpc.CallOption) (*PublishVideoResponse, error)
 	DeleteVideo(ctx context.Context, in *DeleteVideoRequest, opts ...grpc.CallOption) (*DeleteVideoResponse, error)
 	RetryTranscode(ctx context.Context, in *RetryTranscodeRequest, opts ...grpc.CallOption) (*RetryTranscodeResponse, error)
+	// 分片上传相关
+	InitChunkUpload(ctx context.Context, in *InitChunkUploadRequest, opts ...grpc.CallOption) (*InitChunkUploadResponse, error)
+	UploadChunk(ctx context.Context, in *UploadChunkRequest, opts ...grpc.CallOption) (*UploadChunkResponse, error)
+	CompleteChunkUpload(ctx context.Context, in *CompleteChunkUploadRequest, opts ...grpc.CallOption) (*CompleteChunkUploadResponse, error)
+	AbortChunkUpload(ctx context.Context, in *AbortChunkUploadRequest, opts ...grpc.CallOption) (*AbortChunkUploadResponse, error)
 	// 视频信息获取
 	GetVideoInfo(ctx context.Context, in *GetVideoInfoRequest, opts ...grpc.CallOption) (*VideoResponse, error)
 	GetVideoInfos(ctx context.Context, in *GetVideoInfosRequest, opts ...grpc.CallOption) (*GetVideoInfosResponse, error)
@@ -133,6 +142,42 @@ func (c *videoServiceClient) DeleteVideo(ctx context.Context, in *DeleteVideoReq
 func (c *videoServiceClient) RetryTranscode(ctx context.Context, in *RetryTranscodeRequest, opts ...grpc.CallOption) (*RetryTranscodeResponse, error) {
 	out := new(RetryTranscodeResponse)
 	err := c.cc.Invoke(ctx, VideoService_RetryTranscode_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoServiceClient) InitChunkUpload(ctx context.Context, in *InitChunkUploadRequest, opts ...grpc.CallOption) (*InitChunkUploadResponse, error) {
+	out := new(InitChunkUploadResponse)
+	err := c.cc.Invoke(ctx, VideoService_InitChunkUpload_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoServiceClient) UploadChunk(ctx context.Context, in *UploadChunkRequest, opts ...grpc.CallOption) (*UploadChunkResponse, error) {
+	out := new(UploadChunkResponse)
+	err := c.cc.Invoke(ctx, VideoService_UploadChunk_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoServiceClient) CompleteChunkUpload(ctx context.Context, in *CompleteChunkUploadRequest, opts ...grpc.CallOption) (*CompleteChunkUploadResponse, error) {
+	out := new(CompleteChunkUploadResponse)
+	err := c.cc.Invoke(ctx, VideoService_CompleteChunkUpload_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *videoServiceClient) AbortChunkUpload(ctx context.Context, in *AbortChunkUploadRequest, opts ...grpc.CallOption) (*AbortChunkUploadResponse, error) {
+	out := new(AbortChunkUploadResponse)
+	err := c.cc.Invoke(ctx, VideoService_AbortChunkUpload_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -338,6 +383,11 @@ type VideoServiceServer interface {
 	PublishVideo(context.Context, *PublishVideoRequest) (*PublishVideoResponse, error)
 	DeleteVideo(context.Context, *DeleteVideoRequest) (*DeleteVideoResponse, error)
 	RetryTranscode(context.Context, *RetryTranscodeRequest) (*RetryTranscodeResponse, error)
+	// 分片上传相关
+	InitChunkUpload(context.Context, *InitChunkUploadRequest) (*InitChunkUploadResponse, error)
+	UploadChunk(context.Context, *UploadChunkRequest) (*UploadChunkResponse, error)
+	CompleteChunkUpload(context.Context, *CompleteChunkUploadRequest) (*CompleteChunkUploadResponse, error)
+	AbortChunkUpload(context.Context, *AbortChunkUploadRequest) (*AbortChunkUploadResponse, error)
 	// 视频信息获取
 	GetVideoInfo(context.Context, *GetVideoInfoRequest) (*VideoResponse, error)
 	GetVideoInfos(context.Context, *GetVideoInfosRequest) (*GetVideoInfosResponse, error)
@@ -386,6 +436,18 @@ func (UnimplementedVideoServiceServer) DeleteVideo(context.Context, *DeleteVideo
 }
 func (UnimplementedVideoServiceServer) RetryTranscode(context.Context, *RetryTranscodeRequest) (*RetryTranscodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RetryTranscode not implemented")
+}
+func (UnimplementedVideoServiceServer) InitChunkUpload(context.Context, *InitChunkUploadRequest) (*InitChunkUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InitChunkUpload not implemented")
+}
+func (UnimplementedVideoServiceServer) UploadChunk(context.Context, *UploadChunkRequest) (*UploadChunkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UploadChunk not implemented")
+}
+func (UnimplementedVideoServiceServer) CompleteChunkUpload(context.Context, *CompleteChunkUploadRequest) (*CompleteChunkUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CompleteChunkUpload not implemented")
+}
+func (UnimplementedVideoServiceServer) AbortChunkUpload(context.Context, *AbortChunkUploadRequest) (*AbortChunkUploadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AbortChunkUpload not implemented")
 }
 func (UnimplementedVideoServiceServer) GetVideoInfo(context.Context, *GetVideoInfoRequest) (*VideoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVideoInfo not implemented")
@@ -549,6 +611,78 @@ func _VideoService_RetryTranscode_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VideoServiceServer).RetryTranscode(ctx, req.(*RetryTranscodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_InitChunkUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InitChunkUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).InitChunkUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_InitChunkUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).InitChunkUpload(ctx, req.(*InitChunkUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_UploadChunk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadChunkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).UploadChunk(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_UploadChunk_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).UploadChunk(ctx, req.(*UploadChunkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_CompleteChunkUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteChunkUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).CompleteChunkUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_CompleteChunkUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).CompleteChunkUpload(ctx, req.(*CompleteChunkUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_AbortChunkUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AbortChunkUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).AbortChunkUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_AbortChunkUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).AbortChunkUpload(ctx, req.(*AbortChunkUploadRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -957,6 +1091,22 @@ var VideoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RetryTranscode",
 			Handler:    _VideoService_RetryTranscode_Handler,
+		},
+		{
+			MethodName: "InitChunkUpload",
+			Handler:    _VideoService_InitChunkUpload_Handler,
+		},
+		{
+			MethodName: "UploadChunk",
+			Handler:    _VideoService_UploadChunk_Handler,
+		},
+		{
+			MethodName: "CompleteChunkUpload",
+			Handler:    _VideoService_CompleteChunkUpload_Handler,
+		},
+		{
+			MethodName: "AbortChunkUpload",
+			Handler:    _VideoService_AbortChunkUpload_Handler,
 		},
 		{
 			MethodName: "GetVideoInfo",

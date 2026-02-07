@@ -56,6 +56,77 @@ message CreateVideoRecordResponse {
   string video_url = 4; // 视频URL
 }
 
+// ==================== 分片上传接口 ====================
+
+// 初始化分片上传请求
+message InitChunkUploadRequest {
+  string token = 1; // 用户token
+  string file_name = 2; // 原始文件名
+  int64 file_size = 3; // 文件总大小
+  string title = 4; // 视频标题
+  string description = 5; // 视频描述
+  string category = 6; // 视频分类
+  repeated string tags = 7; // 视频标签
+}
+
+message InitChunkUploadResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  string upload_id = 3; // 分片上传ID
+  string object_name = 4; // 对象名称
+  int32 chunk_size = 5; // 建议的分片大小
+  int32 total_chunks = 6; // 总分片数
+}
+
+// 上传分片请求
+message UploadChunkRequest {
+  string token = 1; // 用户token
+  string upload_id = 2; // 分片上传ID
+  int32 chunk_number = 3; // 分片序号（从1开始）
+  bytes chunk_data = 4; // 分片数据
+  string object_name = 5; // 对象名称
+}
+
+message UploadChunkResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  int32 chunk_number = 3; // 分片序号
+  string etag = 4; // 分片ETag
+}
+
+// 分片信息
+message ChunkPart {
+  int32 part_number = 1; // 分片序号
+  string etag = 2; // 分片ETag
+}
+
+// 完成分片上传请求
+message CompleteChunkUploadRequest {
+  string token = 1; // 用户token
+  string upload_id = 2; // 分片上传ID
+  string object_name = 3; // 对象名称
+  repeated ChunkPart parts = 4; // 已上传的分片列表
+}
+
+message CompleteChunkUploadResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  uint32 video_id = 3; // 视频ID
+  string video_url = 4; // 视频URL
+}
+
+// 取消分片上传请求
+message AbortChunkUploadRequest {
+  string token = 1; // 用户token
+  string upload_id = 2; // 分片上传ID
+  string object_name = 3; // 对象名称
+}
+
+message AbortChunkUploadResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+}
+
 // 发布视频请求
 message PublishVideoRequest {
   string token = 1; // 用户token
@@ -347,6 +418,12 @@ service VideoService {
   rpc DeleteVideo(DeleteVideoRequest) returns(DeleteVideoResponse);
   rpc RetryTranscode(RetryTranscodeRequest) returns(RetryTranscodeResponse);
   
+  // 分片上传相关
+  rpc InitChunkUpload(InitChunkUploadRequest) returns(InitChunkUploadResponse);
+  rpc UploadChunk(UploadChunkRequest) returns(UploadChunkResponse);
+  rpc CompleteChunkUpload(CompleteChunkUploadRequest) returns(CompleteChunkUploadResponse);
+  rpc AbortChunkUpload(AbortChunkUploadRequest) returns(AbortChunkUploadResponse);
+  
   // 视频信息获取
   rpc GetVideoInfo(GetVideoInfoRequest) returns(VideoResponse);
   rpc GetVideoInfos(GetVideoInfosRequest) returns(GetVideoInfosResponse);
@@ -374,6 +451,13 @@ service VideoService {
   // 播放量统计相关
   rpc RecordPlay(RecordPlayRequest) returns(RecordPlayResponse);
   rpc ReportProgress(ReportProgressRequest) returns(ReportProgressResponse);
+  
+  // 视频互动统计相关
+  rpc GetVideoInteractionStats(GetVideoInteractionStatsRequest) returns(GetVideoInteractionStatsResponse);
+  
+  // 弹幕相关
+  rpc SendDanmaku(SendDanmakuRequest) returns(SendDanmakuResponse);
+  rpc GetDanmakus(GetDanmakusRequest) returns(GetDanmakusResponse);
 }
 
 // 获取热门视频列表请求
@@ -456,4 +540,75 @@ message ReportProgressResponse {
   string status_msg = 2; // 返回状态描述
   bool is_complete = 3; // 是否标记为完整观看
   uint32 watch_time = 4; // 本次观看时长（秒）
+}
+
+// ==================== 视频互动统计接口 ====================
+
+// 获取视频互动数据请求
+message GetVideoInteractionStatsRequest {
+  uint32 video_id = 1; // 视频ID
+  string token = 2; // 用户token (可选，用于判断是否已点赞/收藏)
+}
+
+// 获取视频互动数据响应
+message GetVideoInteractionStatsResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  uint32 video_id = 3; // 视频ID
+  uint32 like_count = 4; // 点赞量
+  uint32 favorite_count = 5; // 收藏量
+  uint32 coin_count = 6; // 投币量
+  uint32 share_count = 7; // 转发量
+  uint32 play_count = 8; // 播放量
+  uint32 danmaku_count = 9; // 弹幕量
+  uint32 comment_count = 10; // 评论量
+  bool is_liked = 11; // 当前用户是否已点赞
+  bool is_favorited = 12; // 当前用户是否已收藏
+  bool is_coined = 13; // 当前用户是否已投币
+}
+
+// ==================== 弹幕相关接口 ====================
+
+// 发送弹幕请求
+message SendDanmakuRequest {
+  uint32 video_id = 1; // 视频ID
+  string text = 2; // 弹幕内容
+  string color = 3; // 弹幕颜色，默认为白色
+  float video_timestamp = 4; // 视频时间戳（秒）
+  string speed = 5; // 弹幕速度：slow, normal, fast
+  string token = 6; // 用户token
+}
+
+// 发送弹幕响应
+message SendDanmakuResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  Danmaku danmaku = 3; // 发送的弹幕信息
+}
+
+// 获取弹幕列表请求
+message GetDanmakusRequest {
+  uint32 video_id = 1; // 视频ID
+  int32 page = 2; // 页码，默认1
+  int32 page_size = 3; // 每页数量，默认20
+}
+
+// 获取弹幕列表响应
+message GetDanmakusResponse {
+  int32 status_code = 1; // 状态码，0-成功，其他值-失败
+  string status_msg = 2; // 返回状态描述
+  repeated Danmaku danmakus = 3; // 弹幕列表
+  int32 total = 4; // 总数量
+}
+
+// 弹幕信息
+message Danmaku {
+  uint32 id = 1; // 弹幕ID
+  uint32 user_id = 2; // 用户ID
+  uint32 video_id = 3; // 视频ID
+  string text = 4; // 弹幕内容
+  string color = 5; // 弹幕颜色
+  float video_timestamp = 6; // 视频时间戳（秒）
+  string speed = 7; // 弹幕速度
+  int64 created_at = 8; // 创建时间戳（秒）
 }

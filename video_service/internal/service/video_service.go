@@ -1279,3 +1279,151 @@ func (s *VideoService) ReportProgress(ctx context.Context, videoID uint32, userI
 
 	return isComplete, watchTime, nil
 }
+
+// ==================== 分片上传相关方法 ====================
+
+// InitChunkUpload 初始化分片上传
+func (s *VideoService) InitChunkUpload(ctx context.Context, userID, fileName string, fileSize int64, title, description, category string, tags []string) (string, string, int, int, error) {
+	s.logger.Info("InitChunkUpload called",
+		"user_id", userID,
+		"file_name", fileName,
+		"file_size", fileSize)
+
+	// 生成上传ID
+	uploadID := uuid.New().String()
+
+	// 生成对象名称
+	objectName := fmt.Sprintf("videos/%s/%s", uploadID, fileName)
+
+	// 计算分片大小（默认5MB）
+	chunkSize := 5 * 1024 * 1024 // 5MB
+
+	// 计算总分片数
+	totalChunks := int(fileSize) / chunkSize
+	if int(fileSize)%chunkSize > 0 {
+		totalChunks++
+	}
+
+	s.logger.Info("Chunk upload initialized",
+		"upload_id", uploadID,
+		"object_name", objectName,
+		"chunk_size", chunkSize,
+		"total_chunks", totalChunks)
+
+	return uploadID, objectName, chunkSize, totalChunks, nil
+}
+
+// UploadChunk 上传分片
+func (s *VideoService) UploadChunk(ctx context.Context, uploadID, objectName string, chunkNumber int, chunkData []byte) (string, error) {
+	s.logger.Info("UploadChunk called",
+		"upload_id", uploadID,
+		"object_name", objectName,
+		"chunk_number", chunkNumber,
+		"chunk_size", len(chunkData))
+
+	// 保存分片到临时目录
+	tmpDir := fmt.Sprintf("/tmp/upload/%s", uploadID)
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		s.logger.Error("Failed to create temp directory", "error", err)
+		return "", fmt.Errorf("failed to create temp directory: %w", err)
+	}
+
+	// 保存分片文件
+	chunkPath := fmt.Sprintf("%s/chunk_%d", tmpDir, chunkNumber)
+	if err := os.WriteFile(chunkPath, chunkData, 0644); err != nil {
+		s.logger.Error("Failed to save chunk", "error", err)
+		return "", fmt.Errorf("failed to save chunk: %w", err)
+	}
+
+	// 生成ETag（使用简单的哈希）
+	etag := fmt.Sprintf("%x", chunkNumber)
+
+	s.logger.Info("Chunk saved successfully",
+		"chunk_path", chunkPath,
+		"etag", etag)
+
+	return etag, nil
+}
+
+// CompleteChunkUpload 完成分片上传
+// func (s *VideoService) CompleteChunkUpload(ctx context.Context, userID, uploadID, objectName string, parts []miniogo.CompletePart) (uint32, string, error) {
+// 	s.logger.Info("CompleteChunkUpload called",
+// 		"user_id", userID,
+// 		"upload_id", uploadID,
+// 		"object_name", objectName,
+// 		"parts_count", len(parts))
+
+// 	tmpDir := fmt.Sprintf("/tmp/upload/%s", uploadID)
+
+// 	// 合并所有分片
+// 	mergedFilePath := fmt.Sprintf("%s/merged", tmpDir)
+// 	mergedFile, err := os.Create(mergedFilePath)
+// 	if err != nil {
+// 		s.logger.Error("Failed to create merged file", "error", err)
+// 		return 0, "", fmt.Errorf("failed to create merged file: %w", err)
+// 	}
+
+// 	// 按顺序合并分片
+// 	for i := 1; ; i++ {
+// 		chunkPath := fmt.Sprintf("%s/chunk_%d", tmpDir, i)
+// 		chunkData, err := os.ReadFile(chunkPath)
+// 		if err != nil {
+// 			if os.IsNotExist(err) {
+// 				break // 所有分片已合并
+// 			}
+// 			mergedFile.Close()
+// 			s.logger.Error("Failed to read chunk", "chunk", i, "error", err)
+// 			return 0, "", fmt.Errorf("failed to read chunk %d: %w", i, err)
+// 		}
+
+// 		if _, err := mergedFile.Write(chunkData); err != nil {
+// 			mergedFile.Close()
+// 			s.logger.Error("Failed to write chunk to merged file", "chunk", i, "error", err)
+// 			return 0, "", fmt.Errorf("failed to write chunk %d: %w", i, err)
+// 		}
+// 	}
+// 	mergedFile.Close()
+
+// 	// 读取合并后的文件
+// 	mergedData, err := os.ReadFile(mergedFilePath)
+// 	if err != nil {
+// 		s.logger.Error("Failed to read merged file", "error", err)
+// 		return 0, "", fmt.Errorf("failed to read merged file: %w", err)
+// 	}
+
+// 	// 提取文件名
+// 	fileName := filepath.Base(objectName)
+
+// 	// 调用UploadVideo上传合并后的文件
+// 	videoID, videoURL, _, err := s.UploadVideo(ctx, userID, fileName, "待编辑的视频", "", "", []string{}, mergedData)
+// 	if err != nil {
+// 		s.logger.Error("Failed to upload merged video", "error", err)
+// 		return 0, "", fmt.Errorf("failed to upload merged video: %w", err)
+// 	}
+
+// 	// 清理临时文件
+// 	os.RemoveAll(tmpDir)
+
+// 	s.logger.Info("Chunk upload completed successfully",
+// 		"video_id", videoID,
+// 		"video_url", videoURL)
+
+// 	return videoID, videoURL, nil
+// }
+
+// AbortChunkUpload 取消分片上传
+func (s *VideoService) AbortChunkUpload(ctx context.Context, uploadID, objectName string) error {
+	s.logger.Info("AbortChunkUpload called",
+		"upload_id", uploadID,
+		"object_name", objectName)
+
+	// 清理临时目录
+	tmpDir := fmt.Sprintf("/tmp/upload/%s", uploadID)
+	if err := os.RemoveAll(tmpDir); err != nil {
+		s.logger.Error("Failed to remove temp directory", "error", err)
+		return fmt.Errorf("failed to remove temp directory: %w", err)
+	}
+
+	s.logger.Info("Chunk upload aborted successfully")
+	return nil
+}

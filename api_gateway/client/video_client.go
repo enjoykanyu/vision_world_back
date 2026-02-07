@@ -264,3 +264,35 @@ func (c *VideoServiceClient) GetDanmakus(ctx context.Context, req *videopb.GetDa
 	}
 	return c.client.GetDanmakus(ctx, req)
 }
+
+// InitChunkUpload 初始化分片上传
+func (c *VideoServiceClient) InitChunkUpload(ctx context.Context, req *videopb.InitChunkUploadRequest) (*videopb.InitChunkUploadResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.InitChunkUpload(ctx, req)
+}
+
+// UploadChunk 上传分片
+func (c *VideoServiceClient) UploadChunk(ctx context.Context, req *videopb.UploadChunkRequest) (*videopb.UploadChunkResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.UploadChunk(ctx, req)
+}
+
+// CompleteChunkUpload 完成分片上传
+func (c *VideoServiceClient) CompleteChunkUpload(ctx context.Context, req *videopb.CompleteChunkUploadRequest) (*videopb.CompleteChunkUploadResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.CompleteChunkUpload(ctx, req)
+}
+
+// AbortChunkUpload 取消分片上传
+func (c *VideoServiceClient) AbortChunkUpload(ctx context.Context, req *videopb.AbortChunkUploadRequest) (*videopb.AbortChunkUploadResponse, error) {
+	if !c.IsConnected() {
+		return nil, fmt.Errorf("connection not ready")
+	}
+	return c.client.AbortChunkUpload(ctx, req)
+}
