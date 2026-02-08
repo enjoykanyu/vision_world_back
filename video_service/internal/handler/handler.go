@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -22,6 +23,7 @@ import (
 	"github.com/vision_world/video_service/pkg/logger"
 	"github.com/vision_world/video_service/pkg/minio"
 	auditpb "github.com/vision_world/video_service/proto/proto_gen/audit"
+
 	//"github.com/vision_world/video_service/proto/proto_gen/user"
 	userpb "github.com/vision_world/video_service/proto/proto_gen/user"
 	pb "github.com/vision_world/video_service/proto/proto_gen/video"
@@ -1438,13 +1440,13 @@ func (h *VideoHandler) ReportProgress(ctx context.Context, req *pb.ReportProgres
 
 // GetVideoInteractionStats 获取视频互动数据统计
 func (h *VideoHandler) GetVideoInteractionStats(ctx context.Context, req *pb.GetVideoInteractionStatsRequest) (*pb.GetVideoInteractionStatsResponse, error) {
-	h.logger.Info("GetVideoInteractionStats called", zap.Uint32("video_id", req.VideoId))
+	log.Printf("GetVideoInteractionStats called, video_id: %d", req.VideoId)
 
 	// 获取视频详情
 	videoID := strconv.FormatUint(uint64(req.VideoId), 10)
 	videoDetail, err := h.videoService.GetVideoDetail(ctx, videoID)
 	if err != nil {
-		h.logger.Error("Failed to get video detail", zap.Error(err))
+		log.Printf("Failed to get video detail, video_id: %d, error: %v", req.VideoId, err)
 		return &pb.GetVideoInteractionStatsResponse{
 			StatusCode: 404,
 			StatusMsg:  "视频不存在",
