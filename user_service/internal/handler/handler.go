@@ -189,7 +189,7 @@ func (h *UserServiceHandler) RefreshToken(ctx context.Context, req *proto_gen.Re
 
 // GetUserInfo 获取用户信息
 func (h *UserServiceHandler) GetUserInfo(ctx context.Context, req *proto_gen.GetUserInfoRequest) (*proto_gen.UserResponse, error) {
-	h.logger.Info("GetUserInfo called", "user_id", req.UserId)
+	log.Printf("GetUserInfo called, user_id: %d", req.UserId)
 	converter := converter.NewUserConverter()
 
 	// 调用用户服务获取用户信息
