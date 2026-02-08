@@ -356,7 +356,7 @@ func (s *userService) SendSmsCode(ctx context.Context, phone string) error {
 
 // VerifyToken 验证Token
 func (s *userService) VerifyToken(ctx context.Context, token string) (uint32, error) {
-	s.logger.Info("VerifyToken service called")
+	log.Printf("VerifyToken service called, token: %s", token)
 
 	// 验证token格式
 	if token == "" {
@@ -366,7 +366,7 @@ func (s *userService) VerifyToken(ctx context.Context, token string) (uint32, er
 	// 验证token
 	userID, err := s.authService.VerifyToken(token)
 	if err != nil {
-		s.logger.Error("Token parsing failed", "error", err)
+		log.Printf("Token parsing failed, error: %v", err)
 		return 0, fmt.Errorf("token verification failed: %w", err)
 	}
 
@@ -376,7 +376,7 @@ func (s *userService) VerifyToken(ctx context.Context, token string) (uint32, er
 		if err == gorm.ErrRecordNotFound {
 			return 0, errors.New("user not found")
 		}
-		s.logger.Error("Failed to get user", "error", err)
+		log.Printf("Failed to get user, userID: %d, error: %v", userID, err)
 		return 0, errors.New("database error")
 	}
 
@@ -395,7 +395,7 @@ func (s *userService) VerifyToken(ctx context.Context, token string) (uint32, er
 	}
 
 	if cacheErr := s.cacheService.SetUser(ctx, user.ID, userCache, 30*time.Minute); cacheErr != nil {
-		s.logger.Warn("Failed to cache user", "userID", userID, "error", cacheErr)
+		log.Printf("Failed to cache user, userID: %d, error: %v", user.ID, cacheErr)
 		// 不影响主流程，只记录警告
 	}
 
@@ -411,21 +411,21 @@ func (s *userService) VerifyToken(ctx context.Context, token string) (uint32, er
 func (s *userService) RefreshToken(ctx context.Context, refreshToken string) (string, error) {
 	// 验证refresh token格式
 	if err := s.validateToken(refreshToken); err != nil {
-		s.logger.Error("Invalid refresh token format", "error", err)
+		log.Printf("Invalid refresh token format, error: %v", err)
 		return "", fmt.Errorf("invalid refresh token format: %w", err)
 	}
 
 	// 解析refresh token
 	userID, err := s.authService.ParseRefreshToken(refreshToken)
 	if err != nil {
-		s.logger.Error("Failed to parse refresh token", "error", err)
+		log.Printf("Failed to parse refresh token, error: %v", err)
 		return "", fmt.Errorf("failed to parse refresh token: %w", err)
 	}
 
 	// 从数据库获取用户
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		s.logger.Error("Failed to get user by ID", "userID", userID, "error", err)
+		log.Printf("Failed to get user by ID, userID: %d, error: %v", userID, err)
 		return "", fmt.Errorf("failed to get user: %w", err)
 	}
 
@@ -444,34 +444,34 @@ func (s *userService) RefreshToken(ctx context.Context, refreshToken string) (st
 	}
 
 	if cacheErr := s.cacheService.SetUser(ctx, user.ID, userCache, 30*time.Minute); cacheErr != nil {
-		s.logger.Warn("Failed to cache user", "userID", userID, "error", cacheErr)
+		log.Printf("Failed to cache user, userID: %d, error: %v", user.ID, cacheErr)
 		// 不影响主流程，只记录警告
 	}
 
 	// 检查用户状态
 	if user.Status != model.UserStatusActive {
-		s.logger.Error("User account is not active", "userID", userID, "status", user.Status)
+		log.Printf("User account is not active, userID: %d, status: %d", userID, user.Status)
 		return "", fmt.Errorf("account is not active")
 	}
 
 	// 生成新的token
 	newToken, err := s.authService.GenerateToken(ctx, user.ID)
 	if err != nil {
-		s.logger.Error("Failed to generate token", "userID", user.ID, "error", err)
+		log.Printf("Failed to generate token, userID: %d, error: %v", user.ID, err)
 		return "", fmt.Errorf("failed to generate token: %w", err)
 	}
 
 	// 生成新的refresh token
 	newRefreshToken, err := s.authService.GenerateRefreshToken(ctx, user.ID)
 	if err != nil {
-		s.logger.Error("Failed to generate refresh token", "userID", user.ID, "error", err)
+		log.Printf("Failed to generate refresh token, userID: %d, error: %v", user.ID, err)
 		return "", fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 
 	// 将新的refresh token存储在缓存中，以便后续验证
 	refreshTokenKey := fmt.Sprintf("refresh_token:%d", user.ID)
 	if err := s.cacheService.Set(ctx, refreshTokenKey, newRefreshToken, 7*24*time.Hour); err != nil {
-		s.logger.Warn("Failed to cache refresh token", "userID", user.ID, "error", err)
+		log.Printf("Failed to cache refresh token, userID: %d, error: %v", user.ID, err)
 		// 不影响主流程，只记录警告
 	}
 
@@ -481,14 +481,14 @@ func (s *userService) RefreshToken(ctx context.Context, refreshToken string) (st
 
 // GetUserInfo 获取用户信息
 func (s *userService) GetUserInfo(ctx context.Context, userID uint32) (*model.User, error) {
-	s.logger.Info("GetUserInfo service called", "userID", userID)
+	log.Printf("GetUserInfo service called, userID: %d", userID)
 
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errors.New("user not found")
 		}
-		s.logger.Error("Failed to get user", "error", err)
+		log.Printf("Failed to get user, userID: %d, error: %v", userID, err)
 		return nil, errors.New("database error")
 	}
 	log.Printf("ttt user: %+v", user)
@@ -498,11 +498,11 @@ func (s *userService) GetUserInfo(ctx context.Context, userID uint32) (*model.Us
 
 // GetUserInfos 批量获取用户信息
 func (s *userService) GetUserInfos(ctx context.Context, userIDs []uint32) ([]*model.User, error) {
-	s.logger.Info("GetUserInfos service called", "count", len(userIDs))
+	log.Printf("GetUserInfos service called, count: %d", len(userIDs))
 
 	users, err := s.userRepo.GetByIDs(ctx, userIDs)
 	if err != nil {
-		s.logger.Error("Failed to get users", "error", err)
+		log.Printf("Failed to get users, error: %v", err)
 		return nil, errors.New("database error")
 	}
 
@@ -517,7 +517,7 @@ func (s *userService) GetUserInfos(ctx context.Context, userIDs []uint32) ([]*mo
 
 // UpdateUserInfo 更新用户信息
 func (s *userService) UpdateUserInfo(ctx context.Context, userID uint32, updates map[string]interface{}) error {
-	s.logger.Info("UpdateUserInfo service called", "userID", userID, "updates", updates)
+	log.Printf("UpdateUserInfo service called, userID: %d, updates: %v", userID, updates)
 
 	// 验证用户是否存在
 	_, err := s.userRepo.GetByID(ctx, userID)
@@ -525,20 +525,20 @@ func (s *userService) UpdateUserInfo(ctx context.Context, userID uint32, updates
 		if err == gorm.ErrRecordNotFound {
 			return errors.New("user not found")
 		}
-		s.logger.Error("Failed to get user", "error", err)
+		log.Printf("Failed to get user, userID: %d, error: %v", userID, err)
 		return errors.New("database error")
 	}
 
 	// 更新用户信息
 	updates["updated_at"] = time.Now()
 	if err := s.userRepo.Update(ctx, uint32(userID), updates); err != nil {
-		s.logger.Error("Failed to update user", "error", err)
+		log.Printf("Failed to update user, userID: %d, error: %v", userID, err)
 		return errors.New("update failed")
 	}
 
 	// 清除用户缓存
 	if err := s.userRepo.DeleteUserCache(ctx, userID); err != nil {
-		s.logger.Error("Failed to clear user cache", "error", err)
+		log.Printf("Failed to clear user cache, userID: %d, error: %v", userID, err)
 	}
 
 	return nil
@@ -546,14 +546,14 @@ func (s *userService) UpdateUserInfo(ctx context.Context, userID uint32, updates
 
 // GetUserExistInformation 检查用户是否存在
 func (s *userService) GetUserExistInformation(ctx context.Context, userID uint32) (bool, error) {
-	s.logger.Info("GetUserExistInformation service called", "userID", userID)
+	log.Printf("GetUserExistInformation service called, userID: %d", userID)
 
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return false, nil
 		}
-		s.logger.Error("Failed to check user existence", "error", err)
+		log.Printf("Failed to check user existence, userID: %d, error: %v", userID, err)
 		return false, errors.New("database error")
 	}
 

@@ -101,6 +101,8 @@ func (s *VideoService) GetVideoByID(ctx context.Context, videoID string) (*model
 func (s *VideoService) GetVideoDetail(ctx context.Context, videoID string) (*model.VideoDetail, error) {
 	// 从仓库层获取视频详情
 	videoDetail, err := s.repo.GetVideoDetailByID(ctx, videoID)
+	log.Println("GetVideoDetailByID")
+	log.Println(videoDetail)
 	if err != nil {
 		return nil, err
 	}

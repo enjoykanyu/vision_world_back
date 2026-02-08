@@ -58,6 +58,7 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 // GetByID 根据ID获取用户
 func (r *userRepository) GetByID(ctx context.Context, userID uint32) (*model.User, error) {
 	var user model.User
+	log.Printf("GetByID: %d", userID)
 	if err := r.db.WithContext(ctx).First(&user, userID).Error; err != nil {
 		return nil, err
 	}

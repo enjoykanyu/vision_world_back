@@ -1121,6 +1121,7 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 					}
 
 					resp, err := videoClient.GetVideoInfo(ctx, req)
+					log.Printf("GetVideoInfo response: %v", resp)
 					if err == nil && resp.StatusCode == 0 {
 						// 检查是否有HLS播放列表URL
 						if resp.Video.PlaylistUrl == "" {
