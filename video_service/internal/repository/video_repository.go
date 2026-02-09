@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -167,9 +168,10 @@ func (r *videoRepository) GetVideoByID(ctx context.Context, videoID string) (*mo
 func (r *videoRepository) GetVideoDetailByID(ctx context.Context, videoID string) (*model.VideoDetail, error) {
 	// 先从缓存获取
 	if r.redis != nil {
-		cacheKey := fmt.Sprintf("%s%s_detail", model.CacheKeyVideo, videoID)
+		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoID)
 		cached, err := r.redis.Get(ctx, cacheKey).Result()
-		if err == nil {
+		log.Printf("cached: %s, err: %v", cached, err)
+		if err == nil && cached != "" {
 			var videoDetail model.VideoDetail
 			if json.Unmarshal([]byte(cached), &videoDetail) == nil {
 				return &videoDetail, nil
@@ -224,7 +226,7 @@ func (r *videoRepository) GetVideoDetailByID(ctx context.Context, videoID string
 
 	// 存入缓存
 	if r.redis != nil {
-		cacheKey := fmt.Sprintf("%s%s_detail", model.CacheKeyVideo, videoID)
+		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoID)
 		if data, err := json.Marshal(videoDetail); err == nil {
 			r.redis.Set(ctx, cacheKey, data, model.CacheExpireShort)
 		}
@@ -623,7 +625,7 @@ func (r *videoRepository) UpdateVideoURL(ctx context.Context, videoID uint32, vi
 		cacheKey := fmt.Sprintf("%s%d", model.CacheKeyVideo, videoID)
 		r.redis.Del(ctx, cacheKey)
 		// 清除详情缓存
-		detailCacheKey := fmt.Sprintf("%s%d_detail", model.CacheKeyVideo, videoID)
+		detailCacheKey := fmt.Sprintf("%s%d", model.CacheKeyVideo, videoID)
 		r.redis.Del(ctx, detailCacheKey)
 	}
 
@@ -646,7 +648,7 @@ func (r *videoRepository) UpdateVideoTranscodeStatus(ctx context.Context, videoI
 		cacheKey := fmt.Sprintf("%s%d", model.CacheKeyVideo, videoID)
 		r.redis.Del(ctx, cacheKey)
 		// 清除详情缓存
-		detailCacheKey := fmt.Sprintf("%s%d_detail", model.CacheKeyVideo, videoID)
+		detailCacheKey := fmt.Sprintf("%s%d", model.CacheKeyVideo, videoID)
 		r.redis.Del(ctx, detailCacheKey)
 	}
 
@@ -706,10 +708,10 @@ func (r *videoRepository) UpdateVideoMetadata(ctx context.Context, videoID strin
 
 	// 清除相关缓存
 	if r.redis != nil {
-		cacheKey := fmt.Sprintf("%s%d", model.CacheKeyVideo, videoID)
+		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoID)
 		r.redis.Del(ctx, cacheKey)
 		// 清除详情缓存
-		detailCacheKey := fmt.Sprintf("%s%d_detail", model.CacheKeyVideo, videoID)
+		detailCacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoID)
 		r.redis.Del(ctx, detailCacheKey)
 	}
 
