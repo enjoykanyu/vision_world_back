@@ -25,7 +25,6 @@ import (
 	"github.com/vision_world/video_service/pkg/minio"
 	"github.com/vision_world/video_service/pkg/transcode"
 	"github.com/vision_world/video_service/proto/proto_gen/user"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 )
@@ -90,11 +89,6 @@ func (s *VideoService) Close() error {
 		return s.repo.Close()
 	}
 	return nil
-}
-
-// GetVideoByID 根据ID获取视频详情
-func (s *VideoService) GetVideoByID(ctx context.Context, videoID string) (*model.RecommendationVideo, error) {
-	return s.repo.GetVideoByID(ctx, videoID)
 }
 
 // GetVideoDetail 根据ID获取完整视频详情，包括用户信息
@@ -218,12 +212,12 @@ func (s *VideoService) UpdateVideoViewCount(ctx context.Context, videoID string,
 	}
 
 	// 获取更新后的播放量
-	video, err := s.repo.GetVideoByID(ctx, videoID)
+	video, err := s.repo.GetVideoDetailByID(ctx, videoID)
 	if err != nil {
 		return 0, err
 	}
 
-	return int64(video.ViewCount), nil
+	return int64(video.PlayCount), nil
 }
 
 // UpdateVideoLikeCount 更新视频点赞数
@@ -241,7 +235,7 @@ func (s *VideoService) UpdateVideoLikeCount(ctx context.Context, videoID string,
 	}
 
 	// 获取更新后的点赞数
-	video, err := s.repo.GetVideoByID(ctx, videoID)
+	video, err := s.repo.GetVideoDetailByID(ctx, videoID)
 	if err != nil {
 		return 0, err
 	}
@@ -996,7 +990,7 @@ func (s *VideoService) PublishVideo(ctx context.Context, userID string, videoID 
 		"user_id", userID)
 
 	// 先检查视频是否存在
-	video, err := s.repo.GetVideoByID(ctx, videoID)
+	video, err := s.repo.GetVideoDetailByID(ctx, videoID)
 	if err != nil {
 		s.logger.Error("Video not found when publishing",
 			"video_id", videoID,
@@ -1091,7 +1085,7 @@ func (s *VideoService) RetryTranscode(ctx context.Context, videoID uint32) error
 
 	// 获取视频信息
 	videoStrID := strconv.FormatUint(uint64(videoID), 10)
-	video, err := s.repo.GetVideoByID(ctx, videoStrID)
+	video, err := s.repo.GetVideoDetailByID(ctx, videoStrID)
 	if err != nil {
 		s.logger.Error("Video not found for transcoding",
 			"video_id", videoID,
