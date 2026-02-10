@@ -863,7 +863,7 @@ func (h *VideoHandler) AbortChunkUpload(ctx context.Context, req *pb.AbortChunkU
 
 // GetVideoInfo 获取单个视频信息
 func (h *VideoHandler) GetVideoInfo(ctx context.Context, req *pb.GetVideoInfoRequest) (*pb.VideoResponse, error) {
-	h.logger.Info("GetVideoInfo called", zap.Uint32("video_id", req.VideoId))
+	log.Printf("GetVideoInfo called, video_id: %d", req.VideoId)
 
 	// 调用service层获取视频信息
 	videoID := strconv.FormatUint(uint64(req.VideoId), 10)
@@ -1384,7 +1384,7 @@ func (h *VideoHandler) LikeComment(ctx context.Context, req *pb.LikeCommentReque
 
 // RecordPlay 记录视频播放
 func (h *VideoHandler) RecordPlay(ctx context.Context, req *pb.RecordPlayRequest) (*pb.RecordPlayResponse, error) {
-	h.logger.Info("RecordPlay called",
+	log.Println("RecordPlay called",
 		zap.Uint32("video_id", req.VideoId),
 		zap.Uint32("user_id", req.UserId),
 		zap.String("session_id", req.SessionId),
@@ -1394,7 +1394,7 @@ func (h *VideoHandler) RecordPlay(ctx context.Context, req *pb.RecordPlayRequest
 	// 调用 videoService 记录播放
 	playCount, isRecorded, realPlayCount, err := h.videoService.RecordPlay(ctx, req.VideoId, req.UserId, req.SessionId, req.DeviceId, req.ViewSource)
 	if err != nil {
-		h.logger.Error("Failed to record play", zap.Error(err))
+		log.Printf("Failed to record play, video_id: %d, error: %v", req.VideoId, err)
 		return &pb.RecordPlayResponse{
 			StatusCode: 500,
 			StatusMsg:  "Failed to record play: " + err.Error(),
