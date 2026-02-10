@@ -1170,6 +1170,9 @@ func (h *VideoHandler) ProxyHLSStream(c *gin.Context) {
 
 					resp, err := videoClient.GetVideoInfo(ctx, req)
 					if err == nil && resp.StatusCode == 0 && resp.Video != nil {
+						// 打印 Video 结构体详细信息
+						log.Printf("Video Info - ID: %d, Title: %s, PlaylistUrl: %s, VideoUrl: %s, CoverUrl: %s",
+							resp.Video.Id, resp.Video.Title, resp.Video.PlaylistUrl, resp.Video.VideoUrl, resp.Video.CoverUrl)
 						transcodeStatus := "unknown"
 						playlistURL := resp.Video.PlaylistUrl
 
