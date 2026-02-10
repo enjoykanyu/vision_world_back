@@ -103,6 +103,7 @@ func (s *VideoService) GetVideoDetail(ctx context.Context, videoID string) (*mod
 	videoDetail, err := s.repo.GetVideoDetailByID(ctx, videoID)
 	log.Println("GetVideoDetailByID")
 	log.Println(videoDetail)
+	log.Println("videoDetail.PlaylistURL value:", videoDetail.PlaylistURL)
 	if err != nil {
 		return nil, err
 	}
@@ -1194,7 +1195,7 @@ func (s *VideoService) RetryTranscode(ctx context.Context, videoID uint32) error
 
 // RecordPlay 记录视频播放
 func (s *VideoService) RecordPlay(ctx context.Context, videoID uint32, userID uint32, sessionID, deviceID, viewSource string) (uint32, bool, uint32, error) {
-	s.logger.Info("Recording video play",
+	log.Println("Recording video play",
 		"video_id", videoID,
 		"user_id", userID,
 		"session_id", sessionID,
@@ -1209,7 +1210,7 @@ func (s *VideoService) RecordPlay(ctx context.Context, videoID uint32, userID ui
 	// 检查该设备今天是否已经记录过
 	exists, err := s.redis.Exists(ctx, deviceKey).Result()
 	if err != nil {
-		s.logger.Error("Failed to check device play record", "error", err)
+		log.Printf("Failed to check device play record, video_id: %d, error: %v", videoID, err)
 		// 继续执行，不阻断播放
 	}
 
@@ -1227,13 +1228,13 @@ func (s *VideoService) RecordPlay(ctx context.Context, videoID uint32, userID ui
 			log.Println("增加下播放量")
 			// Redis 设置
 			if err = s.redis.Set(ctx, deviceKey, "1", 24*time.Hour).Err(); err != nil {
-				s.logger.Error("Failed to set device play record", "error", err)
+				log.Printf("Failed to set device play record, video_id: %d, error: %v", videoID, err)
 			}
 
 			// 更新播放量
 			videoIDStr := strconv.FormatUint(uint64(videoID), 10) // 高效转换 uint32 为 string
 			if _, err = s.UpdateVideoViewCount(ctx, videoIDStr, 1); err != nil {
-				s.logger.Error("Failed to update view count", zap.Error(err))
+				log.Printf("Failed to update view count, video_id: %d, error: %v", videoID, err)
 			}
 			isRecorded = true
 		}
@@ -1241,13 +1242,13 @@ func (s *VideoService) RecordPlay(ctx context.Context, videoID uint32, userID ui
 		// 获取当前播放量
 		var err error
 		if playCount, err = s.repo.GetVideoPlayCount(ctx, videoID); err != nil {
-			s.logger.Error("Failed to get video play count", "error", err)
+			log.Printf("Failed to get video play count, video_id: %d, error: %v", videoID, err)
 			playCount = 0
 		}
 
 		// 获取真实播放量
 		if realPlayCount, err = s.repo.GetVideoRealPlayCount(ctx, videoID); err != nil {
-			s.logger.Error("Failed to get video real play count", "error", err)
+			log.Printf("Failed to get video real play count, video_id: %d, error: %v", videoID, err)
 			realPlayCount = 0
 		}
 	}()
