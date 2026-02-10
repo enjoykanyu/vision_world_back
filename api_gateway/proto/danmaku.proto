@@ -19,6 +19,7 @@ message SendDanmakuRequest {
     string color = 3;        // 弹幕颜色，默认为白色
     float video_timestamp = 4; // 视频时间戳（秒）
     string speed = 5;        // 弹幕速度：slow, normal, fast
+    uint32 user_id = 6;      // 用户ID
 }
 
 // 发送弹幕响应

@@ -29,6 +29,7 @@ type SendDanmakuRequest struct {
 	Color          string                 `protobuf:"bytes,3,opt,name=color,proto3" json:"color,omitempty"`                                           // 弹幕颜色，默认为白色
 	VideoTimestamp float32                `protobuf:"fixed32,4,opt,name=video_timestamp,json=videoTimestamp,proto3" json:"video_timestamp,omitempty"` // 视频时间戳（秒）
 	Speed          string                 `protobuf:"bytes,5,opt,name=speed,proto3" json:"speed,omitempty"`                                           // 弹幕速度：slow, normal, fast
+	UserId         uint32                 `protobuf:"varint,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                          // 用户ID
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -96,6 +97,13 @@ func (x *SendDanmakuRequest) GetSpeed() string {
 		return x.Speed
 	}
 	return ""
+}
+
+func (x *SendDanmakuRequest) GetUserId() uint32 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
 }
 
 // 发送弹幕响应
@@ -378,13 +386,14 @@ var File_danmaku_proto protoreflect.FileDescriptor
 
 const file_danmaku_proto_rawDesc = "" +
 	"\n" +
-	"\rdanmaku.proto\x12\adanmaku\"\x98\x01\n" +
+	"\rdanmaku.proto\x12\adanmaku\"\xb1\x01\n" +
 	"\x12SendDanmakuRequest\x12\x19\n" +
 	"\bvideo_id\x18\x01 \x01(\rR\avideoId\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\x12\x14\n" +
 	"\x05color\x18\x03 \x01(\tR\x05color\x12'\n" +
 	"\x0fvideo_timestamp\x18\x04 \x01(\x02R\x0evideoTimestamp\x12\x14\n" +
-	"\x05speed\x18\x05 \x01(\tR\x05speed\"u\n" +
+	"\x05speed\x18\x05 \x01(\tR\x05speed\x12\x17\n" +
+	"\auser_id\x18\x06 \x01(\rR\x06userId\"u\n" +
 	"\x13SendDanmakuResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12*\n" +

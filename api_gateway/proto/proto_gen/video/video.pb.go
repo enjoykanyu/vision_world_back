@@ -4474,6 +4474,7 @@ type SendDanmakuRequest struct {
 	VideoTimestamp float32                `protobuf:"fixed32,4,opt,name=video_timestamp,json=videoTimestamp,proto3" json:"video_timestamp,omitempty"` // 视频时间戳（秒）
 	Speed          string                 `protobuf:"bytes,5,opt,name=speed,proto3" json:"speed,omitempty"`                                           // 弹幕速度：slow, normal, fast
 	Token          string                 `protobuf:"bytes,6,opt,name=token,proto3" json:"token,omitempty"`                                           // 用户token
+	UserId         uint32                 `protobuf:"varint,7,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                          // 用户ID
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -4548,6 +4549,13 @@ func (x *SendDanmakuRequest) GetToken() string {
 		return x.Token
 	}
 	return ""
+}
+
+func (x *SendDanmakuRequest) GetUserId() uint32 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
 }
 
 // 发送弹幕响应
@@ -5310,14 +5318,15 @@ const file_video_proto_rawDesc = "" +
 	" \x01(\rR\fcommentCount\x12\x19\n" +
 	"\bis_liked\x18\v \x01(\bR\aisLiked\x12!\n" +
 	"\fis_favorited\x18\f \x01(\bR\visFavorited\x12\x1b\n" +
-	"\tis_coined\x18\r \x01(\bR\bisCoined\"\xae\x01\n" +
+	"\tis_coined\x18\r \x01(\bR\bisCoined\"\xc7\x01\n" +
 	"\x12SendDanmakuRequest\x12\x19\n" +
 	"\bvideo_id\x18\x01 \x01(\rR\avideoId\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\x12\x14\n" +
 	"\x05color\x18\x03 \x01(\tR\x05color\x12'\n" +
 	"\x0fvideo_timestamp\x18\x04 \x01(\x02R\x0evideoTimestamp\x12\x14\n" +
 	"\x05speed\x18\x05 \x01(\tR\x05speed\x12\x14\n" +
-	"\x05token\x18\x06 \x01(\tR\x05token\"\x83\x01\n" +
+	"\x05token\x18\x06 \x01(\tR\x05token\x12\x17\n" +
+	"\auser_id\x18\a \x01(\rR\x06userId\"\x83\x01\n" +
 	"\x13SendDanmakuResponse\x12\x1f\n" +
 	"\vstatus_code\x18\x01 \x01(\x05R\n" +
 	"statusCode\x12\x1d\n" +

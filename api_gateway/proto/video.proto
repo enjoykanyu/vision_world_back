@@ -577,6 +577,7 @@ message SendDanmakuRequest {
   float video_timestamp = 4; // 视频时间戳（秒）
   string speed = 5; // 弹幕速度：slow, normal, fast
   string token = 6; // 用户token
+  uint32 user_id = 7; // 用户ID
 }
 
 // 发送弹幕响应
