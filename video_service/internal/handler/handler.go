@@ -1641,59 +1641,40 @@ func (h *VideoHandler) convertToProtoVideoDetail(videoDetail *model.VideoDetail)
 // ==================== 弹幕相关接口 ====================
 
 // SendDanmaku 发送弹幕
-// func (h *VideoHandler) SendDanmaku(ctx context.Context, req *pb.SendDanmakuRequest) (*pb.SendDanmakuResponse, error) {
-// 	h.logger.Info("SendDanmaku called", zap.Uint32("video_id", req.VideoId))
+func (h *VideoHandler) SendDanmaku(ctx context.Context, req *pb.SendDanmakuRequest) (*pb.SendDanmakuResponse, error) {
+	log.Println("SendDanmaku called", zap.Uint32("video_id", req.VideoId))
 
-// 	// 验证token获取用户ID
-// 	// 调用用户服务验证token
-// 	verifyResp, err := h.userClient.VerifyToken(ctx, &user.VerifyTokenRequest{Token: req.Token})
-// 	if err != nil || verifyResp.StatusCode != 0 || !verifyResp.Valid {
-// 		return &pb.SendDanmakuResponse{
-// 			StatusCode: 401,
-// 			StatusMsg:  "token无效",
-// 		}, err
-// 	}
+	userID := req.UserId
 
-// 	userID := verifyResp.UserId
-// 	// userID, err := h.verifyTokenAndGetUserID(ctx, req.Token)
-// 	if err != nil {
-// 		h.logger.Error("Failed to verify token", zap.Error(err))
-// 		return &pb.SendDanmakuResponse{
-// 			StatusCode: 401,
-// 			StatusMsg:  "未登录或token无效",
-// 		}, nil
-// 	}
+	//调用弹幕服务存储弹幕
+	//调用service->db
+	err := h.videoService.SendDanmaku(ctx, userID, req.VideoId, req.Text, req.Color, req.VideoTimestamp, req.Speed)
+	if err != nil {
+		h.logger.Error("Failed to send danmaku", zap.Error(err))
+		return &pb.SendDanmakuResponse{
+			StatusCode: 500,
+			StatusMsg:  "发送弹幕失败",
+		}, err
+	}
 
-// 	// TODO: 调用弹幕服务存储弹幕
-// 	//调用service->db
-// 	// 这里暂时返回模拟数据
-// 	videoID, videoURL, video, err := h.videoService.SendDanmaku(ctx, userID, req.VideoId, req.Text, req.Color, req.VideoTimestamp, req.Speed)
-// 	if err != nil {
-// 		h.logger.Error("Failed to send danmaku", zap.Error(err))
-// 		return &pb.SendDanmakuResponse{
-// 			StatusCode: 500,
-// 			StatusMsg:  "发送弹幕失败",
-// 		}, err
-// 	}
+	now := time.Now().Unix()
+	danmaku := &pb.Danmaku{
+		Id:             uint32(now), // 使用时间戳作为临时ID
+		UserId:         userID,
+		VideoId:        req.VideoId,
+		Text:           req.Text,
+		Color:          req.Color,
+		VideoTimestamp: req.VideoTimestamp,
+		Speed:          req.Speed,
+		CreatedAt:      now,
+	}
 
-// 	now := time.Now().Unix()
-// 	danmaku := &pb.Danmaku{
-// 		Id:             uint32(now), // 使用时间戳作为临时ID
-// 		UserId:         userID,
-// 		VideoId:        req.VideoId,
-// 		Text:           req.Text,
-// 		Color:          req.Color,
-// 		VideoTimestamp: req.VideoTimestamp,
-// 		Speed:          req.Speed,
-// 		CreatedAt:      now,
-// 	}
-
-// 	return &pb.SendDanmakuResponse{
-// 		StatusCode: 0,
-// 		StatusMsg:  "success",
-// 		Danmaku:    danmaku,
-// 	}, nil
-// }
+	return &pb.SendDanmakuResponse{
+		StatusCode: 0,
+		StatusMsg:  "success",
+		Danmaku:    danmaku,
+	}, nil
+}
 
 // GetDanmakus 获取视频弹幕列表
 func (h *VideoHandler) GetDanmakus(ctx context.Context, req *pb.GetDanmakusRequest) (*pb.GetDanmakusResponse, error) {
