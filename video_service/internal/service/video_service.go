@@ -1430,3 +1430,8 @@ func (s *VideoService) AbortChunkUpload(ctx context.Context, uploadID, objectNam
 	s.logger.Info("Chunk upload aborted successfully")
 	return nil
 }
+
+// SendDanmaku 发送弹幕 ctx, userID, req.VideoId, req.Text, req.Color, req.VideoTimestamp, req.Speed
+func (s *VideoService) SendDanmaku(ctx context.Context, userId uint32, videoId uint32, text string, color string, videoTimestamp float32, speed string) error {
+	return nil
+}
