@@ -2211,11 +2211,11 @@ func (h *VideoHandler) ReportVideoProgress(c *gin.Context) {
 func (h *VideoHandler) SendDanmaku(c *gin.Context) {
 	// 1. 解析参数
 	var req struct {
-		VideoID        string  `json:"video_id" binding:"required"`
-		Text           string  `json:"text" binding:"required,max=200"`
-		Color          string  `json:"color"`
-		VideoTimestamp float32 `json:"video_timestamp" binding:"required"`
-		Speed          string  `json:"speed"`
+		VideoID        string   `json:"video_id" binding:"required"`
+		Text           string   `json:"text" binding:"required,max=200"`
+		Color          string   `json:"color"`
+		VideoTimestamp *float32 `json:"video_timestamp" binding:"required"`
+		Speed          string   `json:"speed"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		Error(c, http.StatusBadRequest, "Invalid request parameters: "+err.Error())
@@ -2243,7 +2243,7 @@ func (h *VideoHandler) SendDanmaku(c *gin.Context) {
 		VideoId:        uint32(videoID),
 		Text:           req.Text,
 		Color:          req.Color,
-		VideoTimestamp: req.VideoTimestamp,
+		VideoTimestamp: *req.VideoTimestamp,
 		Speed:          req.Speed,
 	})
 	if err != nil {
