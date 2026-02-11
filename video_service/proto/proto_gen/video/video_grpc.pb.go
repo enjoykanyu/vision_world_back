@@ -40,13 +40,13 @@ const (
 	VideoService_FavoriteVideo_FullMethodName            = "/rpc.video.VideoService/FavoriteVideo"
 	VideoService_GetUserLikedVideos_FullMethodName       = "/rpc.video.VideoService/GetUserLikedVideos"
 	VideoService_ShareVideo_FullMethodName               = "/rpc.video.VideoService/ShareVideo"
-	VideoService_GetVideoInteractionStats_FullMethodName = "/rpc.video.VideoService/GetVideoInteractionStats"
 	VideoService_CommentVideo_FullMethodName             = "/rpc.video.VideoService/CommentVideo"
 	VideoService_DeleteComment_FullMethodName            = "/rpc.video.VideoService/DeleteComment"
 	VideoService_LikeComment_FullMethodName              = "/rpc.video.VideoService/LikeComment"
 	VideoService_GetVideoComments_FullMethodName         = "/rpc.video.VideoService/GetVideoComments"
 	VideoService_RecordPlay_FullMethodName               = "/rpc.video.VideoService/RecordPlay"
 	VideoService_ReportProgress_FullMethodName           = "/rpc.video.VideoService/ReportProgress"
+	VideoService_GetVideoInteractionStats_FullMethodName = "/rpc.video.VideoService/GetVideoInteractionStats"
 	VideoService_SendDanmaku_FullMethodName              = "/rpc.video.VideoService/SendDanmaku"
 	VideoService_GetDanmakus_FullMethodName              = "/rpc.video.VideoService/GetDanmakus"
 )
@@ -81,7 +81,6 @@ type VideoServiceClient interface {
 	FavoriteVideo(ctx context.Context, in *FavoriteVideoRequest, opts ...grpc.CallOption) (*FavoriteVideoResponse, error)
 	GetUserLikedVideos(ctx context.Context, in *GetUserLikedVideosRequest, opts ...grpc.CallOption) (*GetUserLikedVideosResponse, error)
 	ShareVideo(ctx context.Context, in *ShareVideoRequest, opts ...grpc.CallOption) (*ShareVideoResponse, error)
-	GetVideoInteractionStats(ctx context.Context, in *GetVideoInteractionStatsRequest, opts ...grpc.CallOption) (*GetVideoInteractionStatsResponse, error)
 	// 视频评论相关
 	CommentVideo(ctx context.Context, in *CommentRequest, opts ...grpc.CallOption) (*CommentResponse, error)
 	DeleteComment(ctx context.Context, in *DeleteCommentRequest, opts ...grpc.CallOption) (*DeleteCommentResponse, error)
@@ -90,6 +89,8 @@ type VideoServiceClient interface {
 	// 播放量统计相关
 	RecordPlay(ctx context.Context, in *RecordPlayRequest, opts ...grpc.CallOption) (*RecordPlayResponse, error)
 	ReportProgress(ctx context.Context, in *ReportProgressRequest, opts ...grpc.CallOption) (*ReportProgressResponse, error)
+	// 视频互动统计相关
+	GetVideoInteractionStats(ctx context.Context, in *GetVideoInteractionStatsRequest, opts ...grpc.CallOption) (*GetVideoInteractionStatsResponse, error)
 	// 弹幕相关
 	SendDanmaku(ctx context.Context, in *SendDanmakuRequest, opts ...grpc.CallOption) (*SendDanmakuResponse, error)
 	GetDanmakus(ctx context.Context, in *GetDanmakusRequest, opts ...grpc.CallOption) (*GetDanmakusResponse, error)
@@ -292,15 +293,6 @@ func (c *videoServiceClient) ShareVideo(ctx context.Context, in *ShareVideoReque
 	return out, nil
 }
 
-func (c *videoServiceClient) GetVideoInteractionStats(ctx context.Context, in *GetVideoInteractionStatsRequest, opts ...grpc.CallOption) (*GetVideoInteractionStatsResponse, error) {
-	out := new(GetVideoInteractionStatsResponse)
-	err := c.cc.Invoke(ctx, VideoService_GetVideoInteractionStats_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *videoServiceClient) CommentVideo(ctx context.Context, in *CommentRequest, opts ...grpc.CallOption) (*CommentResponse, error) {
 	out := new(CommentResponse)
 	err := c.cc.Invoke(ctx, VideoService_CommentVideo_FullMethodName, in, out, opts...)
@@ -355,6 +347,15 @@ func (c *videoServiceClient) ReportProgress(ctx context.Context, in *ReportProgr
 	return out, nil
 }
 
+func (c *videoServiceClient) GetVideoInteractionStats(ctx context.Context, in *GetVideoInteractionStatsRequest, opts ...grpc.CallOption) (*GetVideoInteractionStatsResponse, error) {
+	out := new(GetVideoInteractionStatsResponse)
+	err := c.cc.Invoke(ctx, VideoService_GetVideoInteractionStats_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *videoServiceClient) SendDanmaku(ctx context.Context, in *SendDanmakuRequest, opts ...grpc.CallOption) (*SendDanmakuResponse, error) {
 	out := new(SendDanmakuResponse)
 	err := c.cc.Invoke(ctx, VideoService_SendDanmaku_FullMethodName, in, out, opts...)
@@ -403,7 +404,6 @@ type VideoServiceServer interface {
 	FavoriteVideo(context.Context, *FavoriteVideoRequest) (*FavoriteVideoResponse, error)
 	GetUserLikedVideos(context.Context, *GetUserLikedVideosRequest) (*GetUserLikedVideosResponse, error)
 	ShareVideo(context.Context, *ShareVideoRequest) (*ShareVideoResponse, error)
-	GetVideoInteractionStats(context.Context, *GetVideoInteractionStatsRequest) (*GetVideoInteractionStatsResponse, error)
 	// 视频评论相关
 	CommentVideo(context.Context, *CommentRequest) (*CommentResponse, error)
 	DeleteComment(context.Context, *DeleteCommentRequest) (*DeleteCommentResponse, error)
@@ -412,6 +412,8 @@ type VideoServiceServer interface {
 	// 播放量统计相关
 	RecordPlay(context.Context, *RecordPlayRequest) (*RecordPlayResponse, error)
 	ReportProgress(context.Context, *ReportProgressRequest) (*ReportProgressResponse, error)
+	// 视频互动统计相关
+	GetVideoInteractionStats(context.Context, *GetVideoInteractionStatsRequest) (*GetVideoInteractionStatsResponse, error)
 	// 弹幕相关
 	SendDanmaku(context.Context, *SendDanmakuRequest) (*SendDanmakuResponse, error)
 	GetDanmakus(context.Context, *GetDanmakusRequest) (*GetDanmakusResponse, error)
@@ -485,9 +487,6 @@ func (UnimplementedVideoServiceServer) GetUserLikedVideos(context.Context, *GetU
 func (UnimplementedVideoServiceServer) ShareVideo(context.Context, *ShareVideoRequest) (*ShareVideoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShareVideo not implemented")
 }
-func (UnimplementedVideoServiceServer) GetVideoInteractionStats(context.Context, *GetVideoInteractionStatsRequest) (*GetVideoInteractionStatsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVideoInteractionStats not implemented")
-}
 func (UnimplementedVideoServiceServer) CommentVideo(context.Context, *CommentRequest) (*CommentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CommentVideo not implemented")
 }
@@ -505,6 +504,9 @@ func (UnimplementedVideoServiceServer) RecordPlay(context.Context, *RecordPlayRe
 }
 func (UnimplementedVideoServiceServer) ReportProgress(context.Context, *ReportProgressRequest) (*ReportProgressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportProgress not implemented")
+}
+func (UnimplementedVideoServiceServer) GetVideoInteractionStats(context.Context, *GetVideoInteractionStatsRequest) (*GetVideoInteractionStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVideoInteractionStats not implemented")
 }
 func (UnimplementedVideoServiceServer) SendDanmaku(context.Context, *SendDanmakuRequest) (*SendDanmakuResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendDanmaku not implemented")
@@ -903,24 +905,6 @@ func _VideoService_ShareVideo_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VideoService_GetVideoInteractionStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVideoInteractionStatsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(VideoServiceServer).GetVideoInteractionStats(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: VideoService_GetVideoInteractionStats_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VideoServiceServer).GetVideoInteractionStats(ctx, req.(*GetVideoInteractionStatsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _VideoService_CommentVideo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CommentRequest)
 	if err := dec(in); err != nil {
@@ -1025,6 +1009,24 @@ func _VideoService_ReportProgress_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VideoServiceServer).ReportProgress(ctx, req.(*ReportProgressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VideoService_GetVideoInteractionStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVideoInteractionStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServiceServer).GetVideoInteractionStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VideoService_GetVideoInteractionStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServiceServer).GetVideoInteractionStats(ctx, req.(*GetVideoInteractionStatsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1157,10 +1159,6 @@ var VideoService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _VideoService_ShareVideo_Handler,
 		},
 		{
-			MethodName: "GetVideoInteractionStats",
-			Handler:    _VideoService_GetVideoInteractionStats_Handler,
-		},
-		{
 			MethodName: "CommentVideo",
 			Handler:    _VideoService_CommentVideo_Handler,
 		},
@@ -1183,6 +1181,10 @@ var VideoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportProgress",
 			Handler:    _VideoService_ReportProgress_Handler,
+		},
+		{
+			MethodName: "GetVideoInteractionStats",
+			Handler:    _VideoService_GetVideoInteractionStats_Handler,
 		},
 		{
 			MethodName: "SendDanmaku",
