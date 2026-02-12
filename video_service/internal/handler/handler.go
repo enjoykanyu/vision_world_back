@@ -36,6 +36,7 @@ type VideoHandler struct {
 	pb.UnimplementedVideoServiceServer
 	config          *config.Config
 	videoService    *service.VideoService
+	danmuService    *service.DanmuService
 	commentService  *service.CommentService
 	auditClient     auditpb.AuditServiceClient
 	auditConn       *grpc.ClientConn
@@ -75,6 +76,10 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 		return nil, fmt.Errorf("failed to create video service: %w", err)
 	}
 
+	danmuService, err := service.NewDanmuService(db, queueClient, redis)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create danmu service: %w", err)
+	}
 	// 创建model.DB实例
 	modelDB := model.NewDB(db)
 	// 创建服务发现客户端 - 参考api_gateway的实现方式
@@ -182,6 +187,7 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 	return &VideoHandler{
 		config:          cfg,
 		videoService:    videoService,
+		danmuService:    danmuService,
 		commentService:  commentService,
 		auditClient:     auditClient,
 		auditConn:       auditConn,
@@ -1646,15 +1652,23 @@ func (h *VideoHandler) SendDanmaku(ctx context.Context, req *pb.SendDanmakuReque
 
 	userID := req.UserId
 
-	//调用弹幕服务存储弹幕
-	//调用service->db
-	err := h.videoService.SendDanmaku(ctx, userID, req.VideoId, req.Text, req.Color, req.VideoTimestamp, req.Speed)
-	if err != nil {
-		h.logger.Error("Failed to send danmaku", zap.Error(err))
+	// 构建弹幕请求
+	danmuReq := &service.SendDanmakuRequest{
+		VideoID:   uint64(req.VideoId),
+		UserID:    uint64(userID),
+		Content:   req.Text,
+		VideoTime: float64(req.VideoTimestamp),
+		Color:     req.Color,
+		Speed:     parseSpeed(req.Speed),
+	}
+
+	// 提交到协程池异步处理
+	if !h.danmuService.SubmitDanmaku(danmuReq) {
+		h.logger.Error("Failed to submit danmaku job, queue is full")
 		return &pb.SendDanmakuResponse{
 			StatusCode: 500,
-			StatusMsg:  "发送弹幕失败",
-		}, err
+			StatusMsg:  "弹幕发送繁忙，请稍后重试",
+		}, nil
 	}
 
 	now := time.Now().Unix()
@@ -1676,6 +1690,18 @@ func (h *VideoHandler) SendDanmaku(ctx context.Context, req *pb.SendDanmakuReque
 	}, nil
 }
 
+// parseSpeed 解析速度字符串为整数
+func parseSpeed(speed string) int {
+	switch speed {
+	case "slow":
+		return 1
+	case "fast":
+		return 2
+	default:
+		return 0 // normal
+	}
+}
+
 // GetDanmakus 获取视频弹幕列表
 func (h *VideoHandler) GetDanmakus(ctx context.Context, req *pb.GetDanmakusRequest) (*pb.GetDanmakusResponse, error) {
 	h.logger.Info("GetDanmakus called", zap.Uint32("video_id", req.VideoId))
@@ -1685,7 +1711,7 @@ func (h *VideoHandler) GetDanmakus(ctx context.Context, req *pb.GetDanmakusReque
 	return &pb.GetDanmakusResponse{
 		StatusCode: 0,
 		StatusMsg:  "success",
-		Danmakus:   []*pb.Danmaku{},
-		Total:      0,
+		Danmakus:   pbDanmakuList,
+		Total:      int32(len(pbDanmakuList)),
 	}, nil
 }
