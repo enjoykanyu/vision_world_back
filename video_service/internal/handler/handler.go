@@ -1704,9 +1704,33 @@ func parseSpeed(speed string) int {
 
 // GetDanmakus 获取视频弹幕列表
 func (h *VideoHandler) GetDanmakus(ctx context.Context, req *pb.GetDanmakusRequest) (*pb.GetDanmakusResponse, error) {
-	h.logger.Info("GetDanmakus called", zap.Uint32("video_id", req.VideoId))
+	log.Println("GetDanmakus called", zap.Uint32("video_id", req.VideoId))
 
 	// TODO: 从弹幕服务获取弹幕列表
+	danmakuList, err := h.danmuService.GetDanmakuByVideoID(ctx, req.VideoId)
+	if err != nil {
+		log.Println("Failed to get danmaku list", zap.Uint32("video_id", req.VideoId), zap.Error(err))
+		return &pb.GetDanmakusResponse{
+			StatusCode: 500,
+			StatusMsg:  "获取弹幕列表失败",
+		}, nil
+	}
+
+	// 转换为pb.Danmaku
+	pbDanmakuList := make([]*pb.Danmaku, 0, len(danmakuList))
+	for _, danmaku := range danmakuList {
+		pbDanmakuList = append(pbDanmakuList, &pb.Danmaku{
+			Id:             danmaku.ID,
+			UserId:         danmaku.UserID,
+			VideoId:        danmaku.VideoID,
+			Text:           danmaku.Content,
+			Color:          danmaku.Color,
+			VideoTimestamp: danmaku.VideoTime,
+			// Speed:          int32(danmaku.Speed),
+			CreatedAt: danmaku.CreatedAt.Unix(),
+		})
+	}
+
 	// 这里暂时返回空列表
 	return &pb.GetDanmakusResponse{
 		StatusCode: 0,

@@ -2255,6 +2255,47 @@ func (h *VideoHandler) SendDanmaku(c *gin.Context) {
 	Success(c, resp)
 }
 
+// GetDanmakus 获取视频弹幕列表
+func (h *VideoHandler) GetDanmakus(c *gin.Context) {
+	// 1. 解析参数
+	var req struct {
+		VideoID string `uri:"video_id" binding:"required"`
+	}
+	if err := c.ShouldBindUri(&req); err != nil {
+		Error(c, http.StatusBadRequest, "Invalid request parameters: "+err.Error())
+		return
+	}
+
+	videoID, err := strconv.ParseUint(req.VideoID, 10, 32)
+	if err != nil {
+		Error(c, http.StatusBadRequest, "Invalid video_id format")
+		return
+	}
+
+	// 2. 获取客户端
+	videoClient, err := h.getVideoClient()
+	if err != nil {
+		Error(c, http.StatusServiceUnavailable, "Video service temporarily unavailable")
+		return
+	}
+
+	// 3. 调用服务
+	ctx, cancel := WithTimeout(5)
+	defer cancel()
+
+	resp, err := videoClient.GetDanmakus(ctx, &pb.GetDanmakusRequest{
+		VideoId: uint32(videoID),
+	})
+	if err != nil {
+		HandleGRPCError(c, err)
+		return
+	}
+
+	// 4. 返回响应
+	Success(c, resp)
+}
+
+// GetDanmakus
 // RegisterVideoRoutesWithHandler 使用已有的视频处理器注册路由
 func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandler) {
 	// 分片上传路由组 - 需要认证
@@ -2315,6 +2356,7 @@ func RegisterVideoRoutesWithHandler(router *gin.Engine, videoHandler *VideoHandl
 		authGroup.Use(middleware.RequireAuthMiddleware())
 		{
 			authGroup.POST("/send", videoHandler.SendDanmaku)
+			authGroup.GET("/:video_id", videoHandler.GetDanmakus)
 		}
 	}
 }
