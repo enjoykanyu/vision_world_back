@@ -1726,8 +1726,8 @@ func (h *VideoHandler) GetDanmakus(ctx context.Context, req *pb.GetDanmakusReque
 			Text:           danmaku.Content,
 			Color:          danmaku.Color,
 			VideoTimestamp: danmaku.VideoTime,
-			// Speed:          int32(danmaku.Speed),
-			CreatedAt: danmaku.CreatedAt.Unix(),
+			Speed:          strconv.Itoa(int(danmaku.Speed)),
+			CreatedAt:      danmaku.CreatedAt.Unix(),
 		})
 	}
 
