@@ -6,7 +6,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/vision_world/video_service/internal/model"
+	"github.com/vision_world/video_service/internal/repository"
 	"github.com/vision_world/video_service/proto/proto_gen/user"
 	"github.com/vision_world/video_service/proto/proto_gen/video"
 	"gorm.io/gorm"
@@ -14,15 +16,21 @@ import (
 
 // CommentService 评论服务
 type CommentService struct {
-	db         *model.DB
+	db         *gorm.DB
 	userClient user.UserServiceClient
+	redis      *redis.Client
+	repo       repository.VideoRepository
 }
 
 // NewCommentService 创建评论服务实例
-func NewCommentService(db *model.DB, userClient user.UserServiceClient) *CommentService {
+func NewCommentService(db *gorm.DB, userClient user.UserServiceClient, redis *redis.Client) *CommentService {
+	videoRepo := repository.NewVideoRepository(db, redis)
+
 	return &CommentService{
 		db:         db,
 		userClient: userClient,
+		redis:      redis,
+		repo:       videoRepo,
 	}
 }
 
@@ -73,15 +81,27 @@ func (s *CommentService) CommentVideo(ctx context.Context, req *video.CommentReq
 	}
 
 	// 5. 保存到数据库
-	result := s.db.Create(comment)
-	if result.Error != nil {
+	if err := s.db.Create(comment).Error; err != nil {
 		return &video.CommentResponse{
 			StatusCode: 500,
 			StatusMsg:  "发表评论失败",
-		}, result.Error
+		}, err
 	}
 
-	// 6. 获取用户信息
+	//6，缓存评论数量+1
+	_, err = s.redis.Incr(ctx, fmt.Sprintf("video:%d:comment_count", req.VideoId)).Result()
+	if err != nil {
+		// Redis 错误不影响主流程，记录日志即可
+		log.Printf("更新评论数缓存失败: %v", err)
+	}
+
+	//7. 更新 video 表评论数
+	if err := s.repo.IncrementCommentCount(ctx, fmt.Sprintf("%d", req.VideoId)); err != nil {
+		// DB 更新失败记录日志，不影响主流程
+		log.Printf("更新视频评论数失败: %v", err)
+	}
+
+	// 8 获取用户信息
 	var userInfo *user.User
 	if s.userClient != nil {
 		userResp, err := s.userClient.GetUserInfo(ctx, &user.GetUserInfoRequest{
@@ -93,7 +113,7 @@ func (s *CommentService) CommentVideo(ctx context.Context, req *video.CommentReq
 		}
 	}
 
-	// 7. 获取回复用户信息
+	// 9. 获取回复用户信息
 	var replyToUserInfo *user.User
 	if comment.ReplyToUserID != nil && s.userClient != nil {
 		userResp, err := s.userClient.GetUserInfo(ctx, &user.GetUserInfoRequest{

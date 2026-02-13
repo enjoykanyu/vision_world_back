@@ -80,8 +80,8 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 	if err != nil {
 		return nil, fmt.Errorf("failed to create danmu service: %w", err)
 	}
-	// 创建model.DB实例
-	modelDB := model.NewDB(db)
+	// // 创建model.DB实例
+	// modelDB := model.NewDB(db)
 	// 创建服务发现客户端 - 参考api_gateway的实现方式
 	var discoveryClient discovery.ServiceDiscovery
 	if cfg.Discovery.Type != "" && cfg.Discovery.Type == "etcd" && cfg.Discovery.Address != "" {
@@ -180,7 +180,7 @@ func NewVideoHandler(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *
 			"address", cfg.Services.UserService.Address)
 	}
 	// 创建CommentService实例
-	commentService := service.NewCommentService(modelDB, userClient)
+	commentService := service.NewCommentService(db, userClient, redis)
 	// 更新CommentService的userClient
 	//commentService.SetUserClient(userClient)
 

@@ -40,6 +40,7 @@ type VideoRepository interface {
 	IncrementFavoriteCount(ctx context.Context, videoID string) error
 	DecrementFavoriteCount(ctx context.Context, videoID string) error
 	IncrementShareCount(ctx context.Context, videoID string) error
+	IncrementCommentCount(ctx context.Context, videoID string) error
 	GetVideoPlayCount(ctx context.Context, videoID uint32) (uint32, error)
 	GetVideoRealPlayCount(ctx context.Context, videoID uint32) (uint32, error)
 
@@ -609,6 +610,30 @@ func (r *videoRepository) IncrementShareCount(ctx context.Context, videoID strin
 	// 更新缓存
 	if r.redis != nil {
 		cacheKey := fmt.Sprintf("%s%s", model.CacheKeyVideo, videoID)
+		// 简单处理，直接删除缓存，下次访问时重新加载
+		r.redis.Del(ctx, cacheKey)
+	}
+
+	return nil
+}
+
+// IncrementCommentCount 增加视频评论数
+func (r *videoRepository) IncrementCommentCount(ctx context.Context, videoID string) error {
+	id, err := strconv.ParseUint(videoID, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid video ID: %s", videoID)
+	}
+
+	// 更新数据库
+	if err := r.db.WithContext(ctx).Model(&model.Video{}).
+		Where("id = ?", id).
+		UpdateColumn("comment_count", gorm.Expr("comment_count + ?", 1)).Error; err != nil {
+		return fmt.Errorf("failed to increment comment count: %w", err)
+	}
+
+	// 更新缓存
+	if r.redis != nil {
+		cacheKey := fmt.Sprintf("%s%s_detail", model.CacheKeyVideo, videoID)
 		// 简单处理，直接删除缓存，下次访问时重新加载
 		r.redis.Del(ctx, cacheKey)
 	}
