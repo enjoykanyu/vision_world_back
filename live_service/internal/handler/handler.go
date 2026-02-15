@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	pb "live_service/proto/proto_gen/audit"
+	"live_service/proto/proto_gen/live"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -26,7 +27,7 @@ type LiveServiceHandler struct {
 		GetAuditResult(ctx context.Context, req *pb.GetAuditResultRequest) (*pb.GetAuditResultResponse, error)
 		Close() error
 	}
-	proto_gen.UnimplementedLiveServiceServer
+	live.UnimplementedLiveServiceServer
 }
 
 // NewLiveServiceHandler 创建直播服务处理器
@@ -52,7 +53,7 @@ func (h *LiveServiceHandler) SetAuditManager(manager interface {
 }
 
 // StartLive 开始直播
-func (h *LiveServiceHandler) StartLive(ctx context.Context, req *proto_gen.StartLiveRequest) (*proto_gen.StartLiveResponse, error) {
+func (h *LiveServiceHandler) StartLive(ctx context.Context, req *live.StartLiveRequest) (*live.StartLiveResponse, error) {
 	h.logger.Info("StartLive called", "user_id", req.UserId, "title", req.Title)
 
 	// 生成直播流ID (这里简化处理，实际应该从数据库获取)
@@ -97,7 +98,7 @@ func (h *LiveServiceHandler) StartLive(ctx context.Context, req *proto_gen.Start
 						"status", auditResp.Status,
 						"reason", auditResp.Reason,
 						"level", auditResp.Level)
-					return &proto_gen.StartLiveResponse{
+					return &live.StartLiveResponse{
 						Code:      403,
 						Message:   fmt.Sprintf("直播内容违规，无法开始直播: %s", auditResp.Reason),
 						RequestId: req.RequestId,
@@ -125,7 +126,7 @@ func (h *LiveServiceHandler) StartLive(ctx context.Context, req *proto_gen.Start
 		"user_id", req.UserId,
 		"title", req.Title)
 
-	return &proto_gen.StartLiveResponse{
+	return &live.StartLiveResponse{
 		Code:      200,
 		Message:   "直播开始成功",
 		RequestId: req.RequestId,
@@ -142,11 +143,11 @@ func (h *LiveServiceHandler) StartLive(ctx context.Context, req *proto_gen.Start
 }
 
 // StopLive 结束直播
-func (h *LiveServiceHandler) StopLive(ctx context.Context, req *proto_gen.StopLiveRequest) (*proto_gen.StopLiveResponse, error) {
+func (h *LiveServiceHandler) StopLive(ctx context.Context, req *live.StopLiveRequest) (*live.StopLiveResponse, error) {
 	h.logger.Info("StopLive called")
 
 	// TODO: 实现结束直播逻辑
-	return &proto_gen.StopLiveResponse{
+	return &live.StopLiveResponse{
 		Code:      200,
 		Message:   "直播结束成功",
 		RequestId: req.RequestId,
@@ -167,11 +168,11 @@ func (h *LiveServiceHandler) GetLiveStream(ctx context.Context, req *proto_gen.G
 }
 
 // GetLiveList 获取直播列表
-func (h *LiveServiceHandler) GetLiveList(ctx context.Context, req *proto_gen.GetLiveListRequest) (*proto_gen.GetLiveListResponse, error) {
+func (h *LiveServiceHandler) GetLiveList(ctx context.Context, req *live.GetLiveListRequest) (*live.GetLiveListResponse, error) {
 	h.logger.Info("GetLiveList called")
 
 	// TODO: 实现获取直播列表逻辑
-	return &proto_gen.GetLiveListResponse{
+	return &live.GetLiveListResponse{
 		Code:      200,
 		Message:   "获取直播列表成功",
 		RequestId: req.RequestId,

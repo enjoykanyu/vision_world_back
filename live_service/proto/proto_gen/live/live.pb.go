@@ -1138,7 +1138,7 @@ const file_live_proto_rawDesc = "" +
 	"\vGetRoomInfo\x12\x1a.livepb.GetRoomInfoRequest\x1a\x1b.livepb.GetRoomInfoResponse\x12@\n" +
 	"\tEnterRoom\x12\x18.livepb.EnterRoomRequest\x1a\x19.livepb.EnterRoomResponse\x12@\n" +
 	"\tLeaveRoom\x12\x18.livepb.LeaveRoomRequest\x1a\x19.livepb.LeaveRoomResponse\x12F\n" +
-	"\vGetLiveList\x12\x1a.livepb.GetLiveListRequest\x1a\x1b.livepb.GetLiveListResponseB4Z2github.com/vision_world/api_gateway/proto_gen/liveb\x06proto3"
+	"\vGetLiveList\x12\x1a.livepb.GetLiveListRequest\x1a\x1b.livepb.GetLiveListResponseB0Z.github.com/vision_world/live_service/proto_genb\x06proto3"
 
 var (
 	file_live_proto_rawDescOnce sync.Once

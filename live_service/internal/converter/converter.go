@@ -3,6 +3,7 @@ package converter
 import (
 	"live_service/internal/model"
 	livepb "live_service/proto/proto_gen"
+	"live_service/proto/proto_gen/live"
 )
 
 // LiveStreamToProto 直播流转Proto
@@ -47,12 +48,12 @@ func LiveStreamListToProto(streams []*model.LiveStream) []*livepb.LiveStream {
 }
 
 // LiveRoomToProto 直播间转Proto
-func LiveRoomToProto(room *model.LiveRoom) *livepb.LiveRoom {
+func LiveRoomToProto(room *model.LiveRoom) *live.LiveRoom {
 	if room == nil {
 		return nil
 	}
 
-	return &livepb.LiveRoom{
+	return &live.LiveRoom{
 		Id:             room.ID,
 		StreamId:       room.StreamID,
 		Title:          room.Title,
@@ -287,7 +288,7 @@ func GiftRankingListToProto(items []*service.GiftRankingItem) []*livepb.GiftRank
 }
 
 // StartLiveRequestToModel 开始直播请求转Model
-func StartLiveRequestToModel(req *livepb.StartLiveRequest, userID uint64) *model.LiveStream {
+func StartLiveRequestToModel(req *live.StartLiveRequest, userID uint64) *model.LiveStream {
 	if req == nil {
 		return nil
 	}

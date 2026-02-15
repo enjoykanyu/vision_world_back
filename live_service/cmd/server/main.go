@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"live_service/internal/discovery"
 	"live_service/internal/model"
+	"live_service/proto/proto_gen/live"
 	"log"
 	"net"
 	"os"
@@ -21,7 +22,6 @@ import (
 	"live_service/internal/handler"
 	"live_service/pkg/database"
 	"live_service/pkg/logger"
-	"live_service/proto/proto_gen"
 	// 使用审计服务客户端
 	auditclient "live_service/internal/client"
 )
@@ -113,7 +113,7 @@ func main() {
 		logger.Warn("No etcd endpoints configured, audit service will not be available")
 	}
 
-	proto_gen.RegisterLiveServiceServer(grpcServer, liveHandler)
+	live.RegisterLiveServiceServer(grpcServer, liveHandler)
 	logger.Info("Live service registered")
 
 	// 9. 注册反射服务（用于调试）

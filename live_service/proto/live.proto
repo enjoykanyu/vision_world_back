@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package livepb;
 
-option go_package = "github.com/vision_world/api_gateway/proto_gen/live";
+option go_package = "github.com/vision_world/live_service/proto_gen";
 
 // 直播服务 - MVP 版本
 service LiveService {
