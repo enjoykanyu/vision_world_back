@@ -15,7 +15,7 @@ import (
 // LiveService 直播服务接口
 type LiveService interface {
 	// 直播流管理
-	StartLive(ctx context.Context, userID uint64, title, description string, categoryID uint32) (*model.LiveStream, error)
+	StartLive(ctx context.Context, userID uint64, title string, category string) (*model.LiveStream, error)
 	StopLive(ctx context.Context, streamID, userID uint64) error
 	GetLiveStream(ctx context.Context, streamID uint64) (*model.LiveStream, error)
 	GetLiveList(ctx context.Context, page, pageSize int, categoryID uint32) ([]*model.LiveStream, int64, error)
@@ -108,7 +108,7 @@ func NewLiveService(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *r
 }
 
 // StartLive 开始直播
-func (s *liveService) StartLive(ctx context.Context, userID uint64, title, description string, categoryID uint32) (*model.LiveStream, error) {
+func (s *liveService) StartLive(ctx context.Context, userID uint64, title string, category string) (*model.LiveStream, error) {
 	s.logger.Info("Starting live stream", "userID", userID, "title", title)
 
 	// TODO: 实现开始直播逻辑
@@ -120,12 +120,10 @@ func (s *liveService) StartLive(ctx context.Context, userID uint64, title, descr
 	// 5. 设置直播参数
 
 	return &model.LiveStream{
-		ID:          1,
-		UserID:      userID,
-		Title:       title,
-		Description: description,
-		CategoryID:  categoryID,
-		Status:      model.LiveStatusPreparing,
+		ID:     1,
+		UserID: userID,
+		Title:  title,
+		Status: model.LiveStatusPreparing,
 	}, nil
 }
 

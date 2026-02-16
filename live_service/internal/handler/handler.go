@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -53,16 +54,19 @@ func (h *LiveServiceHandler) CreateRoom(ctx context.Context, req *livepb.CreateR
 
 // StartLive 开始直播
 func (h *LiveServiceHandler) StartLive(ctx context.Context, req *livepb.StartLiveRequest) (*livepb.StartLiveResponse, error) {
-	h.logger.Info("StartLive called", "user_id", req.UserId, "room_id", req.RoomId)
+	log.Printf("StartLive called, user_id: %d, title: %s, category: %s", req.UserId, req.Title, req.Category)
 
 	// TODO: 实现开始直播逻辑
-	streamKey := fmt.Sprintf("stream_%d_%d", req.UserId, req.RoomId)
+	_, err := h.liveService.StartLive(ctx, req.UserId, req.Title, req.Category)
+	if err != nil {
+		return nil, err
+	}
 
 	return &livepb.StartLiveResponse{
-		Code:      0,
-		Message:   "直播开始成功",
-		PlayUrl:   fmt.Sprintf("http://localhost:8080/live/%s.m3u8", streamKey),
-		StreamKey: streamKey,
+		Code:    0,
+		Message: "直播开始成功",
+		PlayUrl: fmt.Sprintf("http://localhost:8080/live/%s.m3u8", ""),
+		RoomId:  9,
 	}, nil
 }
 

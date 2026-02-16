@@ -43,14 +43,19 @@ message CreateRoomResponse {
 // ========== 开始直播 ==========
 message StartLiveRequest {
     uint64 user_id = 1;
-    uint64 room_id = 2;
+    string title = 2;      // 直播间标题（首次创建时用）
+    string category = 3;   // 分类（首次创建时用）
+    string cover_url = 4;  // 封面图（可选）
 }
 
 message StartLiveResponse {
     int32 code = 1;
     string message = 2;
-    string play_url = 3;
-    string stream_key = 4;
+    uint64 room_id = 3;        // 房间ID（新创建或已有）
+    string stream_key = 4;     // 推流密钥
+    string push_url = 5;       // RTMP推流地址
+    string play_url = 6;       // HLS播放地址
+    bool is_new_room = 7;      // 是否新创建的房间
 }
 
 // ========== 结束直播 ==========

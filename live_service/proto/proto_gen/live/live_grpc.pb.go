@@ -4,7 +4,7 @@
 // - protoc             v3.20.1
 // source: live.proto
 
-package live
+package proto_gen
 
 import (
 	context "context"

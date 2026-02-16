@@ -4,7 +4,7 @@
 // 	protoc        v3.20.1
 // source: live.proto
 
-package live
+package proto_gen
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -223,7 +223,9 @@ func (x *CreateRoomResponse) GetPushUrl() string {
 type StartLiveRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	RoomId        uint64                 `protobuf:"varint,2,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`                       // 直播间标题（首次创建时用）
+	Category      string                 `protobuf:"bytes,3,opt,name=category,proto3" json:"category,omitempty"`                 // 分类（首次创建时用）
+	CoverUrl      string                 `protobuf:"bytes,4,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"` // 封面图（可选）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -265,19 +267,36 @@ func (x *StartLiveRequest) GetUserId() uint64 {
 	return 0
 }
 
-func (x *StartLiveRequest) GetRoomId() uint64 {
+func (x *StartLiveRequest) GetTitle() string {
 	if x != nil {
-		return x.RoomId
+		return x.Title
 	}
-	return 0
+	return ""
+}
+
+func (x *StartLiveRequest) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *StartLiveRequest) GetCoverUrl() string {
+	if x != nil {
+		return x.CoverUrl
+	}
+	return ""
 }
 
 type StartLiveResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	PlayUrl       string                 `protobuf:"bytes,3,opt,name=play_url,json=playUrl,proto3" json:"play_url,omitempty"`
-	StreamKey     string                 `protobuf:"bytes,4,opt,name=stream_key,json=streamKey,proto3" json:"stream_key,omitempty"`
+	RoomId        uint64                 `protobuf:"varint,3,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`            // 房间ID（新创建或已有）
+	StreamKey     string                 `protobuf:"bytes,4,opt,name=stream_key,json=streamKey,proto3" json:"stream_key,omitempty"`    // 推流密钥
+	PushUrl       string                 `protobuf:"bytes,5,opt,name=push_url,json=pushUrl,proto3" json:"push_url,omitempty"`          // RTMP推流地址
+	PlayUrl       string                 `protobuf:"bytes,6,opt,name=play_url,json=playUrl,proto3" json:"play_url,omitempty"`          // HLS播放地址
+	IsNewRoom     bool                   `protobuf:"varint,7,opt,name=is_new_room,json=isNewRoom,proto3" json:"is_new_room,omitempty"` // 是否新创建的房间
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -326,11 +345,11 @@ func (x *StartLiveResponse) GetMessage() string {
 	return ""
 }
 
-func (x *StartLiveResponse) GetPlayUrl() string {
+func (x *StartLiveResponse) GetRoomId() uint64 {
 	if x != nil {
-		return x.PlayUrl
+		return x.RoomId
 	}
-	return ""
+	return 0
 }
 
 func (x *StartLiveResponse) GetStreamKey() string {
@@ -338,6 +357,27 @@ func (x *StartLiveResponse) GetStreamKey() string {
 		return x.StreamKey
 	}
 	return ""
+}
+
+func (x *StartLiveResponse) GetPushUrl() string {
+	if x != nil {
+		return x.PushUrl
+	}
+	return ""
+}
+
+func (x *StartLiveResponse) GetPlayUrl() string {
+	if x != nil {
+		return x.PlayUrl
+	}
+	return ""
+}
+
+func (x *StartLiveResponse) GetIsNewRoom() bool {
+	if x != nil {
+		return x.IsNewRoom
+	}
+	return false
 }
 
 // ========== 结束直播 ==========
@@ -1066,16 +1106,21 @@ const file_live_proto_rawDesc = "" +
 	"\aroom_id\x18\x03 \x01(\x04R\x06roomId\x12\x1d\n" +
 	"\n" +
 	"stream_key\x18\x04 \x01(\tR\tstreamKey\x12\x19\n" +
-	"\bpush_url\x18\x05 \x01(\tR\apushUrl\"D\n" +
+	"\bpush_url\x18\x05 \x01(\tR\apushUrl\"z\n" +
 	"\x10StartLiveRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x17\n" +
-	"\aroom_id\x18\x02 \x01(\x04R\x06roomId\"{\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
+	"\bcategory\x18\x03 \x01(\tR\bcategory\x12\x1b\n" +
+	"\tcover_url\x18\x04 \x01(\tR\bcoverUrl\"\xcf\x01\n" +
 	"\x11StartLiveResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\x12\x19\n" +
-	"\bplay_url\x18\x03 \x01(\tR\aplayUrl\x12\x1d\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x17\n" +
+	"\aroom_id\x18\x03 \x01(\x04R\x06roomId\x12\x1d\n" +
 	"\n" +
-	"stream_key\x18\x04 \x01(\tR\tstreamKey\"C\n" +
+	"stream_key\x18\x04 \x01(\tR\tstreamKey\x12\x19\n" +
+	"\bpush_url\x18\x05 \x01(\tR\apushUrl\x12\x19\n" +
+	"\bplay_url\x18\x06 \x01(\tR\aplayUrl\x12\x1e\n" +
+	"\vis_new_room\x18\a \x01(\bR\tisNewRoom\"C\n" +
 	"\x0fStopLiveRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x17\n" +
 	"\aroom_id\x18\x02 \x01(\x04R\x06roomId\"@\n" +
