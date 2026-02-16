@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
@@ -109,7 +110,7 @@ func NewLiveService(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *r
 
 // StartLive 开始直播
 func (s *liveService) StartLive(ctx context.Context, userID uint64, title string, category string) (*model.LiveStream, error) {
-	s.logger.Info("Starting live stream", "userID", userID, "title", title)
+	log.Println("Starting live stream", "userID", userID, "title", title)
 
 	// TODO: 实现开始直播逻辑
 	// 这里应该包含：
