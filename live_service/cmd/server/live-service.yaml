@@ -1,0 +1,58 @@
+server:
+  host: 0.0.0.0
+  port: 50059
+  mode: debug
+  read_timeout: 30s
+  write_timeout: 30s
+
+database:
+  host: localhost
+  port: 3306
+  username: root
+  password: 901project
+  database: videoworld
+  charset: utf8mb4
+  table_prefix: ""
+  log_level: info
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  max_retries: 3
+  dial_timeout: 5
+  read_timeout: 3
+  write_timeout: 3
+
+logger:
+  level: info
+  format: json
+  output_path: ./logs/live-service.log
+
+etcd:
+  endpoints:
+    - localhost:2379
+  dial_timeout: 5
+  username: ""
+  password: ""
+
+consul:
+  host: localhost
+  port: 8500
+  service_id: live-service
+
+jwt:
+  secret: your-secret-key-here
+  refresh_secret: your-refresh-secret-key-here
+  token_expiration: 24h
+  refresh_expiration: 168h
+
+sms:
+  access_key: your-access-key
+  secret_key: your-secret-key
+  sign_name: your-sign-name
+  template_code: your-template-code
