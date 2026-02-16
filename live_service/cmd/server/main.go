@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"live_service/internal/discovery"
 	"live_service/internal/model"
-	"live_service/proto/proto_gen/live"
+	live "live_service/proto/proto_gen/live"
 	"log"
 	"net"
 	"os"
