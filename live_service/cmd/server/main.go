@@ -23,7 +23,6 @@ import (
 	"live_service/pkg/database"
 	"live_service/pkg/logger"
 	// 使用审计服务客户端
-	auditclient "live_service/internal/client"
 )
 
 func main() {
@@ -96,22 +95,6 @@ func main() {
 
 	// 8. 注册用户服务
 	liveHandler := handler.NewLiveServiceHandler(cfg, logger, db, redisClient)
-
-	// 初始化审计服务客户端管理器
-	if len(cfg.Etcd.Endpoints) > 0 {
-		auditManager, err := auditclient.NewAuditClientManager(cfg.Etcd.Endpoints)
-		if err != nil {
-			logger.Error("Failed to initialize audit client manager", "error", err)
-			// 审计服务初始化失败，服务仍然可以继续运行，但审计功能将不可用
-		} else {
-			// 将审计管理器注入到处理器中
-			liveHandler.SetAuditManager(auditManager)
-			logger.Info("Audit client manager initialized successfully")
-			defer auditManager.Close()
-		}
-	} else {
-		logger.Warn("No etcd endpoints configured, audit service will not be available")
-	}
 
 	live.RegisterLiveServiceServer(grpcServer, liveHandler)
 	logger.Info("Live service registered")

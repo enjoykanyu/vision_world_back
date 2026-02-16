@@ -4,7 +4,7 @@ package livepb;
 
 option go_package = "github.com/vision_world/api_gateway/proto_gen/live";
 
-// 直播服务 - MVP 版本
+// 直播服务 
 service LiveService {
     // 直播间管理
     rpc CreateRoom(CreateRoomRequest) returns (CreateRoomResponse);

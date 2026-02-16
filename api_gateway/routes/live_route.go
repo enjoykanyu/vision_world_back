@@ -189,47 +189,47 @@ func (h *LiveHandler) StopLive(c *gin.Context) {
 }
 
 // GetLiveStream 获取直播流信息
-func (h *LiveHandler) GetLiveStream(c *gin.Context) {
-	streamID := c.Param("id")
-	if streamID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Stream ID is required"})
-		return
-	}
+// func (h *LiveHandler) GetLiveStream(c *gin.Context) {
+// 	streamID := c.Param("id")
+// 	if streamID == "" {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Stream ID is required"})
+// 		return
+// 	}
 
-	// 转换streamID为uint64
-	id, err := strconv.ParseUint(streamID, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid stream ID"})
-		return
-	}
+// 	// 转换streamID为uint64
+// 	id, err := strconv.ParseUint(streamID, 10, 64)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid stream ID"})
+// 		return
+// 	}
 
-	req := &pb.GetLiveStreamRequest{
-		StreamId: id,
-	}
+// 	req := &pb.GetLiveStreamRequest{
+// 		StreamId: id,
+// 	}
 
-	liveClient, err := h.getLiveClient()
-	if err != nil {
-		log.Printf("Failed to get live service client: %v", err)
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Live service temporarily unavailable"})
-		return
-	}
+// 	liveClient, err := h.getLiveClient()
+// 	if err != nil {
+// 		log.Printf("Failed to get live service client: %v", err)
+// 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Live service temporarily unavailable"})
+// 		return
+// 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	defer cancel()
 
-	resp, err := liveClient.GetLiveStream(ctx, req)
-	if err != nil {
-		log.Printf("GetLiveStream error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get live stream"})
-		return
-	}
+// 	resp, err := liveClient.GetLiveStream(ctx, req)
+// 	if err != nil {
+// 		log.Printf("GetLiveStream error: %v", err)
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get live stream"})
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": 0,
-		"msg":  "success",
-		"data": resp,
-	})
-}
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"code": 0,
+// 		"msg":  "success",
+// 		"data": resp,
+// 	})
+// }
 
 // GetLiveList 获取直播列表
 func (h *LiveHandler) GetLiveList(c *gin.Context) {
