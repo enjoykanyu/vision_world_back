@@ -145,7 +145,7 @@ func (s *liveService) StopLive(ctx context.Context, streamID, userID uint64) err
 
 // GetLiveStream 获取直播流信息
 func (s *liveService) GetLiveStream(ctx context.Context, streamID uint64) (*model.LiveStream, error) {
-	s.logger.Info("Getting live stream info", "streamID", streamID)
+	log.Println("Getting live stream info", "streamID", streamID)
 
 	// TODO: 实现获取直播流信息逻辑
 	// 这里应该包含：
@@ -161,7 +161,7 @@ func (s *liveService) GetLiveStream(ctx context.Context, streamID uint64) (*mode
 
 // GetLiveList 获取直播列表
 func (s *liveService) GetLiveList(ctx context.Context, page, pageSize int, categoryID uint32) ([]*model.LiveStream, int64, error) {
-	s.logger.Info("Getting live list", "page", page, "pageSize", pageSize, "categoryID", categoryID)
+	log.Println("Getting live list", "page", page, "pageSize", pageSize, "categoryID", categoryID)
 
 	// TODO: 实现获取直播列表逻辑
 	// 这里应该包含：
@@ -175,7 +175,7 @@ func (s *liveService) GetLiveList(ctx context.Context, page, pageSize int, categ
 
 // GetHotLiveList 获取热门直播列表
 func (s *liveService) GetHotLiveList(ctx context.Context, page, pageSize int) ([]*model.LiveStream, int64, error) {
-	s.logger.Info("Getting hot live list", "page", page, "pageSize", pageSize)
+	log.Println("Getting hot live list", "page", page, "pageSize", pageSize)
 
 	// TODO: 实现获取热门直播列表逻辑
 	// 这里应该包含：
@@ -189,7 +189,7 @@ func (s *liveService) GetHotLiveList(ctx context.Context, page, pageSize int) ([
 
 // JoinLiveRoom 加入直播间
 func (s *liveService) JoinLiveRoom(ctx context.Context, streamID, userID uint64) (*model.LiveViewer, error) {
-	s.logger.Info("Joining live room", "streamID", streamID, "userID", userID)
+	log.Println("Joining live room", "streamID", streamID, "userID", userID)
 
 	// TODO: 实现加入直播间逻辑
 	// 这里应该包含：
@@ -208,7 +208,7 @@ func (s *liveService) JoinLiveRoom(ctx context.Context, streamID, userID uint64)
 
 // LeaveLiveRoom 离开直播间
 func (s *liveService) LeaveLiveRoom(ctx context.Context, streamID, userID uint64) error {
-	s.logger.Info("Leaving live room", "streamID", streamID, "userID", userID)
+	log.Println("Leaving live room", "streamID", streamID, "userID", userID)
 
 	// TODO: 实现离开直播间逻辑
 	// 这里应该包含：
@@ -221,7 +221,7 @@ func (s *liveService) LeaveLiveRoom(ctx context.Context, streamID, userID uint64
 
 // GetLiveViewerList 获取直播观看者列表
 func (s *liveService) GetLiveViewerList(ctx context.Context, streamID uint64, page, pageSize int) ([]*model.LiveViewer, int64, error) {
-	s.logger.Info("Getting live viewer list", "streamID", streamID, "page", page, "pageSize", pageSize)
+	log.Println("Getting live viewer list", "streamID", streamID, "page", page, "pageSize", pageSize)
 
 	// TODO: 实现获取观看者列表逻辑
 	// 这里应该包含：
@@ -235,7 +235,7 @@ func (s *liveService) GetLiveViewerList(ctx context.Context, streamID uint64, pa
 
 // SendLiveChat 发送直播聊天消息
 func (s *liveService) SendLiveChat(ctx context.Context, streamID, userID uint64, content, contentType string) (*model.LiveChat, error) {
-	s.logger.Info("Sending live chat", "streamID", streamID, "userID", userID)
+	log.Println("Sending live chat", "streamID", streamID, "userID", userID)
 
 	// TODO: 实现发送聊天消息逻辑
 	// 这里应该包含：
@@ -269,7 +269,7 @@ func (s *liveService) GetLiveChatList(ctx context.Context, streamID uint64, page
 
 // SendLiveGift 发送直播礼物
 func (s *liveService) SendLiveGift(ctx context.Context, streamID, userID uint64, giftID uint32, giftCount uint32) (*model.LiveGift, error) {
-	s.logger.Info("Sending live gift", "streamID", streamID, "userID", userID, "giftID", giftID)
+	log.Println("Sending live gift", "streamID", streamID, "userID", userID, "giftID", giftID)
 
 	// TODO: 实现发送礼物逻辑
 	// 这里应该包含：
@@ -290,7 +290,7 @@ func (s *liveService) SendLiveGift(ctx context.Context, streamID, userID uint64,
 
 // GetLiveGiftList 获取直播礼物列表
 func (s *liveService) GetLiveGiftList(ctx context.Context, streamID uint64, page, pageSize int) ([]*model.LiveGift, int64, error) {
-	s.logger.Info("Getting live gift list", "streamID", streamID, "page", page, "pageSize", pageSize)
+	log.Println("Getting live gift list", "streamID", streamID, "page", page, "pageSize", pageSize)
 
 	// TODO: 实现获取礼物列表逻辑
 	// 这里应该包含：
@@ -304,7 +304,7 @@ func (s *liveService) GetLiveGiftList(ctx context.Context, streamID uint64, page
 
 // LikeLive 点赞直播
 func (s *liveService) LikeLive(ctx context.Context, streamID, userID uint64) error {
-	s.logger.Info("Liking live stream", "streamID", streamID, "userID", userID)
+	log.Println("Liking live stream", "streamID", streamID, "userID", userID)
 
 	// TODO: 实现点赞逻辑
 	// 这里应该包含：
@@ -318,7 +318,7 @@ func (s *liveService) LikeLive(ctx context.Context, streamID, userID uint64) err
 
 // SearchLive 搜索直播
 func (s *liveService) SearchLive(ctx context.Context, keyword string, page, pageSize int) ([]*model.LiveStream, int64, error) {
-	s.logger.Info("Searching live streams", "keyword", keyword, "page", page, "pageSize", pageSize)
+	log.Println("Searching live streams", "keyword", keyword, "page", page, "pageSize", pageSize)
 
 	// TODO: 实现搜索直播逻辑
 	// 这里应该包含：
@@ -333,7 +333,7 @@ func (s *liveService) SearchLive(ctx context.Context, keyword string, page, page
 
 // GetLiveCategories 获取直播分类
 func (s *liveService) GetLiveCategories(ctx context.Context) ([]*LiveCategory, error) {
-	s.logger.Info("Getting live categories")
+	log.Println("Getting live categories")
 
 	// TODO: 实现获取直播分类逻辑
 	// 这里应该返回预设的直播分类列表
@@ -343,7 +343,7 @@ func (s *liveService) GetLiveCategories(ctx context.Context) ([]*LiveCategory, e
 
 // GetLiveStats 获取直播统计
 func (s *liveService) GetLiveStats(ctx context.Context, streamID uint64) (*LiveStats, error) {
-	s.logger.Info("Getting live stats", "streamID", streamID)
+	log.Println("Getting live stats", "streamID", streamID)
 
 	// TODO: 实现获取直播统计逻辑
 	// 这里应该包含：
@@ -359,7 +359,7 @@ func (s *liveService) GetLiveStats(ctx context.Context, streamID uint64) (*LiveS
 
 // GetLivePlayback 获取直播回放
 func (s *liveService) GetLivePlayback(ctx context.Context, streamID uint64) (*LivePlayback, error) {
-	s.logger.Info("Getting live playback", "streamID", streamID)
+	log.Println("Getting live playback", "streamID", streamID)
 
 	// TODO: 实现获取直播回放逻辑
 	// 这里应该包含：
