@@ -130,7 +130,7 @@ func (s *liveService) StartLive(ctx context.Context, userID uint64, title string
 
 // StopLive 结束直播
 func (s *liveService) StopLive(ctx context.Context, streamID, userID uint64) error {
-	s.logger.Info("Stopping live stream", "streamID", streamID, "userID", userID)
+	log.Println("Stopping live stream", "streamID", streamID, "userID", userID)
 
 	// TODO: 实现结束直播逻辑
 	// 这里应该包含：
