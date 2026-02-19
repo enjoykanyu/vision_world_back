@@ -167,7 +167,7 @@ func (h *LiveServiceHandler) EnterRoom(ctx context.Context, req *livepb.EnterRoo
 	return &livepb.EnterRoomResponse{
 		Code:        0,
 		Message:     "进入直播间成功",
-		PlayUrl:     fmt.Sprintf("http://localhost:8080/live/%s.m3u8", streamKey),
+		PlayUrl:     fmt.Sprintf("http://localhost:8085/live/%s.m3u8", streamKey),
 		OnlineCount: 100,
 	}, nil
 }

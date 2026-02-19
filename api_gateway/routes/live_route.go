@@ -325,6 +325,59 @@ func (h *LiveHandler) GetLiveList(c *gin.Context) {
 	})
 }
 
+// SRSCallbackRequest SRS回调请求
+type SRSCallbackRequest struct {
+	Action   string `json:"action"`    // 动作: on_publish, on_unpublish, on_play, on_stop
+	ClientID string `json:"client_id"` // 客户端ID
+	IP       string `json:"ip"`        // 客户端IP
+	VHost    string `json:"vhost"`     // 虚拟主机
+	App      string `json:"app"`       // 应用名
+	Stream   string `json:"stream"`    // 流名（即streamKey）
+	Param    string `json:"param"`     // 参数
+	PageURL  string `json:"pageUrl"`   // 页面URL
+	SWFURL   string `json:"swfUrl"`    // SWF URL
+	TCURL    string `json:"tcUrl"`     // TC URL
+	URL      string `json:"url"`       // 完整URL
+}
+
+// SRSCallbackResponse SRS回调响应
+type SRSCallbackResponse struct {
+	Code int    `json:"code"` // 0=成功, 其他=失败
+	Data string `json:"data"` // 可选数据
+}
+
+// SRSCallback 处理SRS回调
+func (h *LiveHandler) SRSCallback(c *gin.Context) {
+	var req SRSCallbackRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("Failed to decode SRS callback request: %v", err)
+		c.JSON(http.StatusOK, SRSCallbackResponse{Code: 1, Data: "invalid request"})
+		return
+	}
+
+	log.Printf("Received SRS callback: action=%s, stream=%s, clientID=%s", req.Action, req.Stream, req.ClientID)
+
+	// 根据动作类型处理
+	switch req.Action {
+	case "on_publish":
+		// 开始推流 - 可以在这里更新直播状态为"直播中"
+		log.Printf("Stream started publishing: %s", req.Stream)
+	case "on_unpublish":
+		// 停止推流 - 可以在这里更新直播状态为"已结束"
+		log.Printf("Stream stopped publishing: %s", req.Stream)
+	case "on_play":
+		// 开始播放
+		log.Printf("Stream started playing: %s", req.Stream)
+	case "on_stop":
+		// 停止播放
+		log.Printf("Stream stopped playing: %s", req.Stream)
+	default:
+		log.Printf("Unknown SRS callback action: %s", req.Action)
+	}
+
+	c.JSON(http.StatusOK, SRSCallbackResponse{Code: 0})
+}
+
 // Close 关闭处理器
 func (h *LiveHandler) Close() error {
 	if h.discovery != nil {

@@ -1,41 +1,106 @@
-{"level":"info","timestamp":"2025-10-08T19:16:02.301+0800","caller":"logger/logger.go:109","msg":"Starting live service","version":"dev","build_time":"unknown","commit_hash":"unknown"}
-{"level":"fatal","timestamp":"2025-10-08T19:16:02.325+0800","caller":"logger/logger.go:124","msg":"Failed to connect to database","error":"failed to connect to MySQL: Error 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '' at line 1","stacktrace":"vision_world_back/service/live_service/pkg/logger.(*zapLogger).Fatal\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/pkg/logger/logger.go:124\nmain.main\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/cmd/server/main.go:68\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:272"}
-{"level":"info","timestamp":"2025-10-08T19:16:38.691+0800","caller":"logger/logger.go:109","msg":"Starting live service","version":"dev","build_time":"unknown","commit_hash":"unknown"}
-{"level":"info","timestamp":"2025-10-08T19:16:38.710+0800","caller":"logger/logger.go:109","msg":"Database connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:16:38.710+0800","caller":"logger/logger.go:109","msg":"Database models initialized successfully"}
-{"level":"info","timestamp":"2025-10-08T19:16:38.712+0800","caller":"logger/logger.go:109","msg":"Redis connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:16:38.712+0800","caller":"logger/logger.go:109","msg":"Live service registered"}
-{"level":"fatal","timestamp":"2025-10-08T19:16:38.712+0800","caller":"logger/logger.go:124","msg":"Failed to listen","error":"listen tcp 0.0.0.0:50053: bind: address already in use","stacktrace":"vision_world_back/service/live_service/pkg/logger.(*zapLogger).Fatal\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/pkg/logger/logger.go:124\nmain.main.func2\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/cmd/server/main.go:123"}
-{"level":"info","timestamp":"2025-10-08T19:18:56.544+0800","caller":"logger/logger.go:109","msg":"Starting live service","version":"dev","build_time":"unknown","commit_hash":"unknown"}
-{"level":"info","timestamp":"2025-10-08T19:18:56.556+0800","caller":"logger/logger.go:109","msg":"Database connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:18:56.556+0800","caller":"logger/logger.go:109","msg":"Database models initialized successfully"}
-{"level":"info","timestamp":"2025-10-08T19:18:56.557+0800","caller":"logger/logger.go:109","msg":"Redis connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:18:56.558+0800","caller":"logger/logger.go:109","msg":"Live service registered"}
-{"level":"fatal","timestamp":"2025-10-08T19:18:56.558+0800","caller":"logger/logger.go:124","msg":"Failed to listen","error":"listen tcp 0.0.0.0:50053: bind: address already in use","stacktrace":"vision_world_back/service/live_service/pkg/logger.(*zapLogger).Fatal\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/pkg/logger/logger.go:124\nmain.main.func2\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/cmd/server/main.go:123"}
-{"level":"info","timestamp":"2025-10-08T19:19:55.360+0800","caller":"logger/logger.go:109","msg":"Starting live service","version":"dev","build_time":"unknown","commit_hash":"unknown"}
-{"level":"info","timestamp":"2025-10-08T19:19:55.369+0800","caller":"logger/logger.go:109","msg":"Database connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:19:55.369+0800","caller":"logger/logger.go:109","msg":"Database models initialized successfully"}
-{"level":"info","timestamp":"2025-10-08T19:19:55.371+0800","caller":"logger/logger.go:109","msg":"Redis connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:19:55.371+0800","caller":"logger/logger.go:109","msg":"Live service registered"}
-{"level":"fatal","timestamp":"2025-10-08T19:19:55.372+0800","caller":"logger/logger.go:124","msg":"Failed to listen","error":"listen tcp 0.0.0.0:50053: bind: address already in use","stacktrace":"vision_world_back/service/live_service/pkg/logger.(*zapLogger).Fatal\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/pkg/logger/logger.go:124\nmain.main.func2\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/cmd/server/main.go:130"}
-{"level":"info","timestamp":"2025-10-08T19:20:55.195+0800","caller":"logger/logger.go:109","msg":"Starting live service","version":"dev","build_time":"unknown","commit_hash":"unknown"}
-{"level":"info","timestamp":"2025-10-08T19:20:55.211+0800","caller":"logger/logger.go:109","msg":"Database connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:20:55.211+0800","caller":"logger/logger.go:109","msg":"Database models initialized successfully"}
-{"level":"info","timestamp":"2025-10-08T19:20:55.214+0800","caller":"logger/logger.go:109","msg":"Redis connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:20:55.214+0800","caller":"logger/logger.go:109","msg":"Live service registered"}
-{"level":"info","timestamp":"2025-10-08T19:20:55.214+0800","caller":"logger/logger.go:109","msg":"HTTP server starting","address":"0.0.0.0:8080"}
-{"level":"fatal","timestamp":"2025-10-08T19:20:55.214+0800","caller":"logger/logger.go:124","msg":"Failed to listen","error":"listen tcp 0.0.0.0:50053: bind: address already in use","stacktrace":"vision_world_back/service/live_service/pkg/logger.(*zapLogger).Fatal\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/pkg/logger/logger.go:124\nmain.main.func2\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/cmd/server/main.go:130"}
-{"level":"info","timestamp":"2025-10-08T19:27:54.254+0800","caller":"logger/logger.go:109","msg":"Starting live service","version":"dev","build_time":"unknown","commit_hash":"unknown"}
-{"level":"info","timestamp":"2025-10-08T19:27:54.271+0800","caller":"logger/logger.go:109","msg":"Database connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:27:54.272+0800","caller":"logger/logger.go:109","msg":"Database models initialized successfully"}
-{"level":"info","timestamp":"2025-10-08T19:27:54.274+0800","caller":"logger/logger.go:109","msg":"Redis connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:27:54.274+0800","caller":"logger/logger.go:109","msg":"Live service registered"}
-{"level":"fatal","timestamp":"2025-10-08T19:27:54.274+0800","caller":"logger/logger.go:124","msg":"Failed to listen","error":"listen tcp 0.0.0.0:50053: bind: address already in use","stacktrace":"vision_world_back/service/live_service/pkg/logger.(*zapLogger).Fatal\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/pkg/logger/logger.go:124\nmain.main.func2\n\t/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/service/live_service/cmd/server/main.go:130"}
-{"level":"info","timestamp":"2025-10-08T19:28:22.329+0800","caller":"logger/logger.go:109","msg":"Starting live service","version":"dev","build_time":"unknown","commit_hash":"unknown"}
-{"level":"info","timestamp":"2025-10-08T19:28:22.338+0800","caller":"logger/logger.go:109","msg":"Database connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:28:22.338+0800","caller":"logger/logger.go:109","msg":"Database models initialized successfully"}
-{"level":"info","timestamp":"2025-10-08T19:28:22.340+0800","caller":"logger/logger.go:109","msg":"Redis connected successfully"}
-{"level":"info","timestamp":"2025-10-08T19:28:22.340+0800","caller":"logger/logger.go:109","msg":"Live service registered"}
-{"level":"info","timestamp":"2025-10-08T19:28:22.341+0800","caller":"logger/logger.go:109","msg":"gRPC server starting","address":"0.0.0.0:50055"}
-{"level":"info","timestamp":"2025-10-08T19:55:25.075+0800","caller":"logger/logger.go:109","msg":"Shutting down server..."}
-{"level":"info","timestamp":"2025-10-08T19:55:25.080+0800","caller":"logger/logger.go:109","msg":"Server stopped gracefully"}
+2026/02/19 19:43:35 Failed to load config: failed to read config file: Config File "live-service" Not Found in "[/Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/live_service /Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/live_service/config /Users/kanyu/Desktop/project/kanyu_server/new_project/project/vision_world_back/config /Users/kanyu/Desktop/project/kanyu_server/new_project/project/config]"
+{"level":"info","timestamp":"2026-02-19T19:44:21.679+0800","caller":"logger/logger.go:88","msg":"Starting live service","version":"1.0.0"}
+{"level":"info","timestamp":"2026-02-19T19:44:21.713+0800","caller":"logger/logger.go:88","msg":"Database connected successfully"}
+{"level":"info","timestamp":"2026-02-19T19:44:21.713+0800","caller":"logger/logger.go:88","msg":"Database models initialized successfully"}
+{"level":"info","timestamp":"2026-02-19T19:44:21.713+0800","caller":"logger/logger.go:88","msg":"Auto migrating database tables..."}
+{"level":"info","timestamp":"2026-02-19T19:44:22.029+0800","caller":"logger/logger.go:88","msg":"Database tables migrated successfully"}
+{"level":"info","timestamp":"2026-02-19T19:44:22.029+0800","caller":"logger/logger.go:88","msg":"Redis connected successfully"}
+{"level":"info","timestamp":"2026-02-19T19:44:22.044+0800","caller":"logger/logger.go:88","msg":"Live service registered"}
+{"level":"info","timestamp":"2026-02-19T19:44:22.045+0800","caller":"logger/logger.go:88","msg":"gRPC server starting","address":"0.0.0.0:50055"}
+{"level":"info","timestamp":"2026-02-19T19:44:22.131+0800","caller":"logger/logger.go:88","msg":"Service registered to etcd","address":"0.0.0.0:50055"}
+{"level":"info","timestamp":"2026-02-19T19:44:29.108+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T19:44:29.108+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T19:44:29.111+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.003175521}
+{"level":"info","timestamp":"2026-02-19T19:53:15.057+0800","caller":"logger/logger.go:88","msg":"Starting live service","version":"1.0.0"}
+{"level":"info","timestamp":"2026-02-19T19:53:15.072+0800","caller":"logger/logger.go:88","msg":"Database connected successfully"}
+{"level":"info","timestamp":"2026-02-19T19:53:15.072+0800","caller":"logger/logger.go:88","msg":"Database models initialized successfully"}
+{"level":"info","timestamp":"2026-02-19T19:53:15.072+0800","caller":"logger/logger.go:88","msg":"Auto migrating database tables..."}
+{"level":"info","timestamp":"2026-02-19T19:53:15.211+0800","caller":"logger/logger.go:88","msg":"Database tables migrated successfully"}
+{"level":"info","timestamp":"2026-02-19T19:53:15.212+0800","caller":"logger/logger.go:88","msg":"Redis connected successfully"}
+{"level":"info","timestamp":"2026-02-19T19:53:15.233+0800","caller":"logger/logger.go:88","msg":"Live service registered"}
+{"level":"info","timestamp":"2026-02-19T19:53:15.233+0800","caller":"logger/logger.go:88","msg":"gRPC server starting","address":"0.0.0.0:50055"}
+{"level":"info","timestamp":"2026-02-19T19:53:15.306+0800","caller":"logger/logger.go:88","msg":"Service registered to etcd","address":"0.0.0.0:50055"}
+{"level":"info","timestamp":"2026-02-19T19:54:30.118+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T19:54:30.120+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T19:54:41.917+0800","caller":"logger/logger.go:88","msg":"Starting live service","version":"1.0.0"}
+{"level":"info","timestamp":"2026-02-19T19:54:41.926+0800","caller":"logger/logger.go:88","msg":"Database connected successfully"}
+{"level":"info","timestamp":"2026-02-19T19:54:41.926+0800","caller":"logger/logger.go:88","msg":"Database models initialized successfully"}
+{"level":"info","timestamp":"2026-02-19T19:54:41.926+0800","caller":"logger/logger.go:88","msg":"Auto migrating database tables..."}
+{"level":"info","timestamp":"2026-02-19T19:54:42.149+0800","caller":"logger/logger.go:88","msg":"Database tables migrated successfully"}
+{"level":"info","timestamp":"2026-02-19T19:54:42.149+0800","caller":"logger/logger.go:88","msg":"Redis connected successfully"}
+{"level":"info","timestamp":"2026-02-19T19:54:42.157+0800","caller":"logger/logger.go:88","msg":"Live service registered"}
+{"level":"info","timestamp":"2026-02-19T19:54:42.157+0800","caller":"logger/logger.go:88","msg":"gRPC server starting","address":"0.0.0.0:50055"}
+{"level":"info","timestamp":"2026-02-19T19:54:42.207+0800","caller":"logger/logger.go:88","msg":"Service registered to etcd","address":"0.0.0.0:50055"}
+{"level":"info","timestamp":"2026-02-19T19:54:51.154+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T19:54:51.154+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T19:54:51.158+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.003652822}
+{"level":"info","timestamp":"2026-02-19T19:55:04.294+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/StartLive","request":"user_id:1  title:\"我的直播间\"  category:\"娱乐\""}
+{"level":"info","timestamp":"2026-02-19T19:55:04.295+0800","caller":"logger/logger.go:88","msg":"StartLive called","user_id":1,"title":"我的直播间","category":"娱乐"}
+{"level":"info","timestamp":"2026-02-19T19:55:04.436+0800","caller":"logger/logger.go:88","msg":"Live stream created","streamID":41,"streamKey":"65491df0b06748e01c9b408a36f55567"}
+{"level":"info","timestamp":"2026-02-19T19:55:04.447+0800","caller":"logger/logger.go:88","msg":"Live stream started","stream_id":41,"stream_key":"65491df0b06748e01c9b408a36f55567","stream_url":"rtmp://0.0.0.0:1935/live/65491df0b06748e01c9b408a36f55567","playback_url":"http://0.0.0.0:8085/live/65491df0b06748e01c9b408a36f55567.m3u8"}
+{"level":"info","timestamp":"2026-02-19T19:55:04.447+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/StartLive","duration":0.152460693}
+{"level":"info","timestamp":"2026-02-19T19:55:09.272+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T19:55:09.272+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T19:55:09.274+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.002485825}
+{"level":"info","timestamp":"2026-02-19T20:31:06.554+0800","caller":"logger/logger.go:88","msg":"Shutting down server..."}
+{"level":"info","timestamp":"2026-02-19T20:31:06.557+0800","caller":"logger/logger.go:88","msg":"Server stopped gracefully"}
+{"level":"info","timestamp":"2026-02-19T20:31:11.662+0800","caller":"logger/logger.go:88","msg":"Starting live service","version":"1.0.0"}
+{"level":"info","timestamp":"2026-02-19T20:31:11.684+0800","caller":"logger/logger.go:88","msg":"Database connected successfully"}
+{"level":"info","timestamp":"2026-02-19T20:31:11.685+0800","caller":"logger/logger.go:88","msg":"Database models initialized successfully"}
+{"level":"info","timestamp":"2026-02-19T20:31:11.685+0800","caller":"logger/logger.go:88","msg":"Auto migrating database tables..."}
+{"level":"info","timestamp":"2026-02-19T20:31:12.247+0800","caller":"logger/logger.go:88","msg":"Database tables migrated successfully"}
+{"level":"info","timestamp":"2026-02-19T20:31:12.247+0800","caller":"logger/logger.go:88","msg":"Redis connected successfully"}
+{"level":"info","timestamp":"2026-02-19T20:31:12.262+0800","caller":"logger/logger.go:88","msg":"Live service registered"}
+{"level":"info","timestamp":"2026-02-19T20:31:12.262+0800","caller":"logger/logger.go:88","msg":"gRPC server starting","address":"0.0.0.0:50055"}
+{"level":"info","timestamp":"2026-02-19T20:31:12.667+0800","caller":"logger/logger.go:88","msg":"Service registered to etcd","address":"0.0.0.0:50055"}
+{"level":"info","timestamp":"2026-02-19T20:32:42.130+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/StartLive","request":"user_id:1  title:\"我的直播间\"  category:\"娱乐\""}
+{"level":"info","timestamp":"2026-02-19T20:32:42.131+0800","caller":"logger/logger.go:88","msg":"StartLive called","user_id":1,"title":"我的直播间","category":"娱乐"}
+{"level":"info","timestamp":"2026-02-19T20:32:42.141+0800","caller":"logger/logger.go:88","msg":"Live stream created","streamID":47,"streamKey":"a49dd4f735c70949526df73be45213ce"}
+{"level":"info","timestamp":"2026-02-19T20:32:42.151+0800","caller":"logger/logger.go:88","msg":"Live stream started","stream_id":47,"stream_key":"a49dd4f735c70949526df73be45213ce","stream_url":"rtmp://0.0.0.0:1935/live/a49dd4f735c70949526df73be45213ce","playback_url":"http://localhost:8086/live/a49dd4f735c70949526df73be45213ce.m3u8"}
+{"level":"info","timestamp":"2026-02-19T20:32:42.151+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/StartLive","duration":0.021118977}
+{"level":"info","timestamp":"2026-02-19T20:32:50.142+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T20:32:50.143+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T20:32:50.146+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.003887262}
+{"level":"info","timestamp":"2026-02-19T20:48:01.217+0800","caller":"logger/logger.go:88","msg":"Shutting down server..."}
+{"level":"info","timestamp":"2026-02-19T20:48:01.219+0800","caller":"logger/logger.go:88","msg":"Server stopped gracefully"}
+{"level":"info","timestamp":"2026-02-19T20:48:06.444+0800","caller":"logger/logger.go:88","msg":"Starting live service","version":"1.0.0"}
+{"level":"info","timestamp":"2026-02-19T20:48:06.457+0800","caller":"logger/logger.go:88","msg":"Database connected successfully"}
+{"level":"info","timestamp":"2026-02-19T20:48:06.458+0800","caller":"logger/logger.go:88","msg":"Database models initialized successfully"}
+{"level":"info","timestamp":"2026-02-19T20:48:06.458+0800","caller":"logger/logger.go:88","msg":"Auto migrating database tables..."}
+{"level":"info","timestamp":"2026-02-19T20:48:06.739+0800","caller":"logger/logger.go:88","msg":"Database tables migrated successfully"}
+{"level":"info","timestamp":"2026-02-19T20:48:06.739+0800","caller":"logger/logger.go:88","msg":"Redis connected successfully"}
+{"level":"info","timestamp":"2026-02-19T20:48:06.763+0800","caller":"logger/logger.go:88","msg":"Live service registered"}
+{"level":"info","timestamp":"2026-02-19T20:48:06.763+0800","caller":"logger/logger.go:88","msg":"gRPC server starting","address":"0.0.0.0:50055"}
+{"level":"info","timestamp":"2026-02-19T20:48:06.952+0800","caller":"logger/logger.go:88","msg":"Service registered to etcd","address":"0.0.0.0:50055"}
+{"level":"info","timestamp":"2026-02-19T20:48:30.398+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/StopLive","request":"user_id:1"}
+{"level":"info","timestamp":"2026-02-19T20:48:30.398+0800","caller":"logger/logger.go:88","msg":"StopLive called","user_id":1,"room_id":0}
+{"level":"info","timestamp":"2026-02-19T20:48:30.398+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/StopLive","duration":0.000251701}
+{"level":"info","timestamp":"2026-02-19T20:48:58.517+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/StartLive","request":"user_id:1  title:\"我的直播间\"  category:\"娱乐\""}
+{"level":"info","timestamp":"2026-02-19T20:48:58.518+0800","caller":"logger/logger.go:88","msg":"StartLive called","user_id":1,"title":"我的直播间","category":"娱乐"}
+{"level":"info","timestamp":"2026-02-19T20:48:58.540+0800","caller":"logger/logger.go:88","msg":"Live stream created","streamID":48,"streamKey":"1c1c22a741cc38570c2bd67f52536033"}
+{"level":"info","timestamp":"2026-02-19T20:48:58.553+0800","caller":"logger/logger.go:88","msg":"Live stream started","stream_id":48,"stream_key":"1c1c22a741cc38570c2bd67f52536033","stream_url":"rtmp://0.0.0.0:1935/live/1c1c22a741cc38570c2bd67f52536033","playback_url":"http://localhost:8085/live/1c1c22a741cc38570c2bd67f52536033.m3u8"}
+{"level":"info","timestamp":"2026-02-19T20:48:58.553+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/StartLive","duration":0.035923985}
+{"level":"info","timestamp":"2026-02-19T20:49:07.906+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T20:49:07.906+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T20:49:07.909+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.003346247}
+{"level":"info","timestamp":"2026-02-19T20:52:17.204+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T20:52:17.207+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T20:52:17.215+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.01104518}
+{"level":"info","timestamp":"2026-02-19T21:00:29.558+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T21:00:29.559+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T21:00:29.585+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.027015557}
+{"level":"info","timestamp":"2026-02-19T21:01:37.088+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T21:01:37.088+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T21:01:37.090+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.002401824}
+{"level":"info","timestamp":"2026-02-19T21:05:56.851+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T21:05:56.852+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T21:05:56.869+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.018586991}
+{"level":"info","timestamp":"2026-02-19T21:07:08.157+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T21:07:08.158+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T21:07:08.184+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.027135738}
+{"level":"info","timestamp":"2026-02-19T21:15:35.562+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T21:15:35.565+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T21:15:35.578+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.015867998}
+{"level":"info","timestamp":"2026-02-19T21:15:35.580+0800","caller":"logger/logger.go:88","msg":"gRPC request started","method":"/livepb.LiveService/GetRoomInfo","request":"room_id:1"}
+{"level":"info","timestamp":"2026-02-19T21:15:35.581+0800","caller":"logger/logger.go:88","msg":"GetRoomInfo called","room_id":1}
+{"level":"info","timestamp":"2026-02-19T21:15:35.588+0800","caller":"logger/logger.go:88","msg":"gRPC request completed","method":"/livepb.LiveService/GetRoomInfo","duration":0.007840557}

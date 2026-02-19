@@ -140,6 +140,9 @@ func (r *Router) registerLiveRoutes(api *gin.RouterGroup) {
 	api.GET("/live/room/:id", r.liveHandler.GetRoomInfo)
 	// api.GET("/live/stream/:id", r.liveHandler.GetLiveStream)
 	api.GET("/live/list", r.liveHandler.GetLiveList)
+
+	// SRS 回调路由（不需要认证，供SRS服务器调用）
+	api.POST("/live/srs/callback", r.liveHandler.SRSCallback)
 }
 
 // registerHomeRoutes 注册首页相关路由

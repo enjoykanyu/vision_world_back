@@ -255,7 +255,7 @@ func (r *liveRepository) GetLiveStreamByUserID(ctx context.Context, userID uint6
 		model.LiveStatusPreparing,
 		model.LiveStatusStreaming,
 		model.LiveStatusPaused,
-	}).First(&stream).Error
+	}).Order("created_at DESC").First(&stream).Error
 	if err != nil {
 		log.Println("GetLiveStreamByUserID", err)
 		return nil, err
@@ -266,7 +266,8 @@ func (r *liveRepository) GetLiveStreamByUserID(ctx context.Context, userID uint6
 // GetLiveStreamByRoomID 根据房间ID获取正在进行的直播流
 func (r *liveRepository) GetLiveStreamByRoomID(ctx context.Context, roomID uint64) (*model.LiveStream, error) {
 	var stream model.LiveStream
-	err := r.db.WithContext(ctx).Where("room_id = ? AND status = ?", roomID, model.LiveStatusStreaming).First(&stream).Error
+	// 按创建时间倒序排序，获取最新的直播流
+	err := r.db.WithContext(ctx).Where("room_id = ? AND status = ?", roomID, model.LiveStatusStreaming).Order("created_at DESC").First(&stream).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
