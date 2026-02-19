@@ -56,6 +56,8 @@ message StartLiveResponse {
     string push_url = 5;       // RTMP推流地址
     string play_url = 6;       // HLS播放地址
     bool is_new_room = 7;      // 是否新创建的房间
+    string flv_url = 8;        // FLV播放地址
+    string webrtc_url = 9;     // WebRTC播放地址
 }
 
 // ========== 结束直播 ==========

@@ -68,6 +68,19 @@ func main() {
 	model.SetDB(db)
 	logger.Info("Database models initialized successfully")
 
+	// 自动迁移数据库表结构
+	logger.Info("Auto migrating database tables...")
+	if err := db.AutoMigrate(
+		&model.LiveRoom{},
+		&model.LiveStream{},
+		&model.LiveViewer{},
+		&model.LiveGift{},
+		&model.LiveChat{},
+	); err != nil {
+		logger.Fatal("Failed to auto migrate database", "error", err)
+	}
+	logger.Info("Database tables migrated successfully")
+
 	// 4. 初始化Redis连接
 	redisClient, err := database.NewRedisClient(cfg.Redis)
 	if err != nil {

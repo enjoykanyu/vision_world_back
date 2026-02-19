@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
 
 	"github.com/go-redis/redis/v8"
@@ -19,10 +21,12 @@ type LiveService interface {
 	StartLive(ctx context.Context, userID uint64, title string, category string) (*model.LiveStream, error)
 	StopLive(ctx context.Context, streamID, userID uint64) error
 	GetLiveStream(ctx context.Context, streamID uint64) (*model.LiveStream, error)
+	GetLiveStreamByRoomID(ctx context.Context, roomID uint64) (*model.LiveStream, error)
 	GetLiveList(ctx context.Context, page, pageSize int, categoryID uint32) ([]*model.LiveStream, int64, error)
 	GetHotLiveList(ctx context.Context, page, pageSize int) ([]*model.LiveStream, int64, error)
 
 	// 直播间管理
+	GetLiveRoom(ctx context.Context, roomID uint64) (*model.LiveRoom, error)
 	JoinLiveRoom(ctx context.Context, streamID, userID uint64) (*model.LiveViewer, error)
 	LeaveLiveRoom(ctx context.Context, streamID, userID uint64) error
 	GetLiveViewerList(ctx context.Context, streamID uint64, page, pageSize int) ([]*model.LiveViewer, int64, error)
@@ -112,33 +116,100 @@ func NewLiveService(cfg *config.Config, log logger.Logger, db *gorm.DB, redis *r
 func (s *liveService) StartLive(ctx context.Context, userID uint64, title string, category string) (*model.LiveStream, error) {
 	log.Println("Starting live stream", "userID", userID, "title", title)
 
-	// TODO: 实现开始直播逻辑
-	// 这里应该包含：
-	// 1. 检查用户是否有权限开播
-	// 2. 创建直播流记录
-	// 3. 生成推流地址
-	// 4. 初始化直播间状态
-	// 5. 设置直播参数
+	// 1. 查询或创建直播间
+	room, err := s.liveRepo.GetLiveRoomByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
 
-	return &model.LiveStream{
-		ID:     1,
-		UserID: userID,
-		Title:  title,
-		Status: model.LiveStatusPreparing,
-	}, nil
+	var roomID uint64
+	if room == nil {
+		// 1.1 新建直播间
+		newRoom := &model.LiveRoom{
+			UserID: userID,
+			Name:   title,
+			Status: 0, // 离线状态
+		}
+		if err := s.liveRepo.CreateLiveRoom(ctx, newRoom); err != nil {
+			return nil, fmt.Errorf("failed to create live room: %w", err)
+		}
+		roomID = newRoom.ID
+		log.Println("Created new live room", "roomID", roomID)
+	} else {
+		roomID = room.ID
+	}
+	// 2. 检查用户是否已有进行中的直播
+	// existingStream, err := s.liveRepo.GetLiveStreamByUserID(ctx, userID)
+
+	// if err == nil && existingStream != nil {
+	// 	return nil, errors.New("user already has an active live stream")
+	// }
+
+	// 3. 创建直播流记录
+	stream, err := s.streamManager.CreateLiveStream(ctx, roomID, userID, title, category)
+	if err != nil {
+		return nil, err
+	}
+
+	// 4. 生成各种播放地址
+	playURLs := s.streamManager.GeneratePlayURL(stream.StreamKey)
+
+	// 5. 更新直播间状态为在线
+	if err := s.liveRepo.UpdateLiveRoomStatus(ctx, roomID, 1); err != nil {
+		log.Println("Failed to update room status", "error", err)
+	}
+
+	// 6. 更新直播流状态为直播中
+	if err := s.liveRepo.UpdateLiveStreamStatus(ctx, stream.ID, model.LiveStatusStreaming); err != nil {
+		log.Println("Failed to update stream status", "error", err)
+	}
+
+	// 7. 返回直播流信息（包含推流地址和播放地址）
+	stream.PlaybackURL = playURLs["hls"] // 设置默认播放地址
+	stream.Status = model.LiveStatusStreaming
+
+	log.Println("Live stream started successfully",
+		"streamID", stream.ID,
+		"streamKey", stream.StreamKey,
+		"pushURL", stream.StreamURL)
+
+	return stream, nil
 }
 
 // StopLive 结束直播
 func (s *liveService) StopLive(ctx context.Context, streamID, userID uint64) error {
 	log.Println("Stopping live stream", "streamID", streamID, "userID", userID)
 
-	// TODO: 实现结束直播逻辑
-	// 这里应该包含：
-	// 1. 验证用户权限
-	// 2. 更新直播流状态
-	// 3. 计算直播时长
-	// 4. 生成回放文件
-	// 5. 清理相关资源
+	// 1. 获取直播流信息
+	stream, err := s.liveRepo.GetLiveStream(ctx, streamID)
+	if err != nil {
+		log.Println("Failed to get live stream", "error", err)
+		return fmt.Errorf("failed to get live stream: %w", err)
+	}
+	if stream == nil {
+		log.Println("Live stream not found", "streamID", streamID)
+		return errors.New("live stream not found")
+	}
+
+	// 2. 验证用户权限
+	if stream.UserID != userID {
+		log.Println("Permission denied", "streamID", streamID, "userID", userID)
+		return errors.New("permission denied: not the stream owner")
+	}
+
+	// 3. 更新直播流状态为已结束
+	if err := s.liveRepo.UpdateLiveStreamStatus(ctx, streamID, model.LiveStatusEnded); err != nil {
+		log.Println("Failed to update stream status", "error", err)
+		return fmt.Errorf("failed to update stream status: %w", err)
+	}
+
+	// 4. 更新直播间状态为离线
+	if err := s.liveRepo.UpdateLiveRoomStatus(ctx, stream.RoomID, model.RoomStatusOffline); err != nil {
+		log.Println("Failed to update room status", "error", err)
+		return fmt.Errorf("failed to update room status: %w", err)
+	}
+
+	// TODO: 计算直播时长、生成回放文件、清理相关资源
 
 	return nil
 }
@@ -157,6 +228,18 @@ func (s *liveService) GetLiveStream(ctx context.Context, streamID uint64) (*mode
 		ID:     streamID,
 		Status: model.LiveStatusStreaming,
 	}, nil
+}
+
+// GetLiveRoom 获取直播间信息
+func (s *liveService) GetLiveRoom(ctx context.Context, roomID uint64) (*model.LiveRoom, error) {
+	log.Println("Getting live room info", "roomID", roomID)
+	return s.liveRepo.GetLiveRoom(ctx, roomID)
+}
+
+// GetLiveStreamByRoomID 根据房间ID获取正在进行的直播流
+func (s *liveService) GetLiveStreamByRoomID(ctx context.Context, roomID uint64) (*model.LiveStream, error) {
+	log.Println("Getting live stream by room ID", "roomID", roomID)
+	return s.liveRepo.GetLiveStreamByRoomID(ctx, roomID)
 }
 
 // GetLiveList 获取直播列表

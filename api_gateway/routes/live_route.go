@@ -144,7 +144,7 @@ func (h *LiveHandler) StartLive(c *gin.Context) {
 
 	resp, err := liveClient.StartLive(ctx, &req)
 	if err != nil {
-		log.Printf("StartLive error: %v", err)
+		log.Println("StartLive error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start live"})
 		return
 	}
@@ -152,7 +152,15 @@ func (h *LiveHandler) StartLive(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "success",
-		"data": resp,
+		"data": gin.H{
+			"room_id":     resp.GetRoomId(),
+			"stream_key":  resp.GetStreamKey(),
+			"push_url":    resp.GetPushUrl(),
+			"play_url":    resp.GetPlayUrl(),
+			"flv_url":     resp.GetFlvUrl(),
+			"webrtc_url":  resp.GetWebrtcUrl(),
+			"is_new_room": resp.GetIsNewRoom(),
+		},
 	})
 }
 
@@ -185,6 +193,51 @@ func (h *LiveHandler) StopLive(c *gin.Context) {
 		"code": 0,
 		"msg":  "success",
 		"data": resp,
+	})
+}
+
+// GetRoomInfo 获取直播间信息
+func (h *LiveHandler) GetRoomInfo(c *gin.Context) {
+	roomID := c.Param("id")
+	if roomID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Room ID is required"})
+		return
+	}
+
+	// 转换roomID为uint64
+	id, err := strconv.ParseUint(roomID, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid room ID"})
+		return
+	}
+
+	req := &pb.GetRoomInfoRequest{
+		RoomId: id,
+	}
+
+	liveClient, err := h.getLiveClient()
+	if err != nil {
+		log.Printf("Failed to get live service client: %v", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Live service temporarily unavailable"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := liveClient.GetRoomInfo(ctx, req)
+	if err != nil {
+		log.Printf("GetRoomInfo error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get room info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"msg":  "success",
+		"data": gin.H{
+			"room": resp.GetRoom(),
+		},
 	})
 }
 

@@ -64,8 +64,11 @@ message StartLiveResponse {
     string message = 2;
     string request_id = 3;
     LiveStream stream = 4;
-    string stream_url = 5;
-    string stream_key = 6;
+    string stream_url = 5;        // RTMP推流地址
+    string stream_key = 6;        // 流密钥
+    string hls_url = 7;           // HLS播放地址
+    string flv_url = 8;           // FLV播放地址
+    string webrtc_url = 9;        // WebRTC播放地址
 }
 
 message StopLiveRequest {

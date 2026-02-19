@@ -2,6 +2,11 @@ package service
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
+	"fmt"
+	"log"
+	"time"
 
 	"live_service/internal/config"
 	"live_service/internal/model"
@@ -11,6 +16,12 @@ import (
 
 // StreamManager 流管理器接口
 type StreamManager interface {
+	// 直播流创建和管理
+	CreateLiveStream(ctx context.Context, roomID, userID uint64, title, category string) (*model.LiveStream, error)
+	GenerateStreamKey(userID uint64) string
+	GeneratePushURL(streamKey string) string
+	GeneratePlayURL(streamKey string) map[string]string
+
 	// 流状态管理
 	StartStream(ctx context.Context, stream *model.LiveStream) error
 	StopStream(ctx context.Context, streamID uint64) error
@@ -97,6 +108,91 @@ func NewStreamManager(cfg *config.Config, log logger.Logger, repo repository.Liv
 		logger:   log,
 		liveRepo: repo,
 	}
+}
+
+// CreateLiveStream 创建直播流
+func (m *streamManager) CreateLiveStream(ctx context.Context, roomID, userID uint64, title, category string) (*model.LiveStream, error) {
+	log.Println("Creating live stream", "userID", userID, "title", title)
+
+	// 1. 生成唯一的流密钥
+	streamKey := m.GenerateStreamKey(userID)
+
+	// 2. 生成推流地址
+	pushURL := m.GeneratePushURL(streamKey)
+	log.Println(pushURL)
+	log.Println("直播地址为")
+	// 3. 生成播放地址（多种格式）
+	playURLs := m.GeneratePlayURL(streamKey)
+	log.Println(playURLs)
+	// 4. 创建直播流记录
+	now := time.Now()
+	stream := &model.LiveStream{
+		StreamKey:     streamKey,
+		Title:         title,
+		UserID:        userID,
+		RoomID:        roomID,
+		CategoryID:    0, // 从category解析
+		Status:        model.LiveStatusPreparing,
+		StreamType:    "rtmp",
+		StreamURL:     pushURL,
+		PlaybackURL:   playURLs["hls"], // 默认HLS
+		IsPublic:      true,
+		IsChatEnabled: true,
+		IsGiftEnabled: true,
+		VideoQuality:  "720p",
+		AudioQuality:  "high",
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+
+	// 5. 保存到数据库
+	if err := m.liveRepo.CreateLiveStream(ctx, stream); err != nil {
+		return nil, fmt.Errorf("failed to create live stream: %w", err)
+	}
+
+	m.logger.Info("Live stream created", "streamID", stream.ID, "streamKey", streamKey)
+	return stream, nil
+}
+
+// GenerateStreamKey 生成流密钥
+func (m *streamManager) GenerateStreamKey(userID uint64) string {
+	// 使用用户ID + 时间戳 + 随机数生成唯一密钥
+	timestamp := time.Now().UnixNano()
+	random := time.Now().UnixNano() % 10000
+	data := fmt.Sprintf("%d_%d_%d", userID, timestamp, random)
+
+	hash := md5.Sum([]byte(data))
+	return hex.EncodeToString(hash[:])
+}
+
+// GeneratePushURL 生成推流地址
+func (m *streamManager) GeneratePushURL(streamKey string) string {
+	// RTMP推流地址格式: rtmp://srs-server/live/{streamKey}
+	// 实际项目中从配置读取SRS服务器地址
+	srsHost := m.config.Server.Host
+	if srsHost == "" {
+		srsHost = "localhost"
+	}
+	return fmt.Sprintf("rtmp://%s:1935/live/%s", srsHost, streamKey)
+}
+
+// GeneratePlayURL 生成播放地址
+func (m *streamManager) GeneratePlayURL(streamKey string) map[string]string {
+	srsHost := m.config.Server.Host
+	if srsHost == "" {
+		srsHost = "localhost"
+	}
+
+	// 多种播放格式 - 使用 8085 端口避免与 API Gateway 冲突
+	// WebRTC 使用 1985 端口 (HTTP API) 或 8000 端口 (UDP)
+	urls := map[string]string{
+		"rtmp":   fmt.Sprintf("rtmp://%s:1935/live/%s", srsHost, streamKey),
+		"flv":    fmt.Sprintf("http://%s:8085/live/%s.flv", srsHost, streamKey),
+		"hls":    fmt.Sprintf("http://%s:8085/live/%s.m3u8", srsHost, streamKey),
+		"webrtc": fmt.Sprintf("webrtc://%s:1985/live/%s", srsHost, streamKey),
+	}
+	log.Println("GeneratePlayURL")
+	return urls
 }
 
 // StartStream 开始流

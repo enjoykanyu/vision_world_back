@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v3.20.1
-// source: live.proto
+// source: proto/live.proto
 
 package live
 
@@ -331,5 +331,5 @@ var LiveService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "live.proto",
+	Metadata: "proto/live.proto",
 }

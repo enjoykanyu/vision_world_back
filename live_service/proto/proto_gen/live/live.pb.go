@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v3.20.1
-// source: live.proto
+// source: proto/live.proto
 
 package proto_gen
 
@@ -32,7 +32,7 @@ type BaseResponse struct {
 
 func (x *BaseResponse) Reset() {
 	*x = BaseResponse{}
-	mi := &file_live_proto_msgTypes[0]
+	mi := &file_proto_live_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *BaseResponse) String() string {
 func (*BaseResponse) ProtoMessage() {}
 
 func (x *BaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[0]
+	mi := &file_proto_live_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *BaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BaseResponse.ProtoReflect.Descriptor instead.
 func (*BaseResponse) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{0}
+	return file_proto_live_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *BaseResponse) GetCode() int32 {
@@ -87,7 +87,7 @@ type CreateRoomRequest struct {
 
 func (x *CreateRoomRequest) Reset() {
 	*x = CreateRoomRequest{}
-	mi := &file_live_proto_msgTypes[1]
+	mi := &file_proto_live_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -99,7 +99,7 @@ func (x *CreateRoomRequest) String() string {
 func (*CreateRoomRequest) ProtoMessage() {}
 
 func (x *CreateRoomRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[1]
+	mi := &file_proto_live_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -112,7 +112,7 @@ func (x *CreateRoomRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRoomRequest.ProtoReflect.Descriptor instead.
 func (*CreateRoomRequest) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{1}
+	return file_proto_live_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateRoomRequest) GetUserId() uint64 {
@@ -156,7 +156,7 @@ type CreateRoomResponse struct {
 
 func (x *CreateRoomResponse) Reset() {
 	*x = CreateRoomResponse{}
-	mi := &file_live_proto_msgTypes[2]
+	mi := &file_proto_live_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -168,7 +168,7 @@ func (x *CreateRoomResponse) String() string {
 func (*CreateRoomResponse) ProtoMessage() {}
 
 func (x *CreateRoomResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[2]
+	mi := &file_proto_live_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -181,7 +181,7 @@ func (x *CreateRoomResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRoomResponse.ProtoReflect.Descriptor instead.
 func (*CreateRoomResponse) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{2}
+	return file_proto_live_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CreateRoomResponse) GetCode() int32 {
@@ -232,7 +232,7 @@ type StartLiveRequest struct {
 
 func (x *StartLiveRequest) Reset() {
 	*x = StartLiveRequest{}
-	mi := &file_live_proto_msgTypes[3]
+	mi := &file_proto_live_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -244,7 +244,7 @@ func (x *StartLiveRequest) String() string {
 func (*StartLiveRequest) ProtoMessage() {}
 
 func (x *StartLiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[3]
+	mi := &file_proto_live_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -257,7 +257,7 @@ func (x *StartLiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartLiveRequest.ProtoReflect.Descriptor instead.
 func (*StartLiveRequest) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{3}
+	return file_proto_live_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *StartLiveRequest) GetUserId() uint64 {
@@ -297,13 +297,15 @@ type StartLiveResponse struct {
 	PushUrl       string                 `protobuf:"bytes,5,opt,name=push_url,json=pushUrl,proto3" json:"push_url,omitempty"`          // RTMP推流地址
 	PlayUrl       string                 `protobuf:"bytes,6,opt,name=play_url,json=playUrl,proto3" json:"play_url,omitempty"`          // HLS播放地址
 	IsNewRoom     bool                   `protobuf:"varint,7,opt,name=is_new_room,json=isNewRoom,proto3" json:"is_new_room,omitempty"` // 是否新创建的房间
+	FlvUrl        string                 `protobuf:"bytes,8,opt,name=flv_url,json=flvUrl,proto3" json:"flv_url,omitempty"`             // FLV播放地址
+	WebrtcUrl     string                 `protobuf:"bytes,9,opt,name=webrtc_url,json=webrtcUrl,proto3" json:"webrtc_url,omitempty"`    // WebRTC播放地址
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *StartLiveResponse) Reset() {
 	*x = StartLiveResponse{}
-	mi := &file_live_proto_msgTypes[4]
+	mi := &file_proto_live_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -315,7 +317,7 @@ func (x *StartLiveResponse) String() string {
 func (*StartLiveResponse) ProtoMessage() {}
 
 func (x *StartLiveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[4]
+	mi := &file_proto_live_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -328,7 +330,7 @@ func (x *StartLiveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartLiveResponse.ProtoReflect.Descriptor instead.
 func (*StartLiveResponse) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{4}
+	return file_proto_live_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *StartLiveResponse) GetCode() int32 {
@@ -380,6 +382,20 @@ func (x *StartLiveResponse) GetIsNewRoom() bool {
 	return false
 }
 
+func (x *StartLiveResponse) GetFlvUrl() string {
+	if x != nil {
+		return x.FlvUrl
+	}
+	return ""
+}
+
+func (x *StartLiveResponse) GetWebrtcUrl() string {
+	if x != nil {
+		return x.WebrtcUrl
+	}
+	return ""
+}
+
 // ========== 结束直播 ==========
 type StopLiveRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -391,7 +407,7 @@ type StopLiveRequest struct {
 
 func (x *StopLiveRequest) Reset() {
 	*x = StopLiveRequest{}
-	mi := &file_live_proto_msgTypes[5]
+	mi := &file_proto_live_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -403,7 +419,7 @@ func (x *StopLiveRequest) String() string {
 func (*StopLiveRequest) ProtoMessage() {}
 
 func (x *StopLiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[5]
+	mi := &file_proto_live_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -416,7 +432,7 @@ func (x *StopLiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopLiveRequest.ProtoReflect.Descriptor instead.
 func (*StopLiveRequest) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{5}
+	return file_proto_live_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *StopLiveRequest) GetUserId() uint64 {
@@ -443,7 +459,7 @@ type StopLiveResponse struct {
 
 func (x *StopLiveResponse) Reset() {
 	*x = StopLiveResponse{}
-	mi := &file_live_proto_msgTypes[6]
+	mi := &file_proto_live_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -455,7 +471,7 @@ func (x *StopLiveResponse) String() string {
 func (*StopLiveResponse) ProtoMessage() {}
 
 func (x *StopLiveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[6]
+	mi := &file_proto_live_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -468,7 +484,7 @@ func (x *StopLiveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopLiveResponse.ProtoReflect.Descriptor instead.
 func (*StopLiveResponse) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{6}
+	return file_proto_live_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *StopLiveResponse) GetCode() int32 {
@@ -495,7 +511,7 @@ type GetRoomInfoRequest struct {
 
 func (x *GetRoomInfoRequest) Reset() {
 	*x = GetRoomInfoRequest{}
-	mi := &file_live_proto_msgTypes[7]
+	mi := &file_proto_live_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -507,7 +523,7 @@ func (x *GetRoomInfoRequest) String() string {
 func (*GetRoomInfoRequest) ProtoMessage() {}
 
 func (x *GetRoomInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[7]
+	mi := &file_proto_live_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -520,7 +536,7 @@ func (x *GetRoomInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRoomInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetRoomInfoRequest) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{7}
+	return file_proto_live_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetRoomInfoRequest) GetRoomId() uint64 {
@@ -541,7 +557,7 @@ type GetRoomInfoResponse struct {
 
 func (x *GetRoomInfoResponse) Reset() {
 	*x = GetRoomInfoResponse{}
-	mi := &file_live_proto_msgTypes[8]
+	mi := &file_proto_live_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -553,7 +569,7 @@ func (x *GetRoomInfoResponse) String() string {
 func (*GetRoomInfoResponse) ProtoMessage() {}
 
 func (x *GetRoomInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[8]
+	mi := &file_proto_live_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -566,7 +582,7 @@ func (x *GetRoomInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRoomInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetRoomInfoResponse) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{8}
+	return file_proto_live_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetRoomInfoResponse) GetCode() int32 {
@@ -601,7 +617,7 @@ type EnterRoomRequest struct {
 
 func (x *EnterRoomRequest) Reset() {
 	*x = EnterRoomRequest{}
-	mi := &file_live_proto_msgTypes[9]
+	mi := &file_proto_live_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -613,7 +629,7 @@ func (x *EnterRoomRequest) String() string {
 func (*EnterRoomRequest) ProtoMessage() {}
 
 func (x *EnterRoomRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[9]
+	mi := &file_proto_live_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -626,7 +642,7 @@ func (x *EnterRoomRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterRoomRequest.ProtoReflect.Descriptor instead.
 func (*EnterRoomRequest) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{9}
+	return file_proto_live_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *EnterRoomRequest) GetUserId() uint64 {
@@ -655,7 +671,7 @@ type EnterRoomResponse struct {
 
 func (x *EnterRoomResponse) Reset() {
 	*x = EnterRoomResponse{}
-	mi := &file_live_proto_msgTypes[10]
+	mi := &file_proto_live_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -667,7 +683,7 @@ func (x *EnterRoomResponse) String() string {
 func (*EnterRoomResponse) ProtoMessage() {}
 
 func (x *EnterRoomResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[10]
+	mi := &file_proto_live_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -680,7 +696,7 @@ func (x *EnterRoomResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnterRoomResponse.ProtoReflect.Descriptor instead.
 func (*EnterRoomResponse) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{10}
+	return file_proto_live_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *EnterRoomResponse) GetCode() int32 {
@@ -722,7 +738,7 @@ type LeaveRoomRequest struct {
 
 func (x *LeaveRoomRequest) Reset() {
 	*x = LeaveRoomRequest{}
-	mi := &file_live_proto_msgTypes[11]
+	mi := &file_proto_live_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -734,7 +750,7 @@ func (x *LeaveRoomRequest) String() string {
 func (*LeaveRoomRequest) ProtoMessage() {}
 
 func (x *LeaveRoomRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[11]
+	mi := &file_proto_live_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -747,7 +763,7 @@ func (x *LeaveRoomRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveRoomRequest.ProtoReflect.Descriptor instead.
 func (*LeaveRoomRequest) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{11}
+	return file_proto_live_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *LeaveRoomRequest) GetUserId() uint64 {
@@ -774,7 +790,7 @@ type LeaveRoomResponse struct {
 
 func (x *LeaveRoomResponse) Reset() {
 	*x = LeaveRoomResponse{}
-	mi := &file_live_proto_msgTypes[12]
+	mi := &file_proto_live_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -786,7 +802,7 @@ func (x *LeaveRoomResponse) String() string {
 func (*LeaveRoomResponse) ProtoMessage() {}
 
 func (x *LeaveRoomResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[12]
+	mi := &file_proto_live_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -799,7 +815,7 @@ func (x *LeaveRoomResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveRoomResponse.ProtoReflect.Descriptor instead.
 func (*LeaveRoomResponse) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{12}
+	return file_proto_live_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *LeaveRoomResponse) GetCode() int32 {
@@ -828,7 +844,7 @@ type GetLiveListRequest struct {
 
 func (x *GetLiveListRequest) Reset() {
 	*x = GetLiveListRequest{}
-	mi := &file_live_proto_msgTypes[13]
+	mi := &file_proto_live_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -840,7 +856,7 @@ func (x *GetLiveListRequest) String() string {
 func (*GetLiveListRequest) ProtoMessage() {}
 
 func (x *GetLiveListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[13]
+	mi := &file_proto_live_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -853,7 +869,7 @@ func (x *GetLiveListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveListRequest.ProtoReflect.Descriptor instead.
 func (*GetLiveListRequest) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{13}
+	return file_proto_live_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetLiveListRequest) GetCategory() string {
@@ -889,7 +905,7 @@ type GetLiveListResponse struct {
 
 func (x *GetLiveListResponse) Reset() {
 	*x = GetLiveListResponse{}
-	mi := &file_live_proto_msgTypes[14]
+	mi := &file_proto_live_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -901,7 +917,7 @@ func (x *GetLiveListResponse) String() string {
 func (*GetLiveListResponse) ProtoMessage() {}
 
 func (x *GetLiveListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[14]
+	mi := &file_proto_live_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -914,7 +930,7 @@ func (x *GetLiveListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLiveListResponse.ProtoReflect.Descriptor instead.
 func (*GetLiveListResponse) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{14}
+	return file_proto_live_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetLiveListResponse) GetCode() int32 {
@@ -967,7 +983,7 @@ type LiveRoom struct {
 
 func (x *LiveRoom) Reset() {
 	*x = LiveRoom{}
-	mi := &file_live_proto_msgTypes[15]
+	mi := &file_proto_live_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -979,7 +995,7 @@ func (x *LiveRoom) String() string {
 func (*LiveRoom) ProtoMessage() {}
 
 func (x *LiveRoom) ProtoReflect() protoreflect.Message {
-	mi := &file_live_proto_msgTypes[15]
+	mi := &file_proto_live_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -992,7 +1008,7 @@ func (x *LiveRoom) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiveRoom.ProtoReflect.Descriptor instead.
 func (*LiveRoom) Descriptor() ([]byte, []int) {
-	return file_live_proto_rawDescGZIP(), []int{15}
+	return file_proto_live_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *LiveRoom) GetId() uint64 {
@@ -1086,12 +1102,11 @@ func (x *LiveRoom) GetUpdatedAt() int64 {
 	return 0
 }
 
-var File_live_proto protoreflect.FileDescriptor
+var File_proto_live_proto protoreflect.FileDescriptor
 
-const file_live_proto_rawDesc = "" +
+const file_proto_live_proto_rawDesc = "" +
 	"\n" +
-	"\n" +
-	"live.proto\x12\x06livepb\"<\n" +
+	"\x10proto/live.proto\x12\x06livepb\"<\n" +
 	"\fBaseResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"{\n" +
@@ -1111,7 +1126,7 @@ const file_live_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
 	"\bcategory\x18\x03 \x01(\tR\bcategory\x12\x1b\n" +
-	"\tcover_url\x18\x04 \x01(\tR\bcoverUrl\"\xcf\x01\n" +
+	"\tcover_url\x18\x04 \x01(\tR\bcoverUrl\"\x87\x02\n" +
 	"\x11StartLiveResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x17\n" +
@@ -1120,7 +1135,10 @@ const file_live_proto_rawDesc = "" +
 	"stream_key\x18\x04 \x01(\tR\tstreamKey\x12\x19\n" +
 	"\bpush_url\x18\x05 \x01(\tR\apushUrl\x12\x19\n" +
 	"\bplay_url\x18\x06 \x01(\tR\aplayUrl\x12\x1e\n" +
-	"\vis_new_room\x18\a \x01(\bR\tisNewRoom\"C\n" +
+	"\vis_new_room\x18\a \x01(\bR\tisNewRoom\x12\x17\n" +
+	"\aflv_url\x18\b \x01(\tR\x06flvUrl\x12\x1d\n" +
+	"\n" +
+	"webrtc_url\x18\t \x01(\tR\twebrtcUrl\"C\n" +
 	"\x0fStopLiveRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x17\n" +
 	"\aroom_id\x18\x02 \x01(\x04R\x06roomId\"@\n" +
@@ -1186,19 +1204,19 @@ const file_live_proto_rawDesc = "" +
 	"\vGetLiveList\x12\x1a.livepb.GetLiveListRequest\x1a\x1b.livepb.GetLiveListResponseB0Z.github.com/vision_world/live_service/proto_genb\x06proto3"
 
 var (
-	file_live_proto_rawDescOnce sync.Once
-	file_live_proto_rawDescData []byte
+	file_proto_live_proto_rawDescOnce sync.Once
+	file_proto_live_proto_rawDescData []byte
 )
 
-func file_live_proto_rawDescGZIP() []byte {
-	file_live_proto_rawDescOnce.Do(func() {
-		file_live_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_live_proto_rawDesc), len(file_live_proto_rawDesc)))
+func file_proto_live_proto_rawDescGZIP() []byte {
+	file_proto_live_proto_rawDescOnce.Do(func() {
+		file_proto_live_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_live_proto_rawDesc), len(file_proto_live_proto_rawDesc)))
 	})
-	return file_live_proto_rawDescData
+	return file_proto_live_proto_rawDescData
 }
 
-var file_live_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
-var file_live_proto_goTypes = []any{
+var file_proto_live_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_proto_live_proto_goTypes = []any{
 	(*BaseResponse)(nil),        // 0: livepb.BaseResponse
 	(*CreateRoomRequest)(nil),   // 1: livepb.CreateRoomRequest
 	(*CreateRoomResponse)(nil),  // 2: livepb.CreateRoomResponse
@@ -1216,7 +1234,7 @@ var file_live_proto_goTypes = []any{
 	(*GetLiveListResponse)(nil), // 14: livepb.GetLiveListResponse
 	(*LiveRoom)(nil),            // 15: livepb.LiveRoom
 }
-var file_live_proto_depIdxs = []int32{
+var file_proto_live_proto_depIdxs = []int32{
 	15, // 0: livepb.GetRoomInfoResponse.room:type_name -> livepb.LiveRoom
 	15, // 1: livepb.GetLiveListResponse.rooms:type_name -> livepb.LiveRoom
 	1,  // 2: livepb.LiveService.CreateRoom:input_type -> livepb.CreateRoomRequest
@@ -1240,26 +1258,26 @@ var file_live_proto_depIdxs = []int32{
 	0,  // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_live_proto_init() }
-func file_live_proto_init() {
-	if File_live_proto != nil {
+func init() { file_proto_live_proto_init() }
+func file_proto_live_proto_init() {
+	if File_proto_live_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_live_proto_rawDesc), len(file_live_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_live_proto_rawDesc), len(file_proto_live_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_live_proto_goTypes,
-		DependencyIndexes: file_live_proto_depIdxs,
-		MessageInfos:      file_live_proto_msgTypes,
+		GoTypes:           file_proto_live_proto_goTypes,
+		DependencyIndexes: file_proto_live_proto_depIdxs,
+		MessageInfos:      file_proto_live_proto_msgTypes,
 	}.Build()
-	File_live_proto = out.File
-	file_live_proto_goTypes = nil
-	file_live_proto_depIdxs = nil
+	File_proto_live_proto = out.File
+	file_proto_live_proto_goTypes = nil
+	file_proto_live_proto_depIdxs = nil
 }

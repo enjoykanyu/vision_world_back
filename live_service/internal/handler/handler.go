@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -54,19 +53,35 @@ func (h *LiveServiceHandler) CreateRoom(ctx context.Context, req *livepb.CreateR
 
 // StartLive 开始直播
 func (h *LiveServiceHandler) StartLive(ctx context.Context, req *livepb.StartLiveRequest) (*livepb.StartLiveResponse, error) {
-	log.Printf("StartLive called, user_id: %d, title: %s, category: %s", req.UserId, req.Title, req.Category)
+	h.logger.Info("StartLive called", "user_id", req.UserId, "title", req.Title, "category", req.Category)
 
-	// TODO: 实现开始直播逻辑
-	_, err := h.liveService.StartLive(ctx, req.UserId, req.Title, req.Category)
+	// 调用service开始直播
+	stream, err := h.liveService.StartLive(ctx, req.UserId, req.Title, req.Category)
 	if err != nil {
-		return nil, err
+		h.logger.Error("StartLive failed", "error", err)
+		return &livepb.StartLiveResponse{
+			Code:    1,
+			Message: "开始直播失败: " + err.Error(),
+		}, nil
 	}
 
+	// 生成各种播放地址
+	h.logger.Info("Live stream started",
+		"stream_id", stream.ID,
+		"stream_key", stream.StreamKey,
+		"stream_url", stream.StreamURL,
+		"playback_url", stream.PlaybackURL)
+
 	return &livepb.StartLiveResponse{
-		Code:    0,
-		Message: "直播开始成功",
-		PlayUrl: fmt.Sprintf("http://localhost:8080/live/%s.m3u8", ""),
-		RoomId:  9,
+		Code:      0,
+		Message:   "直播开始成功",
+		RoomId:    stream.RoomID,
+		StreamKey: stream.StreamKey,
+		PushUrl:   stream.StreamURL,
+		PlayUrl:   stream.PlaybackURL,
+		FlvUrl:    fmt.Sprintf("http://localhost:8085/live/%s.flv", stream.StreamKey),
+		WebrtcUrl: fmt.Sprintf("webrtc://localhost:1985/live/%s", stream.StreamKey),
+		IsNewRoom: true,
 	}, nil
 }
 
@@ -85,17 +100,59 @@ func (h *LiveServiceHandler) StopLive(ctx context.Context, req *livepb.StopLiveR
 func (h *LiveServiceHandler) GetRoomInfo(ctx context.Context, req *livepb.GetRoomInfoRequest) (*livepb.GetRoomInfoResponse, error) {
 	h.logger.Info("GetRoomInfo called", "room_id", req.RoomId)
 
-	// TODO: 实现获取房间信息逻辑
+	// 获取直播间信息
+	room, err := h.liveService.GetLiveRoom(ctx, req.RoomId)
+	if err != nil {
+		h.logger.Error("Failed to get live room", "error", err)
+		return &livepb.GetRoomInfoResponse{
+			Code:    1,
+			Message: "获取房间信息失败: " + err.Error(),
+		}, nil
+	}
+
+	if room == nil {
+		return &livepb.GetRoomInfoResponse{
+			Code:    1,
+			Message: "直播间不存在",
+		}, nil
+	}
+
+	// 获取当前正在进行的直播流
+	stream, _ := h.liveService.GetLiveStreamByRoomID(ctx, req.RoomId)
+
+	// 转换状态并设置播放地址
+	status := "offline"
+	var playUrl string
+	var streamKey string
+	var startedAt int64
+
+	if room.Status == 1 && stream != nil {
+		status = "streaming"
+		playUrl = stream.PlaybackURL
+		streamKey = stream.StreamKey
+		if stream.StartedAt != nil {
+			startedAt = stream.StartedAt.Unix()
+		}
+	} else if room.Status == 2 {
+		status = "banned"
+	}
+
 	return &livepb.GetRoomInfoResponse{
 		Code:    0,
 		Message: "获取房间信息成功",
 		Room: &livepb.LiveRoom{
-			Id:          req.RoomId,
-			UserId:      1,
-			Title:       "测试直播间",
-			Category:    "娱乐",
-			Status:      "streaming",
-			OnlineCount: 100,
+			Id:          room.ID,
+			UserId:      room.UserID,
+			Title:       room.Name,
+			Category:    "娱乐", // TODO: 从分类表获取
+			Status:      status,
+			CoverUrl:    room.CoverImage,
+			StreamKey:   streamKey,
+			PlayUrl:     playUrl,
+			OnlineCount: 0, // TODO: 从在线人数统计获取
+			StartedAt:   startedAt,
+			CreatedAt:   room.CreatedAt.Unix(),
+			UpdatedAt:   room.UpdatedAt.Unix(),
 		},
 	}, nil
 }

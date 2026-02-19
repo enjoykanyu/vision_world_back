@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log"
 
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
@@ -12,10 +13,18 @@ import (
 
 // LiveRepository 直播数据仓库接口
 type LiveRepository interface {
+	// 直播间管理
+	CreateLiveRoom(ctx context.Context, room *model.LiveRoom) error
+	GetLiveRoom(ctx context.Context, roomID uint64) (*model.LiveRoom, error)
+	GetLiveRoomByUserID(ctx context.Context, userID uint64) (*model.LiveRoom, error)
+	UpdateLiveRoom(ctx context.Context, room *model.LiveRoom) error
+	UpdateLiveRoomStatus(ctx context.Context, roomID uint64, status uint8) error
+
 	// 直播流管理
 	CreateLiveStream(ctx context.Context, stream *model.LiveStream) error
 	GetLiveStream(ctx context.Context, streamID uint64) (*model.LiveStream, error)
 	GetLiveStreamByUserID(ctx context.Context, userID uint64) (*model.LiveStream, error)
+	GetLiveStreamByRoomID(ctx context.Context, roomID uint64) (*model.LiveStream, error)
 	UpdateLiveStream(ctx context.Context, stream *model.LiveStream) error
 	UpdateLiveStreamStatus(ctx context.Context, streamID uint64, status model.LiveStatus) error
 	DeleteLiveStream(ctx context.Context, streamID uint64) error
@@ -180,6 +189,47 @@ func (r *liveRepository) WithTx(tx *gorm.DB) LiveRepository {
 	}
 }
 
+// CreateLiveRoom 创建直播间
+func (r *liveRepository) CreateLiveRoom(ctx context.Context, room *model.LiveRoom) error {
+	log.Println("CreateLiveRoom")
+	return r.db.WithContext(ctx).Create(room).Error
+}
+
+// GetLiveRoom 获取直播间
+func (r *liveRepository) GetLiveRoom(ctx context.Context, roomID uint64) (*model.LiveRoom, error) {
+	var room model.LiveRoom
+	err := r.db.WithContext(ctx).Where("id = ?", roomID).First(&room).Error
+	if err != nil {
+		return nil, err
+	}
+	return &room, nil
+}
+
+// GetLiveRoomByUserID 根据用户ID获取直播间
+func (r *liveRepository) GetLiveRoomByUserID(ctx context.Context, userID uint64) (*model.LiveRoom, error) {
+	var room model.LiveRoom
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&room).Error
+	if err != nil {
+		log.Println("报错了", err)
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &room, nil
+}
+
+// UpdateLiveRoom 更新直播间
+func (r *liveRepository) UpdateLiveRoom(ctx context.Context, room *model.LiveRoom) error {
+	return r.db.WithContext(ctx).Save(room).Error
+}
+
+// UpdateLiveRoomStatus 更新直播间状态
+func (r *liveRepository) UpdateLiveRoomStatus(ctx context.Context, roomID uint64, status uint8) error {
+	log.Println("UpdateLiveRoomStatus", roomID, status)
+	return r.db.WithContext(ctx).Model(&model.LiveRoom{}).Where("id = ?", roomID).Update("status", status).Error
+}
+
 // CreateLiveStream 创建直播流
 func (r *liveRepository) CreateLiveStream(ctx context.Context, stream *model.LiveStream) error {
 	// TODO: 实现创建直播流逻辑
@@ -207,6 +257,20 @@ func (r *liveRepository) GetLiveStreamByUserID(ctx context.Context, userID uint6
 		model.LiveStatusPaused,
 	}).First(&stream).Error
 	if err != nil {
+		log.Println("GetLiveStreamByUserID", err)
+		return nil, err
+	}
+	return &stream, nil
+}
+
+// GetLiveStreamByRoomID 根据房间ID获取正在进行的直播流
+func (r *liveRepository) GetLiveStreamByRoomID(ctx context.Context, roomID uint64) (*model.LiveStream, error) {
+	var stream model.LiveStream
+	err := r.db.WithContext(ctx).Where("room_id = ? AND status = ?", roomID, model.LiveStatusStreaming).First(&stream).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &stream, nil

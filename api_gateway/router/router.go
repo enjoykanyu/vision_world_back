@@ -137,6 +137,7 @@ func (r *Router) registerVideoRoutes(api *gin.RouterGroup) {
 func (r *Router) registerLiveRoutes(api *gin.RouterGroup) {
 	api.POST("/live/start", r.liveHandler.StartLive)
 	api.POST("/live/stop", r.liveHandler.StopLive)
+	api.GET("/live/room/:id", r.liveHandler.GetRoomInfo)
 	// api.GET("/live/stream/:id", r.liveHandler.GetLiveStream)
 	api.GET("/live/list", r.liveHandler.GetLiveList)
 }
