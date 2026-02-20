@@ -390,16 +390,16 @@ func (h *LiveHandler) Close() error {
 func RegisterLiveRoutesWithHandler(router *gin.Engine, liveHandler *LiveHandler) {
 	// 分片上传路由组 - 需要认证
 	liveGroup := router.Group("/api/live")
+	// SRS 回调路由（不需要认证，供SRS服务器调用）
+	liveGroup.POST("/srs/callback", liveHandler.SRSCallback)
 	liveGroup.Use(middleware.RequireAuthMiddleware())
 	{
-		liveGroup.POST("/live/start", liveHandler.StartLive)
-		liveGroup.POST("/live/stop", liveHandler.StopLive)
-		liveGroup.GET("/live/room/:id", liveHandler.GetRoomInfo)
+		liveGroup.POST("/start", liveHandler.StartLive)
+		liveGroup.POST("/stop", liveHandler.StopLive)
+		liveGroup.GET("/room/:id", liveHandler.GetRoomInfo)
 		// api.GET("/live/stream/:id", r.liveHandler.GetLiveStream)
-		liveGroup.GET("/live/list", liveHandler.GetLiveList)
+		liveGroup.GET("/list", liveHandler.GetLiveList)
 
-		// SRS 回调路由（不需要认证，供SRS服务器调用）
-		liveGroup.POST("/live/srs/callback", liveHandler.SRSCallback)
 	}
 
 }
