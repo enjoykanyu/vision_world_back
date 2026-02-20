@@ -135,14 +135,7 @@ func (r *Router) registerVideoRoutes(api *gin.RouterGroup) {
 
 // registerLiveRoutes 注册直播相关路由
 func (r *Router) registerLiveRoutes(api *gin.RouterGroup) {
-	api.POST("/live/start", r.liveHandler.StartLive)
-	api.POST("/live/stop", r.liveHandler.StopLive)
-	api.GET("/live/room/:id", r.liveHandler.GetRoomInfo)
-	// api.GET("/live/stream/:id", r.liveHandler.GetLiveStream)
-	api.GET("/live/list", r.liveHandler.GetLiveList)
-
-	// SRS 回调路由（不需要认证，供SRS服务器调用）
-	api.POST("/live/srs/callback", r.liveHandler.SRSCallback)
+	routes.RegisterLiveRoutesWithHandler(r.engine, r.liveHandler)
 }
 
 // registerHomeRoutes 注册首页相关路由

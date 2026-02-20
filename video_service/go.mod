@@ -1,6 +1,6 @@
 module github.com/vision_world/video_service
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/go-redis/redis/v8 v8.11.5
@@ -16,6 +16,8 @@ require (
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/gorm v1.25.5
 )
+
+require github.com/sony/sonyflake v1.3.0
 
 require (
 	github.com/armon/go-metrics v0.4.1 // indirect
@@ -51,7 +53,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
-	github.com/sony/sonyflake v1.3.0 // indirect
 	github.com/tinylib/msgp v1.3.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.10 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.10 // indirect

@@ -139,11 +139,11 @@ func (s *liveService) StartLive(ctx context.Context, userID uint64, title string
 		roomID = room.ID
 	}
 	// 2. 检查用户是否已有进行中的直播
-	// existingStream, err := s.liveRepo.GetLiveStreamByUserID(ctx, userID)
+	existingStream, err := s.liveRepo.GetLiveStreamByUserID(ctx, userID)
 
-	// if err == nil && existingStream != nil {
-	// 	return nil, errors.New("user already has an active live stream")
-	// }
+	if err == nil && existingStream != nil {
+		return nil, errors.New("user already has an active live stream")
+	}
 
 	// 3. 创建直播流记录
 	stream, err := s.streamManager.CreateLiveStream(ctx, roomID, userID, title, category)
