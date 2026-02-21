@@ -44,6 +44,8 @@ type CacheService interface {
 	SetCategories(categories []string) error
 	GetTags() ([]string, error)
 	SetTags(tags []string) error
+	//弹幕相关缓存
+	// GetDanmakuByVideoID(videoID uint32) ([]*Danmaku, error)
 }
 
 // CacheServiceImpl 缓存服务实现
