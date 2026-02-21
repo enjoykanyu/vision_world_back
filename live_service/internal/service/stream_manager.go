@@ -168,11 +168,8 @@ func (m *streamManager) GenerateStreamKey(userID uint64) string {
 // GeneratePushURL 生成推流地址
 func (m *streamManager) GeneratePushURL(streamKey string) string {
 	// RTMP推流地址格式: rtmp://srs-server/live/{streamKey}
-	// 实际项目中从配置读取SRS服务器地址
-	srsHost := m.config.Server.Host
-	if srsHost == "" {
-		srsHost = "localhost"
-	}
+	// 使用 localhost，因为浏览器/OBS 无法访问 0.0.0.0
+	srsHost := "localhost"
 	return fmt.Sprintf("rtmp://%s:1935/live/%s", srsHost, streamKey)
 }
 

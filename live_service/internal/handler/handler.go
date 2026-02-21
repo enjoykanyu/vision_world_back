@@ -81,15 +81,19 @@ func (h *LiveServiceHandler) StartLive(ctx context.Context, req *livepb.StartLiv
 		PushUrl:   stream.StreamURL,
 		PlayUrl:   stream.PlaybackURL,
 		FlvUrl:    fmt.Sprintf("http://localhost:8085/live/%s.flv", stream.StreamKey),
-		WebrtcUrl: fmt.Sprintf("webrtc://localhost:1985/live/%s", stream.StreamKey),
+		WebrtcUrl: fmt.Sprintf("webrtc://192.168.1.4:8000/live/%s", stream.StreamKey),
 		IsNewRoom: true,
 	}, nil
 }
 
 // StopLive 结束直播
 func (h *LiveServiceHandler) StopLive(ctx context.Context, req *livepb.StopLiveRequest) (*livepb.StopLiveResponse, error) {
-	h.logger.Info("StopLive called", "user_id", req.UserId, "room_id", req.RoomId)
+	log.Println("StopLive called", "user_id", req.UserId, "room_id", req.RoomId)
 
+	err := h.liveService.StopLive(ctx, req.UserId)
+	if err != nil {
+		log.Println("StopLive failed", "error", err)
+	}
 	// TODO: 实现结束直播逻辑
 	return &livepb.StopLiveResponse{
 		Code:    0,
@@ -129,8 +133,9 @@ func (h *LiveServiceHandler) GetRoomInfo(ctx context.Context, req *livepb.GetRoo
 
 	if room.Status == 1 && stream != nil {
 		status = "streaming"
-		playUrl = stream.PlaybackURL
+		// 动态生成播放地址，避免使用数据库中保存的旧地址
 		streamKey = stream.StreamKey
+		playUrl = fmt.Sprintf("http://localhost:8085/live/%s.m3u8", streamKey)
 		if stream.StartedAt != nil {
 			startedAt = stream.StartedAt.Unix()
 		}
@@ -162,14 +167,56 @@ func (h *LiveServiceHandler) GetRoomInfo(ctx context.Context, req *livepb.GetRoo
 func (h *LiveServiceHandler) EnterRoom(ctx context.Context, req *livepb.EnterRoomRequest) (*livepb.EnterRoomResponse, error) {
 	h.logger.Info("EnterRoom called", "user_id", req.UserId, "room_id", req.RoomId)
 
-	// TODO: 实现进入直播间逻辑
-	streamKey := fmt.Sprintf("stream_%d", req.RoomId)
+	// 获取直播间信息
+	room, err := h.liveService.GetLiveRoom(ctx, req.RoomId)
+	if err != nil {
+		h.logger.Error("Failed to get live room", "error", err)
+		return &livepb.EnterRoomResponse{
+			Code:    1,
+			Message: "获取直播间信息失败: " + err.Error(),
+		}, nil
+	}
+
+	if room == nil {
+		return &livepb.EnterRoomResponse{
+			Code:    1,
+			Message: "直播间不存在",
+		}, nil
+	}
+
+	// 检查直播间状态
+	if room.Status != 1 {
+		return &livepb.EnterRoomResponse{
+			Code:    1,
+			Message: "直播间未开播",
+		}, nil
+	}
+
+	// 获取当前正在进行的直播流
+	stream, err := h.liveService.GetLiveStreamByRoomID(ctx, req.RoomId)
+	if err != nil {
+		h.logger.Error("Failed to get live stream", "error", err)
+		return &livepb.EnterRoomResponse{
+			Code:    1,
+			Message: "获取直播流信息失败: " + err.Error(),
+		}, nil
+	}
+
+	if stream == nil {
+		return &livepb.EnterRoomResponse{
+			Code:    1,
+			Message: "直播流不存在",
+		}, nil
+	}
+
+	// 动态生成播放地址
+	playUrl := fmt.Sprintf("http://localhost:8085/live/%s.m3u8", stream.StreamKey)
 
 	return &livepb.EnterRoomResponse{
 		Code:        0,
 		Message:     "进入直播间成功",
-		PlayUrl:     fmt.Sprintf("http://localhost:8085/live/%s.m3u8", streamKey),
-		OnlineCount: 100,
+		PlayUrl:     playUrl,
+		OnlineCount: 0, // TODO: 从在线人数统计获取
 	}, nil
 }
 

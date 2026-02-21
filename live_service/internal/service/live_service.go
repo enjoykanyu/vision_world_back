@@ -2,9 +2,13 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"gorm.io/gorm"
@@ -19,7 +23,7 @@ import (
 type LiveService interface {
 	// 直播流管理
 	StartLive(ctx context.Context, userID uint64, title string, category string) (*model.LiveStream, error)
-	StopLive(ctx context.Context, streamID, userID uint64) error
+	StopLive(ctx context.Context, userID uint64) error
 	GetLiveStream(ctx context.Context, streamID uint64) (*model.LiveStream, error)
 	GetLiveStreamByRoomID(ctx context.Context, roomID uint64) (*model.LiveStream, error)
 	GetLiveList(ctx context.Context, page, pageSize int, categoryID uint32) ([]*model.LiveStream, int64, error)
@@ -138,6 +142,23 @@ func (s *liveService) StartLive(ctx context.Context, userID uint64, title string
 	} else {
 		roomID = room.ID
 	}
+	//if room == nil {
+	//	// 1.1 新建直播间
+	//	roomNumber := generateRoomNumber()
+	//	newRoom := &model.LiveRoom{
+	//		UserID:     userID,
+	//		Name:       title,
+	//		Status:     0, // 离线状态
+	//		RoomNumber: roomNumber,
+	//	}
+	//	if err := s.liveRepo.CreateLiveRoom(ctx, newRoom); err != nil {
+	//		return nil, fmt.Errorf("failed to create live room: %w", err)
+	//	}
+	//	roomID = newRoom.ID
+	//	log.Println("Created new live room", "roomID", roomID, "roomNumber", roomNumber)
+	//} else {
+	//	roomID = room.ID
+	//}
 	// 2. 检查用户是否已有进行中的直播
 	existingStream, err := s.liveRepo.GetLiveStreamByUserID(ctx, userID)
 
@@ -177,7 +198,9 @@ func (s *liveService) StartLive(ctx context.Context, userID uint64, title string
 }
 
 // StopLive 结束直播
-func (s *liveService) StopLive(ctx context.Context, streamID, userID uint64) error {
+func (s *liveService) StopLive(ctx context.Context, userID uint64) error {
+	existingStream, err := s.liveRepo.GetLiveStreamByUserID(ctx, userID)
+	streamID := existingStream.ID
 	log.Println("Stopping live stream", "streamID", streamID, "userID", userID)
 
 	// 1. 获取直播流信息
@@ -454,4 +477,24 @@ func (s *liveService) GetLivePlayback(ctx context.Context, streamID uint64) (*Li
 	return &LivePlayback{
 		StreamID: streamID,
 	}, nil
+}
+
+// generateRoomNumber 生成唯一的房间号
+// 格式: 时间戳(36进制) + 4位随机字符
+func generateRoomNumber() string {
+	// 使用时间戳的36进制表示（缩短长度）
+	timestamp := time.Now().Unix()
+	timestampPart := strconv.FormatInt(timestamp, 36)
+
+	// 生成4位随机字符
+	b := make([]byte, 2)
+	rand.Read(b)
+	randomPart := hex.EncodeToString(b)
+
+	// 组合成房间号（大写）
+	roomNumber := timestampPart + randomPart
+	if len(roomNumber) > 20 {
+		roomNumber = roomNumber[:20]
+	}
+	return roomNumber
 }
