@@ -972,6 +972,8 @@ type LiveRoom struct {
 	CoverUrl      string                 `protobuf:"bytes,6,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`
 	StreamKey     string                 `protobuf:"bytes,7,opt,name=stream_key,json=streamKey,proto3" json:"stream_key,omitempty"`
 	PlayUrl       string                 `protobuf:"bytes,8,opt,name=play_url,json=playUrl,proto3" json:"play_url,omitempty"`
+	FlvUrl        string                 `protobuf:"bytes,14,opt,name=flv_url,json=flvUrl,proto3" json:"flv_url,omitempty"`
+	WebrtcUrl     string                 `protobuf:"bytes,15,opt,name=webrtc_url,json=webrtcUrl,proto3" json:"webrtc_url,omitempty"`
 	OnlineCount   int32                  `protobuf:"varint,9,opt,name=online_count,json=onlineCount,proto3" json:"online_count,omitempty"`
 	StartedAt     int64                  `protobuf:"varint,10,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
 	EndedAt       int64                  `protobuf:"varint,11,opt,name=ended_at,json=endedAt,proto3" json:"ended_at,omitempty"`
@@ -1063,6 +1065,20 @@ func (x *LiveRoom) GetStreamKey() string {
 func (x *LiveRoom) GetPlayUrl() string {
 	if x != nil {
 		return x.PlayUrl
+	}
+	return ""
+}
+
+func (x *LiveRoom) GetFlvUrl() string {
+	if x != nil {
+		return x.FlvUrl
+	}
+	return ""
+}
+
+func (x *LiveRoom) GetWebrtcUrl() string {
+	if x != nil {
+		return x.WebrtcUrl
 	}
 	return ""
 }
@@ -1173,7 +1189,7 @@ const file_proto_live_proto_rawDesc = "" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12&\n" +
 	"\x05rooms\x18\x03 \x03(\v2\x10.livepb.LiveRoomR\x05rooms\x12\x14\n" +
-	"\x05total\x18\x04 \x01(\x05R\x05total\"\xef\x02\n" +
+	"\x05total\x18\x04 \x01(\x05R\x05total\"\xa7\x03\n" +
 	"\bLiveRoom\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12\x14\n" +
@@ -1183,7 +1199,10 @@ const file_proto_live_proto_rawDesc = "" +
 	"\tcover_url\x18\x06 \x01(\tR\bcoverUrl\x12\x1d\n" +
 	"\n" +
 	"stream_key\x18\a \x01(\tR\tstreamKey\x12\x19\n" +
-	"\bplay_url\x18\b \x01(\tR\aplayUrl\x12!\n" +
+	"\bplay_url\x18\b \x01(\tR\aplayUrl\x12\x17\n" +
+	"\aflv_url\x18\x0e \x01(\tR\x06flvUrl\x12\x1d\n" +
+	"\n" +
+	"webrtc_url\x18\x0f \x01(\tR\twebrtcUrl\x12!\n" +
 	"\fonline_count\x18\t \x01(\x05R\vonlineCount\x12\x1d\n" +
 	"\n" +
 	"started_at\x18\n" +

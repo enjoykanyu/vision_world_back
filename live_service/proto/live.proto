@@ -130,6 +130,8 @@ message LiveRoom {
     string cover_url = 6;
     string stream_key = 7;
     string play_url = 8;
+    string flv_url = 14;
+    string webrtc_url = 15;
     int32 online_count = 9;
     int64 started_at = 10;
     int64 ended_at = 11;

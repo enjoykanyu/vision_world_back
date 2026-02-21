@@ -128,14 +128,18 @@ func (h *LiveServiceHandler) GetRoomInfo(ctx context.Context, req *livepb.GetRoo
 	// 转换状态并设置播放地址
 	status := "offline"
 	var playUrl string
+	var flvUrl string
+	var webrtcUrl string
 	var streamKey string
 	var startedAt int64
 
 	if room.Status == 1 && stream != nil {
 		status = "streaming"
-		// 动态生成播放地址，使用 8086 端口（nginx 代理）
 		streamKey = stream.StreamKey
+		// 生成所有播放地址
 		playUrl = fmt.Sprintf("http://localhost:8086/live/%s.m3u8", streamKey)
+		flvUrl = fmt.Sprintf("http://localhost:8085/live/%s.flv", streamKey)
+		webrtcUrl = fmt.Sprintf("webrtc://192.168.1.4:8000/live/%s", streamKey)
 		if stream.StartedAt != nil {
 			startedAt = stream.StartedAt.Unix()
 		}
@@ -155,6 +159,8 @@ func (h *LiveServiceHandler) GetRoomInfo(ctx context.Context, req *livepb.GetRoo
 			CoverUrl:    room.CoverImage,
 			StreamKey:   streamKey,
 			PlayUrl:     playUrl,
+			FlvUrl:      flvUrl,
+			WebrtcUrl:   webrtcUrl,
 			OnlineCount: 0, // TODO: 从在线人数统计获取
 			StartedAt:   startedAt,
 			CreatedAt:   room.CreatedAt.Unix(),
