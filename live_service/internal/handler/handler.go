@@ -133,9 +133,9 @@ func (h *LiveServiceHandler) GetRoomInfo(ctx context.Context, req *livepb.GetRoo
 
 	if room.Status == 1 && stream != nil {
 		status = "streaming"
-		// 动态生成播放地址，避免使用数据库中保存的旧地址
+		// 动态生成播放地址，使用 8086 端口（nginx 代理）
 		streamKey = stream.StreamKey
-		playUrl = fmt.Sprintf("http://localhost:8085/live/%s.m3u8", streamKey)
+		playUrl = fmt.Sprintf("http://localhost:8086/live/%s.m3u8", streamKey)
 		if stream.StartedAt != nil {
 			startedAt = stream.StartedAt.Unix()
 		}
@@ -209,8 +209,8 @@ func (h *LiveServiceHandler) EnterRoom(ctx context.Context, req *livepb.EnterRoo
 		}, nil
 	}
 
-	// 动态生成播放地址
-	playUrl := fmt.Sprintf("http://localhost:8085/live/%s.m3u8", stream.StreamKey)
+	// 动态生成播放地址，使用 8086 端口（nginx 代理）
+	playUrl := fmt.Sprintf("http://localhost:8086/live/%s.m3u8", stream.StreamKey)
 
 	return &livepb.EnterRoomResponse{
 		Code:        0,

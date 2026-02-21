@@ -178,13 +178,14 @@ func (m *streamManager) GeneratePlayURL(streamKey string) map[string]string {
 	// 对于播放地址，使用 localhost，因为浏览器无法访问 0.0.0.0
 	playHost := "localhost"
 
-	// 多种播放格式 - 使用 8085 端口（SRS 已配置 CORS 支持）
-	// SRS http_server 监听 8085 端口，且已启用 http_cors
+	// 多种播放格式
+	// HLS 使用 8086 端口（nginx 代理，带 CORS）
+	// FLV 使用 8085 端口（SRS 直接）
 	// WebRTC 使用 1985 端口 (HTTP API) 或 8000 端口 (UDP)
 	urls := map[string]string{
 		"rtmp":   fmt.Sprintf("rtmp://%s:1935/live/%s", playHost, streamKey),
 		"flv":    fmt.Sprintf("http://%s:8085/live/%s.flv", playHost, streamKey),
-		"hls":    fmt.Sprintf("http://%s:8085/live/%s.m3u8", playHost, streamKey),
+		"hls":    fmt.Sprintf("http://%s:8086/live/%s.m3u8", playHost, streamKey),
 		"webrtc": fmt.Sprintf("webrtc://%s:1985/live/%s", playHost, streamKey),
 	}
 	log.Println("GeneratePlayURL")
