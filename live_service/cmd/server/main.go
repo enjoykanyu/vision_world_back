@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"live_service/internal/discovery"
 	"live_service/internal/model"
+	"live_service/internal/service"
 	live "live_service/proto/proto_gen/live"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -31,6 +33,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+
+	// 打印WebSocket配置
+	log.Printf("WebSocket config loaded: Enabled=%v, Port=%d", cfg.WebSocket.Enabled, cfg.WebSocket.Port)
 
 	// 打印配置信息，用于调试
 	log.Printf("Logger config: Level=%s, Format=%s, OutputPath=%s", cfg.Logger.Level, cfg.Logger.Format, cfg.Logger.OutputPath)
@@ -136,17 +141,68 @@ func main() {
 	}
 	logger.Info("Service registered to etcd", "address", serviceAddr)
 
-	// 12. 等待中断信号
+	// 12. 启动WebSocket服务器（如果启用）
+	logger.Info("WebSocket config", "enabled", cfg.WebSocket.Enabled, "port", cfg.WebSocket.Port)
+	var wsHub *service.Hub
+	if cfg.WebSocket.Enabled {
+		wsHub = service.NewHub(cfg, logger, redisClient)
+
+		// 启动Hub
+		if err := wsHub.Start(); err != nil {
+			logger.Fatal("Failed to start WebSocket hub", "error", err)
+		}
+		logger.Info("WebSocket Hub started")
+
+		// 创建WebSocket handler
+		wsHandler := handler.NewWebSocketHandler(wsHub, logger)
+
+		// 设置HTTP路由
+		http.HandleFunc("/ws/chat", func(w http.ResponseWriter, r *http.Request) {
+			// 从查询参数获取用户信息
+			userID := r.URL.Query().Get("user_id")
+			roomID := r.URL.Query().Get("room_id")
+			username := r.URL.Query().Get("username")
+			avatar := r.URL.Query().Get("avatar")
+
+			wsHub.HandleWebSocket(w, r, userID, roomID, username, avatar)
+		})
+		http.HandleFunc("/api/chat/stats", wsHandler.GetRoomStats)
+		http.HandleFunc("/api/chat/hub/stats", wsHandler.GetHubStats)
+		http.HandleFunc("/api/chat/online-users", wsHandler.GetOnlineUsers)
+		http.HandleFunc("/api/chat/send", wsHandler.SendMessage)
+
+		// 注册SRS回调处理器
+		srsCallbackHandler := handler.NewSRSCallbackHandler(liveHandler.GetLiveService(), wsHub, logger)
+		http.HandleFunc("/api/srs/callback", srsCallbackHandler.HandleCallback)
+		logger.Info("SRS callback handler registered")
+
+		// 启动HTTP服务器
+		go func() {
+			addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.WebSocket.Port)
+			logger.Info("WebSocket HTTP server starting", "address", addr)
+			if err := http.ListenAndServe(addr, nil); err != nil {
+				logger.Fatal("Failed to start WebSocket HTTP server", "error", err)
+			}
+		}()
+	}
+
+	// 13. 等待中断信号
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	<-sigChan
 
 	logger.Info("Shutting down server...")
 
-	// 13. 设置健康检查为不健康状态
+	// 14. 设置健康检查为不健康状态
 	healthServer.SetServingStatus("live_service", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 
-	// 14. 停止gRPC服务器
+	// 15. 停止WebSocket Hub
+	if wsHub != nil {
+		wsHub.Stop()
+		logger.Info("WebSocket Hub stopped")
+	}
+
+	// 16. 停止gRPC服务器
 	grpcServer.GracefulStop()
 	logger.Info("Server stopped gracefully")
 }
