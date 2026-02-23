@@ -12,14 +12,15 @@ import (
 
 // Config 全局配置
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Redis    RedisConfig    `mapstructure:"redis"`
-	Logger   LoggerConfig   `mapstructure:"logger"`
-	Etcd     EtcdConfig     `mapstructure:"etcd"`
-	Consul   ConsulConfig   `mapstructure:"consul"`
-	JWT      JWTConfig      `mapstructure:"jwt"`
-	SMS      SMSConfig      `mapstructure:"sms"`
+	Server    ServerConfig    `mapstructure:"server"`
+	Database  DatabaseConfig  `mapstructure:"database"`
+	Redis     RedisConfig     `mapstructure:"redis"`
+	Logger    LoggerConfig    `mapstructure:"logger"`
+	Etcd      EtcdConfig      `mapstructure:"etcd"`
+	Consul    ConsulConfig    `mapstructure:"consul"`
+	JWT       JWTConfig       `mapstructure:"jwt"`
+	SMS       SMSConfig       `mapstructure:"sms"`
+	WebSocket WebSocketConfig `mapstructure:"websocket"`
 }
 
 // ServerConfig 服务器配置
@@ -94,6 +95,20 @@ type SMSConfig struct {
 	SecretKey    string `mapstructure:"secret_key"`
 	SignName     string `mapstructure:"sign_name"`
 	TemplateCode string `mapstructure:"template_code"`
+}
+
+// WebSocketConfig WebSocket配置
+type WebSocketConfig struct {
+	Enabled          bool          `mapstructure:"enabled"`
+	Port             int           `mapstructure:"port"`
+	ReadBufferSize   int           `mapstructure:"read_buffer_size"`
+	WriteBufferSize  int           `mapstructure:"write_buffer_size"`
+	MaxMessageSize   int64         `mapstructure:"max_message_size"`
+	PongWait         time.Duration `mapstructure:"pong_wait"`
+	PingPeriod       time.Duration `mapstructure:"ping_period"`
+	WriteWait        time.Duration `mapstructure:"write_wait"`
+	MaxConnections   int           `mapstructure:"max_connections"`
+	MessageRateLimit int           `mapstructure:"message_rate_limit"`
 }
 
 // LoadConfig 加载配置
