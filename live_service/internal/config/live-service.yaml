@@ -23,6 +23,20 @@ redis:
   db: 0
   pool_size: 10
 
+
+# WebSocket配置（弹幕实时通信）
+websocket:
+  enabled: true
+  port: 8088
+  read_buffer_size: 1024
+  write_buffer_size: 1024
+  max_message_size: 512
+  pong_wait: 60s
+  ping_period: 54s
+  write_wait: 10s
+  max_connections: 500000  # 单实例最大连接数
+  message_rate_limit: 5    # 每秒最大消息数
+
 logger:
   level: info
   format: json
