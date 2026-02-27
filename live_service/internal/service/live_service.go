@@ -26,6 +26,7 @@ type LiveService interface {
 	StopLive(ctx context.Context, userID uint64) error
 	GetLiveStream(ctx context.Context, streamID uint64) (*model.LiveStream, error)
 	GetLiveStreamByRoomID(ctx context.Context, roomID uint64) (*model.LiveStream, error)
+	GetLiveStreamByStreamKey(ctx context.Context, streamKey string) (*model.LiveStream, error)
 	GetLiveList(ctx context.Context, page, pageSize int, categoryID uint32) ([]*model.LiveStream, int64, error)
 	GetHotLiveList(ctx context.Context, page, pageSize int) ([]*model.LiveStream, int64, error)
 
@@ -263,6 +264,12 @@ func (s *liveService) GetLiveRoom(ctx context.Context, roomID uint64) (*model.Li
 func (s *liveService) GetLiveStreamByRoomID(ctx context.Context, roomID uint64) (*model.LiveStream, error) {
 	log.Println("Getting live stream by room ID", "roomID", roomID)
 	return s.liveRepo.GetLiveStreamByRoomID(ctx, roomID)
+}
+
+// GetLiveStreamByStreamKey 根据流密钥获取直播流
+func (s *liveService) GetLiveStreamByStreamKey(ctx context.Context, streamKey string) (*model.LiveStream, error) {
+	log.Println("Getting live stream by stream key", "streamKey", streamKey)
+	return s.liveRepo.GetLiveStreamByStreamKey(ctx, streamKey)
 }
 
 // GetLiveList 获取直播列表

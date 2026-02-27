@@ -273,3 +273,8 @@ func (h *LiveServiceHandler) GetLiveList(ctx context.Context, req *livepb.GetLiv
 func (h *LiveServiceHandler) Close() error {
 	return nil
 }
+
+// GetLiveService 获取直播服务实例
+func (h *LiveServiceHandler) GetLiveService() service.LiveService {
+	return h.liveService
+}

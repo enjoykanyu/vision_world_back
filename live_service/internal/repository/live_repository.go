@@ -25,6 +25,7 @@ type LiveRepository interface {
 	GetLiveStream(ctx context.Context, streamID uint64) (*model.LiveStream, error)
 	GetLiveStreamByUserID(ctx context.Context, userID uint64) (*model.LiveStream, error)
 	GetLiveStreamByRoomID(ctx context.Context, roomID uint64) (*model.LiveStream, error)
+	GetLiveStreamByStreamKey(ctx context.Context, streamKey string) (*model.LiveStream, error)
 	UpdateLiveStream(ctx context.Context, stream *model.LiveStream) error
 	UpdateLiveStreamStatus(ctx context.Context, streamID uint64, status model.LiveStatus) error
 	DeleteLiveStream(ctx context.Context, streamID uint64) error
@@ -268,6 +269,19 @@ func (r *liveRepository) GetLiveStreamByRoomID(ctx context.Context, roomID uint6
 	var stream model.LiveStream
 	// 按创建时间倒序排序，获取最新的直播流
 	err := r.db.WithContext(ctx).Where("room_id = ? AND status = ?", roomID, model.LiveStatusStreaming).Order("created_at DESC").First(&stream).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &stream, nil
+}
+
+// GetLiveStreamByStreamKey 根据流密钥获取直播流
+func (r *liveRepository) GetLiveStreamByStreamKey(ctx context.Context, streamKey string) (*model.LiveStream, error) {
+	var stream model.LiveStream
+	err := r.db.WithContext(ctx).Where("stream_key = ? AND status = ?", streamKey, model.LiveStatusStreaming).First(&stream).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
