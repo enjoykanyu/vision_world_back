@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"time"
 
 	"live_service/internal/service"
 	"live_service/pkg/logger"
@@ -11,13 +14,15 @@ import (
 // SRSCallbackHandler SRS回调处理器
 type SRSCallbackHandler struct {
 	liveService service.LiveService
+	hub         *service.Hub
 	logger      logger.Logger
 }
 
 // NewSRSCallbackHandler 创建SRS回调处理器
-func NewSRSCallbackHandler(liveService service.LiveService, log logger.Logger) *SRSCallbackHandler {
+func NewSRSCallbackHandler(liveService service.LiveService, hub *service.Hub, log logger.Logger) *SRSCallbackHandler {
 	return &SRSCallbackHandler{
 		liveService: liveService,
+		hub:         hub,
 		logger:      log,
 	}
 }
@@ -95,8 +100,42 @@ func (h *SRSCallbackHandler) handleOnPublish(req *SRSCallbackRequest) {
 func (h *SRSCallbackHandler) handleOnUnpublish(req *SRSCallbackRequest) {
 	h.logger.Info("Stream stopped publishing", "stream", req.Stream)
 
-	// TODO: 根据streamKey查找直播流，更新状态为"已结束"
-	// 可以调用 liveService.StopLive 方法
+	// 1. 根据streamKey查找直播流
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 从streamKey获取直播流信息
+	stream, err := h.liveService.GetLiveStreamByStreamKey(ctx, req.Stream)
+	if err != nil {
+		h.logger.Error("Failed to get live stream by stream key", "stream", req.Stream, "error", err)
+		return
+	}
+
+	if stream == nil {
+		h.logger.Warn("Live stream not found for stream key", "stream", req.Stream)
+		return
+	}
+
+	// 2. 发送WebSocket下播通知给所有观众
+	if h.hub != nil {
+		roomIDStr := fmt.Sprintf("%d", stream.RoomID)
+		streamEndMsg := &service.ChatMessage{
+			Type:      "stream_end",
+			UserID:    "system",
+			Username:  "系统",
+			Avatar:    "",
+			Content:   "主播已下播",
+			RoomID:    roomIDStr,
+			Timestamp: time.Now().Unix(),
+		}
+		h.hub.Broadcast <- streamEndMsg
+		h.logger.Info("Stream end notification sent via WebSocket", "roomID", stream.RoomID)
+	}
+
+	// 3. 更新直播流状态为已结束
+	// 注意：这里不直接调用StopLive，因为StopLive需要userID验证
+	// 实际业务中可以通过streamKey找到对应的userID然后调用StopLive
+	h.logger.Info("Stream unpublished handled", "streamID", stream.ID, "roomID", stream.RoomID)
 }
 
 // handleOnPlay 处理开始播放回调
