@@ -21,6 +21,7 @@ type Config struct {
 	JWT       JWTConfig       `mapstructure:"jwt"`
 	SMS       SMSConfig       `mapstructure:"sms"`
 	WebSocket WebSocketConfig `mapstructure:"websocket"`
+	Live      LiveConfig      `mapstructure:"live"`
 }
 
 // ServerConfig 服务器配置
@@ -109,6 +110,21 @@ type WebSocketConfig struct {
 	WriteWait        time.Duration `mapstructure:"write_wait"`
 	MaxConnections   int           `mapstructure:"max_connections"`
 	MessageRateLimit int           `mapstructure:"message_rate_limit"`
+}
+
+// LiveConfig 直播服务配置
+type LiveConfig struct {
+	RTMP        RTMPConfig        `mapstructure:"rtmp"`
+	SRSCallback SRSCallbackConfig `mapstructure:"srs_callback"`
+}
+
+// SRSCallbackConfig SRS回调配置
+type SRSCallbackConfig struct {
+	Enabled     bool   `mapstructure:"enabled"`
+	OnPublish   string `mapstructure:"on_publish"`
+	OnUnpublish string `mapstructure:"on_unpublish"`
+	OnPlay      string `mapstructure:"on_play"`
+	OnStop      string `mapstructure:"on_stop"`
 }
 
 // LoadConfig 加载配置
