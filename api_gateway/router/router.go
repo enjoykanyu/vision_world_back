@@ -21,6 +21,7 @@ type Router struct {
 	videoHandler *routes.VideoHandler
 	userHandler  *routes.UserHandler
 	liveHandler  *routes.LiveHandler
+	xiaovHandler *routes.XiaovHandler
 }
 
 // NewRouter 创建路由管理器
@@ -71,6 +72,13 @@ func (r *Router) initHandlers() error {
 		return err
 	}
 
+	// 初始化小V助手 Handler
+	r.xiaovHandler, err = routes.NewXiaovHandler(r.etcdEndpoints)
+	if err != nil {
+		log.Printf("Failed to create xiaov handler: %v", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -101,6 +109,7 @@ func (r *Router) registerRoutes() {
 		r.registerVideoRoutes(api)
 		r.registerLiveRoutes(api)
 		r.registerHomeRoutes(api)
+		r.registerXiaovRoutes(api)
 	}
 }
 
@@ -144,6 +153,18 @@ func (r *Router) registerHomeRoutes(api *gin.RouterGroup) {
 	api.GET("/home/hot", r.videoHandler.GetHotVideos)
 }
 
+// registerXiaovRoutes 注册小V助手路由
+func (r *Router) registerXiaovRoutes(api *gin.RouterGroup) {
+	// 小V助手聊天（普通模式）
+	api.POST("/xiaov/chat", r.xiaovHandler.Chat)
+	// 小V助手聊天（流式模式）
+	api.POST("/xiaov/chat/stream", r.xiaovHandler.ChatStream)
+	// 获取会话历史
+	api.GET("/xiaov/history", r.xiaovHandler.GetSessionHistory)
+	// 清空会话
+	api.POST("/xiaov/clear", r.xiaovHandler.ClearSession)
+}
+
 // Close 关闭所有 Handler 连接
 func (r *Router) Close() {
 	if r.userHandler != nil {
@@ -154,5 +175,8 @@ func (r *Router) Close() {
 	}
 	if r.videoHandler != nil {
 		r.videoHandler.Close()
+	}
+	if r.xiaovHandler != nil {
+		r.xiaovHandler.Close()
 	}
 }
